@@ -1,0 +1,42 @@
+# ARA Accounting — Development Roadmap & Risk Register
+
+Each phase ends with a checkpoint report in `PROJECT_STATUS.md`. The report covers features, files, DB changes, API changes, tests run, passed and failed, open issues, security notes and the next phase. A phase is **done** only when its exit criteria pass as automated tests, not when its pages render.
+
+## Phases
+
+| # | Phase | Scope highlights | Exit criteria (automated unless noted) | Depends on |
+| --- | --- | --- | --- | --- |
+| 0 | Repository audit & architecture | Audit, architecture, ERD, rules, security, roadmap, risks | Documents reviewed and approved by the product owner (manual) | — |
+| 1 | Foundation | Scaffold (Next 16, Prisma, Tailwind 4, next-intl nl/en), design system and app shell (sidebar, company / administration / fiscal-year selectors, search, notifications), auth + MFA, organisations (business / firm), users, roles, permissions, companies, administrations (blank CoA), fiscal years and periods, tenant client + RLS, audit log, health, CI | Login/MFA tests; permission matrix tests; **tenant-isolation suite passes**; i18n parity; e2e: register business → create administration → see dashboard shell | 0 |
+| 2 | Accounting core | CoA (hierarchy, categories, control types), journals, `core/money`, `core/ledger` (draft/approve/post/reverse, idempotency, gapless numbering, DB triggers), opening balances, general ledger, trial balance, period close/reopen, dimensions | Deterministic engine tests (L1–L5, P1–P6, F1–F3); DB triggers reject direct UPDATE/DELETE of posted rows; TB always balances in property-based tests | 1 |
+| 3 | Financial operations | Parties, sales (invoice, credit note, numbering, PDF, email interface), purchase (registration, approval), open items, allocations, AR/AP aging (configurable buckets), statements, bank/cash accounts, CSV/CAMT.053 import with dedupe, matching suggestions, reconciliation, cashbook, transfers, current accounts, fixed assets and depreciation | Acceptance workflows **2 (manual-entry variant)** and **3** pass end to end; sub-ledger = control account; depreciation schedules match reference tables | 2 |
+| 4 | Industry management | 15 templates (CoA, journals, tax-code mappings, report mappings, KPIs, budget categories, controls), custom builder, import/export JSON, versioning, upgrade diff proposals, administration-creation wizard | Acceptance workflow **1**; applying a template is reproducible; an upgrade never overwrites | 2 (can run parallel to 3) |
+| 5 | Multi-currency | Rate types, sources, policies, approval, foreign-currency invoices and payments, realised FX, period-end revaluation (auto-reverse), currency transfers | Acceptance workflow **4**; C1–C7 tests incl. partial payments and revaluation reversal | 3 |
+| 6 | Budgets | Budgets/versions/scenarios, monthly distribution, imports (CSV/Excel), prior-year basis, approvals, budget vs actual with drill-down, alerts, rolling forecast | Acceptance workflow **5**; B1–B3 tests | 3, 4 |
+| 7 | ARA Scan & AI | PWA capture (camera, multi-page), uploads, document workflow, PDF text extraction, AI extractor adapter, confidence UI, supplier/account suggestions from history, duplicate detection, automation rules + monitor | Acceptance workflow **2 (scan variant)**; AI1–AI3 tests with a recorded-fixture extractor; duplicate tests | 3 |
+| 8 | Financial reporting | Report templates and mappings, balance sheet, P&L, cash flow (indirect + direct), equity statement, monthly/quarterly packs with comparisons, KPI library with formulas, cash-flow forecast (30d–12m, 3 scenarios), PDF/Excel export | Acceptance workflow **6**; KPI formula tests; report fingerprint reproducibility | 3, 5, 6 |
+| 9 | Year-end & tax | Year-end checklist (24 items), adjustments (period 13), closing workflow, carry-forward, annual accounts generator (framework templates, notes, comparatives, PDF), tax configuration (rule versions, codes), turnover-tax and profit-tax returns, fiscal adjustments, reconciliation, filing workflow | Acceptance workflows **7, 8, 9**; F4–F6 and T1–T4 tests | 8 |
+| 10 | Quality & automation | Quality engine (12 checks, score, assignment, fingerprints), exception monitoring, alerts, scheduled scans, automation statistics | Each check has a positive and a negative fixture; issues never auto-resolve | 3, 7, 9 |
+| 11 | SaaS & practice management | Practice dashboard (client portfolio, assignments, tasks, deadlines, client quality), plans/entitlements, trials, subscription invoices, manual payment confirmation, suspension, usage tracking, platform admin, onboarding, public API keys | Acceptance workflow **10**; entitlement enforcement tests | 1–10 |
+| 12 | Final QA & deployment | Full e2e of workflows 1–10 (nl + en, desktop + mobile), security review (OWASP ASVS L2 checklist), load test (≥ 1 M journal lines per administration), backup/restore drill, deployment config, monitoring, Dutch operating manual (25 chapters with screenshots), release checklist | All of the above pass; written go/no-go report like the ARA Payroll `PRODUCTION_AUDIT.md` | all |
+
+**Note on practice management.** The *data model* for firms (organisation kind, company assignments) ships in Phase 1, so isolation and permissions are right from day one. The *firm dashboard* lands in Phase 11 because it aggregates data from every other module.
+
+## Risk register
+
+| ID | Risk | Likelihood | Impact | Mitigation | Owner |
+| --- | --- | --- | --- | --- | --- |
+| R1 | **Tax rules for Suriname** (turnover tax/BTW, profit tax, rates and filing formats) are wrong or out of date | High | High | Nothing hard-coded; versioned rules with legal status and an acknowledgement on use (ARA Payroll pattern); review by a Surinamese tax advisor before marking VERIFIED | Product owner + tax advisor |
+| R2 | **Annual-accounts framework** misrepresented as legally compliant | Medium | High | Templates labelled "pending professional verification"; no compliance claims in the UI or marketing; review by a registered accountant | Product owner |
+| R3 | Ledger integrity bug (unbalanced or duplicated postings) | Medium | Critical | Single engine; DB triggers; idempotency keys; property-based tests; nightly balance verification job | Engineering |
+| R4 | Cross-tenant data leak | Low | Critical | App-level scoping + Postgres RLS + isolation test suite in CI; external pentest before launch | Engineering |
+| R5 | Prisma + RLS integration complexity or performance (transaction per query) | Medium | Medium | Prototype in Phase 1 with benchmarks; fallback is the app-level scoping layer plus RLS on the most sensitive tables only, as a documented decision | Engineering |
+| R6 | OCR/AI accuracy, cost and **privacy** (sending invoices to a third party) | High | Medium | Off by default; organisation consent; confidence thresholds; review queue; supplier-history suggestions without AI; cost metering in `UsageRecord` | Product owner |
+| R7 | Surinamese bank export formats unavailable or inconsistent | High | Medium | Configurable CSV mapping profiles; collect sample files early from DSB, Hakrinbank, Finabank and Republic Bank | Product owner |
+| R8 | Exchange-rate policy disputes (official CBvS rate vs. bank rate vs. parallel market) | High | Medium | Policies per transaction type; rate type and source stored on every line; manual override audited | Product owner + accountant |
+| R9 | Report performance on large ledgers | Medium | Medium | Period balance snapshots, covering indexes, a load test in Phase 12 | Engineering |
+| R10 | Serverless limits for long jobs (OCR, imports, report packs) | Medium | Medium | Separate pg-boss worker process; container hosting recommended | Engineering |
+| R11 | Scope size (20 modules) causes partially finished modules to be presented as finished | High | High | Phase gates with automated exit criteria; PROJECT_STATUS lists real test results only; no decorative UI | Engineering |
+| R12 | Divergence from ARA Payroll patterns (two codebases) | Medium | Low | Copy patterns deliberately; plan a shared `@ara/core` package (auth, money, audit) after Phase 3 | Engineering |
+| R13 | Dependency vulnerabilities (as seen in the Payroll audit: Prisma CLI, exceljs) | Medium | Low | `npm audit` in CI; evaluate Prisma 7 at Phase 1 start | Engineering |
+| R14 | Data migration from customers' existing systems (opening balances, open items) | High | Medium | Import templates for CoA, opening balances and open items in Phases 2–3; a guided migration checklist | Product owner |
