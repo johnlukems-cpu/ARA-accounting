@@ -50,8 +50,8 @@ Gaps: a double-entry ledger, a chart of accounts, journals with gapless numberin
 | Validation | Zod 4 | Same as Payroll |
 | i18n | next-intl, `nl` default, `en` secondary | Same as Payroll |
 | UI | Tailwind CSS 4, own component library, lucide-react, Recharts | Same as Payroll. ARA Accounting tokens. |
-| Background jobs | **pg-boss** (queue in PostgreSQL) with a separate worker process | OCR, bank imports, revaluation, report generation and depreciation runs must not run inside a request. No extra infrastructure. |
-| Files | S3-compatible object storage (local disk in development) | Same as Payroll |
+| Background jobs | **PostgreSQL job table** (`Job`, claimed with `FOR UPDATE SKIP LOCKED`) processed by Vercel functions: started immediately through `after()` and picked up by a **Vercel Cron** sweep every minute | Runs entirely on Vercel, with no extra worker. Jobs are split into short, resumable, idempotent steps that each finish well within the function time limit. |
+| Files | S3-compatible object storage (local disk in development); on Vercel an S3 bucket or Vercel Blob behind the same storage interface | Same as Payroll (`S3_BUCKET` required on Vercel) |
 | OCR / AI | `DocumentExtractor` interface. Implementations: PDF text layer (built-in), a vision-LLM provider (Claude API) and a manual provider. | Provider-independent. Works without AI (manual entry). |
 | PDF / Excel | pdf-lib, exceljs | Same as Payroll |
 | Tests | Vitest (unit + integration on a real PostgreSQL), Playwright (e2e, nl + en, mobile) | Same as Payroll |
@@ -82,13 +82,13 @@ src/
     tenancy/                request context, tenant-scoped Prisma client, RLS session vars
     auth/                   sessions, MFA, permissions, guards
     audit/                  append-only audit log
-    jobs/                   pg-boss wrapper, job registry
+    jobs/                   job table, step runner, job registry
     storage/                object storage, hashing, virus-scan hook
     numbering/              gapless document and journal sequences
     i18n/, format/          locale-aware formatting
   integrations/             interfaces + adapters (OCR, rates, banks, email, tax filing)
   components/               design system (ui/, shell/, charts/, finance/)
-worker/                     background worker entry (same codebase, different process)
+app/api/jobs/run           cron-triggered job runner (protected by CRON_SECRET)
 prisma/                     schema, migrations (incl. SQL for triggers/RLS), seed
 tests/                      unit, integration, e2e, accounting-scenarios
 docs/                       architecture, schema, rules, security, API, roadmap, manual (nl)
@@ -124,7 +124,7 @@ Platform
 ### Isolation: defence in depth
 
 1. **Application layer.** Every query goes through `tenantDb(ctx)`, a Prisma client extension that injects `organizationId` and `administrationId` filters and refuses queries on tenant tables without them.
-2. **Database layer.** PostgreSQL **row-level security** on every tenant table (`organization_id = current_setting('app.org_id')`). The tenant client runs each operation in a transaction that first executes `SELECT set_config('app.org_id', …, true)`. The application DB role is not the table owner and has no `BYPASSRLS`. Migrations and the platform worker use a separate role.
+2. **Database layer.** PostgreSQL **row-level security** on every tenant table (`organization_id = current_setting('app.org_id')`). The tenant client runs each operation in a transaction that first executes `SELECT set_config('app.org_id', …, true)`. The application DB role is not the table owner and has no `BYPASSRLS`. Migrations and the job runner's platform-level tasks use a separate role.
 3. **Tests.** A tenant-isolation suite seeds two organisations and asserts that every service read and every route handler returns nothing (or 404) across tenants.
 
 Every tenant table carries `organization_id` (denormalised) so RLS policies stay simple and indexable.
@@ -233,7 +233,7 @@ Write dependencies always point *down* to the ledger. Monitors and practice mana
 | Approvals | A generic `Approval` (subject type/id, step, required permission, decision, comment, actor). It is used by invoices, journal entries, budgets, rates, depreciation runs, year-end and tax returns. Segregation of duties is configurable per administration: the creator cannot approve their own item. |
 | Idempotency | Every posting proposal carries `idempotencyKey`, with a unique index on (`administration_id`, `idempotency_key`). Bank import lines carry a content hash. Revaluation runs are unique per (administration, period, rate set). |
 | Numbering | `NumberSequence` (scope, fiscal year, prefix, next value) is locked `FOR UPDATE`. Numbers are gapless for posted journal entries and sales invoices, and assigned at posting or finalisation, not at draft. |
-| Jobs | pg-boss queues: `ocr.extract`, `bank.import`, `fx.revalue`, `assets.depreciate`, `reports.generate`, `quality.scan`, `balances.verify`. Each job is tenant-scoped, idempotent, retried with backoff and recorded in `AutomationExecution`. |
+| Jobs | Job types: `ocr.extract`, `bank.import`, `fx.revalue`, `assets.depreciate`, `reports.generate`, `quality.scan`, `balances.verify`. Each job is tenant-scoped, idempotent, retried with backoff and recorded in `AutomationExecution`. |
 | Notifications | An in-app `Notification` table. Email goes through an `EmailSender` interface (SMTP adapter). |
 | i18n / formatting | `nl-SR` formats (Surinamese Dutch terminology), `en` secondary. Currency is always shown with its ISO code (SRD 38.000,00), never a bare "$". |
 | Feature entitlements | `Plan` → `PlanEntitlement` (module, limit). `requireModule(ctx, "budgets")` is checked server-side next to permissions. |
@@ -259,8 +259,13 @@ Write dependencies always point *down* to the ledger. Monitors and practice mana
 ## 9. Deployment
 
 - No local hyperscale cloud exists in Suriname. Use the closest region (US-East or São Paulo), disclose this in the terms, and offer full data export. ARA Scan is offline-tolerant for unreliable connections.
-- **Target A (recommended): container deployment** (Docker image for web + worker, managed PostgreSQL 16, S3 bucket). This is needed for long-running OCR and import jobs.
-- **Target B: Vercel + managed Postgres** like Payroll. It is possible for the web tier, but the worker must run elsewhere (for example a small container or Fly/Render). Vercel cron can only trigger short jobs.
+- **Platform: Vercel** (decided by the product owner, the same as ARA Payroll). The function region is `iad1` (Washington DC, US-East), the closest region to Suriname, and the database sits in the same region.
+- **Database:** managed PostgreSQL 16 (Neon through the Vercel Marketplace, or another provider in US-East). The pooled connection string is used for the app and the direct one for migrations. RLS policies and triggers are created by SQL migrations.
+- **Build:** `vercel-build` = `prisma generate && prisma migrate deploy && seed reference data && next build` (the ARA Payroll pattern). Preview deployments use a separate preview database branch, never production data.
+- **Files:** an S3 bucket (`S3_BUCKET`) or Vercel Blob for documents, scans and generated PDFs. Never the function filesystem.
+- **Background work on Vercel:** OCR, bank imports, revaluation, depreciation runs and report packs are queued in the `Job` table. They start immediately via `after()` and are retried by a Vercel Cron call to `/api/jobs/run` every minute. Each job step is short and resumable (for example one document per OCR step, 500 bank lines per import step, one report section per step), and a step's progress is committed before the next starts. Large Excel/PDF report packs are generated in steps and assembled at the end.
+- **Limits to watch:** function duration (set `maxDuration` per route; Pro plan needed for longer steps and minute-level cron), request body size for uploads (documents go **directly from the browser to storage** with a signed upload URL, not through a function), and database connections (pooled).
+- **Environment variables:** `DATABASE_URL`, `DIRECT_URL`, `SESSION_SECRET`, `ENCRYPTION_KEY`, `CRON_SECRET`, `S3_*` or `BLOB_READ_WRITE_TOKEN`, `AI_PROVIDER_KEY` (optional), `SMTP_*`, all set in the Vercel project settings and never committed.
 - Environments: development, staging, production. Migrations run with `prisma migrate deploy` in the release step. Seeds are idempotent and load reference data (currencies, industry templates, report templates).
 - Backups: daily logical and continuous WAL (provider PITR), with a restore test each quarter documented in `docs/OPERATIONS.md`.
 
@@ -269,7 +274,7 @@ Write dependencies always point *down* to the ledger. Monitors and practice mana
 ## 10. Open decisions (need product-owner input)
 
 1. **Repository.** Create `johnlukems-cpu/ara-accounting` on GitHub (recommended). This session can't create it.
-2. **Hosting.** Container platform (recommended) or Vercel plus a separate worker.
+2. **Hosting.** ~~Container or Vercel~~ **Decided: Vercel** (region `iad1`) with managed PostgreSQL and S3/Vercel Blob.
 3. **AI provider and data consent for ARA Scan.** Default: off until an organisation enables it. Manual and PDF-text extraction always work.
 4. **Shared login with ARA Payroll.** Recommended later (Phase 11): a shared identity service, and for now separate user tables with the same patterns.
 5. **Annual-accounts templates to ship first.** Recommended: NV under the Wet op de Jaarrekening (S.B. 2017 no. 84) on an IFRS for SMEs basis, eenmanszaak/VOF with a samenstellingsverklaring, and stichting/kerkgenootschap. All are marked *pending professional verification* (see SURINAME_MARKET.md §6).

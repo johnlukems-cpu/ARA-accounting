@@ -35,7 +35,7 @@ Each phase ends with a checkpoint report in `PROJECT_STATUS.md`. The report cove
 | R7 | Surinamese bank export formats unavailable or inconsistent | High | Medium | Configurable CSV mapping profiles; collect sample files early from DSB, Hakrinbank, Finabank and Republic Bank | Product owner |
 | R8 | Exchange-rate policy disputes (CBvS buy/sell vs. bank rate vs. cambio rate) and SRD volatility | High | Medium | Policies per transaction type; rate type and source stored on every line; manual override audited | Product owner + accountant |
 | R9 | Report performance on large ledgers | Medium | Medium | Period balance snapshots, covering indexes, a load test in Phase 12 | Engineering |
-| R10 | Serverless limits for long jobs (OCR, imports, report packs) | Medium | Medium | Separate pg-boss worker process; container hosting recommended | Engineering |
+| R10 | Vercel function limits (duration, body size, connections) for OCR, imports and report packs | Medium | Medium | Jobs split into short resumable steps in a PostgreSQL job table, run via `after()` + Vercel Cron; direct-to-storage uploads; pooled DB connections; Pro plan | Engineering |
 | R11 | Scope size (20 modules) causes partially finished modules to be presented as finished | High | High | Phase gates with automated exit criteria; PROJECT_STATUS lists real test results only; no decorative UI | Engineering |
 | R12 | Divergence from ARA Payroll patterns (two codebases) | Medium | Low | Copy patterns deliberately; plan a shared `@ara/core` package (auth, money, audit) after Phase 3 | Engineering |
 | R13 | Dependency vulnerabilities (as seen in the Payroll audit: Prisma CLI, exceljs) | Medium | Low | `npm audit` in CI; evaluate Prisma 7 at Phase 1 start | Engineering |

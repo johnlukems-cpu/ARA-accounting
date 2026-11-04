@@ -91,7 +91,7 @@ Surinamese public holidays (fixed holidays plus the movable ones: Holi Phagwa, I
 ## 10. Practical constraints
 - **Connectivity.** ARA Scan works as an offline-tolerant PWA: documents are queued on the device and uploaded when the connection returns.
 - **Payments for subscriptions.** Manual bank transfer in SRD or USD to an ARA bank account, confirmed by the platform administrator. No card processor is assumed.
-- **Hosting and data location.** There is no local hyperscale cloud. Hosting will be at a reputable provider (closest region: US-East or Brazil). This is disclosed in the terms, with full data export available.
+- **Hosting and data location.** There is no local hyperscale cloud. Hosting is on **Vercel, region `iad1` (US-East)**, the closest region to Suriname, with the database in the same region. This is disclosed in the terms, with full data export available.
 - **Integration with the ARA suite.** ARA Payroll (salary journals) and later ARA Tax.
 
 ## 11. Professional review required before launch

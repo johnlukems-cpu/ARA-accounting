@@ -31,7 +31,7 @@
 
 **Outstanding decisions (product owner)**
 1. Create the GitHub repository `ara-accounting` so the work can be pushed.
-2. Hosting target: container (recommended) or Vercel plus a separate worker.
+2. ~~Hosting target~~ **Decided: Vercel** (region `iad1`, managed PostgreSQL, S3/Vercel Blob, job table + Vercel Cron).
 3. ARA Scan AI provider and default consent policy.
 4. First annual-accounts templates (NV under S.B. 2017 no. 84 on an IFRS for SMEs basis; eenmanszaak/VOF; stichting/kerkgenootschap).
 5. Appoint a Surinamese tax advisor and a SUVA-registered accountant to verify the configuration.
@@ -42,3 +42,4 @@
 ## Development log
 - 2026-11-03: Phase 0 audit and architecture package written.
 - 2026-11-03: Scope set to **the Surinamese market only** at the product owner's request. Netherlands/international assumptions removed (BW2, KvK, IBAN, PSD2, CAMT/MT940, ECB). Suriname market profile added and all documents aligned.
+- 2026-11-04: Hosting decided: **Vercel**. Background jobs redesigned as a PostgreSQL job table with short resumable steps (`after()` + Vercel Cron) instead of a separate worker.
