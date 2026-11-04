@@ -1,6 +1,6 @@
 # ARA Accounting
 
-Cloud accounting, financial management and reporting for SMEs and accounting firms (Suriname first, then the Netherlands and other markets). Built by ARA Intelligent Solutions. The interface is Dutch by default, with English as a second language.
+Cloud accounting, financial management and reporting for SMEs and accounting firms built for the **Surinamese market**: SRD, CBvS exchange rates, BTW, profit tax, the Wet op de Jaarrekening and Surinamese banks. Built by ARA Intelligent Solutions. The interface is Dutch by default, with English as a second language.
 
 The project is in **Phase 0 (architecture)**. Start here:
 
@@ -11,3 +11,4 @@ The project is in **Phase 0 (architecture)**. Start here:
 - [Security](docs/SECURITY.md)
 - [API conventions](docs/API_DOCUMENTATION.md)
 - [Roadmap & risks](docs/DEVELOPMENT_ROADMAP.md)
+- [Suriname market profile](docs/SURINAME_MARKET.md)

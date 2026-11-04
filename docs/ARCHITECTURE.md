@@ -2,6 +2,7 @@
 
 Status: **Phase 0 deliverable — for review** (3 November 2026)
 Owner: ARA Intelligent Solutions
+Market: **Suriname only**. Every default, template, tax rule, bank format and term follows [SURINAME_MARKET.md](SURINAME_MARKET.md).
 
 ---
 
@@ -109,7 +110,7 @@ Platform
      ├─ OrganizationMembership (user, org role)        ← staff of the firm / business
      └─ Company (legal entity; for a firm = a client company)
          ├─ CompanyAssignment (user, role)              ← which staff may work on which client
-         └─ Administration (books: CoA, journals, base currency, industry, framework, country profile)
+         └─ Administration (books: CoA, journals, base currency SRD by default, industry, legal form, reporting framework)
              └─ FiscalYear
                  └─ AccountingPeriod (OPEN | SOFT_CLOSED | CLOSED)
                      └─ JournalEntry → JournalLine
@@ -234,7 +235,7 @@ Write dependencies always point *down* to the ledger. Monitors and practice mana
 | Numbering | `NumberSequence` (scope, fiscal year, prefix, next value) is locked `FOR UPDATE`. Numbers are gapless for posted journal entries and sales invoices, and assigned at posting or finalisation, not at draft. |
 | Jobs | pg-boss queues: `ocr.extract`, `bank.import`, `fx.revalue`, `assets.depreciate`, `reports.generate`, `quality.scan`, `balances.verify`. Each job is tenant-scoped, idempotent, retried with backoff and recorded in `AutomationExecution`. |
 | Notifications | An in-app `Notification` table. Email goes through an `EmailSender` interface (SMTP adapter). |
-| i18n / formatting | `nl-SR` / `nl-NL` / `en` number and date formats. Currency is always shown with its ISO code (SRD 38.000,00). |
+| i18n / formatting | `nl-SR` formats (Surinamese Dutch terminology), `en` secondary. Currency is always shown with its ISO code (SRD 38.000,00), never a bare "$". |
 | Feature entitlements | `Plan` → `PlanEntitlement` (module, limit). `requireModule(ctx, "budgets")` is checked server-side next to permissions. |
 
 ---
@@ -244,18 +245,20 @@ Write dependencies always point *down* to the ledger. Monitors and practice mana
 | Interface | First adapters | Notes |
 | --- | --- | --- |
 | `DocumentExtractor` | PDF text layer + heuristics; vision LLM (Claude API); manual | Returns fields with confidence and a raw extraction log. Sending documents to an external AI requires organisation consent (setting) because of data protection. |
-| `ExchangeRateProvider` | Manual; generic JSON (reused from Payroll); CBvS when a feed is confirmed | Rates arrive as `PENDING` unless the administration auto-approves the source. |
-| `BankStatementParser` | CSV with saved column mappings; CAMT.053; MT940 | Surinamese banks (DSB, Hakrinbank, Finabank, Republic) are added as CSV profiles once sample files are available. |
-| `BankConnector` | none (interface only) | Future PSD2 (NL) / bank APIs |
+| `ExchangeRateProvider` | Manual; **CBvS** (daily weighted buy/sell, monthly averages); bank or cambio rate taken from the statement or receipt | Rates arrive as `PENDING` unless the administration auto-approves CBvS. |
+| `BankStatementParser` | CSV/Excel with a saved column mapping per Surinamese bank; PDF statements via ARA Scan | Profiles for DSB, Hakrinbank, Finabank, Republic Bank, Southern Commercial Bank, Godo, Volkscredietbank and others are added once sample files are received. No CAMT/MT940 until a Surinamese bank supplies them. |
+| `BankConnector` | none (interface only) | For a future Surinamese bank API, if one becomes available |
 | `EmailSender` | SMTP | Invoice delivery, invitations, reminders |
 | `EmailIngest` | interface only | Forward-to-scan mailbox (Phase 7+) |
-| `TaxFilingChannel` | "Generate documents" (PDF/Excel) only | No claim of electronic filing |
-| `PayrollJournalImport` | ARA Payroll export (CSV/JSON) | Posts payroll journals into Accounting |
+| `TaxFilingChannel` | Filing-ready BTW and inkomstenbelasting documents (PDF/Excel) for the Belastingdienst Suriname | No claim of electronic filing; an e-filing adapter only if the Belastingdienst offers one |
+| `PayrollJournalImport` | ARA Payroll export (CSV/JSON) | Posts salaries, loonbelasting, AOV and contributions payable into Accounting |
+| `PaymentListExport` | CSV per Surinamese bank | Formats once bank specifications are confirmed |
 
 ---
 
 ## 9. Deployment
 
+- No local hyperscale cloud exists in Suriname. Use the closest region (US-East or São Paulo), disclose this in the terms, and offer full data export. ARA Scan is offline-tolerant for unreliable connections.
 - **Target A (recommended): container deployment** (Docker image for web + worker, managed PostgreSQL 16, S3 bucket). This is needed for long-running OCR and import jobs.
 - **Target B: Vercel + managed Postgres** like Payroll. It is possible for the web tier, but the worker must run elsewhere (for example a small container or Fly/Render). Vercel cron can only trigger short jobs.
 - Environments: development, staging, production. Migrations run with `prisma migrate deploy` in the release step. Seeds are idempotent and load reference data (currencies, industry templates, report templates).
@@ -269,4 +272,5 @@ Write dependencies always point *down* to the ledger. Monitors and practice mana
 2. **Hosting.** Container platform (recommended) or Vercel plus a separate worker.
 3. **AI provider and data consent for ARA Scan.** Default: off until an organisation enables it. Manual and PDF-text extraction always work.
 4. **Shared login with ARA Payroll.** Recommended later (Phase 11): a shared identity service, and for now separate user tables with the same patterns.
-5. **Reporting frameworks to ship first.** Recommended: an "ARA Standaard (IFRS for SMEs-based)" template for Suriname and a "BW2 Titel 9 – micro/klein" template for the Netherlands. Both are marked *pending professional verification*.
+5. **Annual-accounts templates to ship first.** Recommended: NV under the Wet op de Jaarrekening (S.B. 2017 no. 84) on an IFRS for SMEs basis, eenmanszaak/VOF with a samenstellingsverklaring, and stichting/kerkgenootschap. All are marked *pending professional verification* (see SURINAME_MARKET.md §6).
+6. **Professional reviewers.** A Surinamese tax advisor and a SUVA-registered accountant to verify the tax and annual-accounts configuration before launch.

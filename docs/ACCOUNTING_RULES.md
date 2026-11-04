@@ -1,6 +1,6 @@
 # ARA Accounting — Accounting Rules
 
-These rules are binding for every module. Each rule lists where it is enforced (A = application/service, D = database, T = automated test).
+These rules are binding for every module. Surinamese defaults and their legal sources are in [SURINAME_MARKET.md](SURINAME_MARKET.md). Each rule lists where it is enforced (A = application/service, D = database, T = automated test).
 
 ## 1. Double entry
 | # | Rule | Enforced |
@@ -51,7 +51,7 @@ These rules are binding for every module. Each rule lists where it is enforced (
 | C6 | Only one POSTED revaluation per (administration, period, scope). A recalculation first reverses the previous one. |
 | C7 | Non-monetary items (fixed assets, prepaid expenses, equity) are not revalued. |
 
-**Reference example (acceptance workflow 4).** Administration in SRD.
+**Reference example (acceptance workflow 4).** Administration in SRD. Rates are CBvS rates (illustrative).
 1. Purchase invoice USD 1,000 at 38.0000 → Dr Expense SRD 38,000 / Cr Creditors SRD 38,000 (tx USD 1,000).
 2. Payment USD 1,000 at 38.5000 → Dr Creditors SRD 38,000 / Dr FX loss SRD 500 / Cr Bank USD SRD 38,500.
 
@@ -69,7 +69,10 @@ These rules are binding for every module. Each rule lists where it is enforced (
 | T1 | No tax rate, threshold or bracket is hard-coded. All come from `TaxRuleVersion` with an effective date and a legal status. |
 | T2 | A rule with status other than VERIFIED can be used, but every return or calculation that uses it shows a warning, and approval requires an explicit acknowledgement that is stored and audited (the ARA Payroll pattern). |
 | T3 | Tax amounts on invoices are calculated per line and rounded per line by default (configurable per jurisdiction: per line or per invoice total). |
-| T4 | A tax return is never marked FILED without a filing-evidence document (receipt or confirmation) and a user confirmation. |
+| T4 | A tax return is never marked FILED without a filing-evidence document (Belastingdienst receipt or confirmation) and a user confirmation. |
+| T5 | **BTW (Suriname):** monthly return per calendar month. Output BTW per rate (10%, 25%, 0%, exempt) from sales lines. Input BTW from purchase and import lines, deductible as configured. The return reconciles to the BTW ledger accounts per period, and the BTW payable/receivable is posted by the tax journal on approval. |
+| T6 | **Inkomstenbelasting rechtspersonen:** commercial result → fiscal adjustments (non-deductible costs, fiscal depreciation differences, exempt income, loss offset) → taxable profit × rate from the rule version → minus voorlopige aanslag paid → payable or refundable. |
+| T7 | **Foreign-currency invoices** show the SRD equivalent of the BTW at the rate used for the booking, and BTW is always reported in SRD. |
 
 ## 8. Budgets and reporting
 | # | Rule |

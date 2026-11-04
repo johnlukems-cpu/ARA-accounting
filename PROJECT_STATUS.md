@@ -18,6 +18,7 @@
 - `docs/ACCOUNTING_RULES.md`: binding ledger, period, sub-ledger, FX, asset, tax, budget, reporting and AI rules
 - `docs/SECURITY.md`
 - `docs/API_DOCUMENTATION.md`: conventions only
+- `docs/SURINAME_MARKET.md`: Suriname market profile (terminology, legal forms, KKF/BTW identifiers, districts, CBvS rates, banks, BTW, profit tax, dividend tax, Wet op de Jaarrekening, industry templates, invoicing, calendar), with sources and verification status
 - `docs/DEVELOPMENT_ROADMAP.md`: phases 0–12 with exit criteria, risk register (R1–R14)
 
 **Modified files:** none. **Database changes:** none. **API changes:** none.
@@ -32,9 +33,12 @@
 1. Create the GitHub repository `ara-accounting` so the work can be pushed.
 2. Hosting target: container (recommended) or Vercel plus a separate worker.
 3. ARA Scan AI provider and default consent policy.
-4. First reporting frameworks (SR "ARA Standaard", NL BW2 Titel 9 micro/klein).
+4. First annual-accounts templates (NV under S.B. 2017 no. 84 on an IFRS for SMEs basis; eenmanszaak/VOF; stichting/kerkgenootschap).
+5. Appoint a Surinamese tax advisor and a SUVA-registered accountant to verify the configuration.
+6. Collect sample statement files from the Surinamese banks.
 
 **Security considerations:** see `docs/SECURITY.md`. The main design choices are RLS plus app scoping, an immutable hash-chained audit log, MFA, and AI off by default.
 
 ## Development log
 - 2026-11-03: Phase 0 audit and architecture package written.
+- 2026-11-03: Scope set to **the Surinamese market only** at the product owner's request. Netherlands/international assumptions removed (BW2, KvK, IBAN, PSD2, CAMT/MT940, ECB). Suriname market profile added and all documents aligned.

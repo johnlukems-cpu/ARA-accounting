@@ -24,7 +24,7 @@
 - Secrets only through environment variables. `.env.example` documents them. Nothing is committed.
 - Uploads: allow-list (PDF, JPG, PNG, HEIC→JPG, CSV, XML, XLSX), magic-byte sniffing, a size limit (20 MB), a virus-scan hook (ClamAV adapter optional) and the SHA-256 stored.
 - AI processing: off by default per organisation. When on, only the document is sent to the configured provider with no other ledger data. The provider and model are recorded per extraction.
-- Data export (full organisation export as ZIP: CSV + documents) and retention settings (default 10 years for financial records, configurable per country profile; deletion only after retention and only by the owner).
+- Data export (full organisation export as ZIP: CSV + documents) and retention settings (default 10 years for financial records, subject to verification of the Surinamese retention period for books and records, which is PENDING_VERIFICATION; deletion only after retention and only by the owner).
 
 ## 5. Application security
 - Server actions use Next.js origin checks (CSRF). Route handlers that mutate require a same-origin check and a session.

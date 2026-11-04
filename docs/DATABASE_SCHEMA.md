@@ -120,15 +120,15 @@ Key: **PK** primary key, **U** unique, **IX** index, **FK** foreign key, **CHK**
 | --- | --- | --- |
 | `User` | email, name, passwordHash, locale, mfaSecret (encrypted), mfaEnabled, isPlatformAdmin, isActive | U(email) |
 | `Session` | id = SHA-256(token), userId, activeOrganizationId, activeCompanyId, activeAdministrationId, activeFiscalYearId, expiresAt, mfaVerifiedAt | IX(userId) |
-| `Organization` | name, kind (BUSINESS, ACCOUNTING_FIRM), status (TRIAL, ACTIVE, SUSPENDED, CANCELLED), countryCode, defaultLocale | |
+| `Organization` | name, kind (BUSINESS, ACCOUNTING_FIRM), status (TRIAL, ACTIVE, SUSPENDED, CANCELLED), defaultLocale (`nl-SR`) | |
 | `OrganizationMembership` | organizationId, userId, roleId, status (INVITED, ACTIVE, DISABLED) | U(organizationId, userId) |
 | `Role` | organizationId (null = system role), code, name, isSystem | U(organizationId, code) |
 | `Permission` | code (`ledger.post`, `sales.approve`, …), module, action | PK(code) |
 | `RolePermission` | roleId, permissionCode | U(roleId, permissionCode) |
-| `Company` | organizationId, name, legalName, registrationNumber (KKF/KvK), taxNumber, countryCode, address, status, ownerUserId | IX(organizationId) |
+| `Company` | organizationId, name, legalName, legalForm (EENMANSZAAK, VOF, CV, NV, STICHTING, VERENIGING, COOPERATIE, OVERHEIDS_NV, KERKGENOOTSCHAP), kkfNumber, taxNumber, btwNumber, isBtwRegistered, address, district (PARAMARIBO, WANICA, NICKERIE, CORONIE, SARAMACCA, COMMEWIJNE, MAROWIJNE, PARA, BROKOPONDO, SIPALIWINI), status, ownerUserId | IX(organizationId); U(organizationId, kkfNumber) where not null |
 | `CompanyAssignment` | companyId, userId, roleId, validFrom, validTo | U(companyId, userId) |
 | `Branch` | companyId, code, name | U(companyId, code) |
-| `Administration` | companyId, organizationId, name, code, baseCurrency, reportingCurrency, countryProfile, framework, industryTemplateVersionId, status (SETUP, ACTIVE, ARCHIVED), settings (JSONB: approval rules, SoD, rounding account …) | U(companyId, code) |
+| `Administration` | companyId, organizationId, name, code, baseCurrency (default SRD), reportingCurrency, framework (annual-accounts template), industryTemplateVersionId, status (SETUP, ACTIVE, ARCHIVED), settings (JSONB: approval rules, SoD, rounding account …) | U(companyId, code) |
 | `FiscalYear` | administrationId, code ("2026"), startDate, endDate, status (OPEN, CLOSING, CLOSED) | U(administrationId, code); CHK no overlap (exclusion constraint on daterange) |
 | `AccountingPeriod` | fiscalYearId, number (0 = opening, 1..12, 13 = closing), startDate, endDate, status (OPEN, SOFT_CLOSED, CLOSED), closedById, closedAt | U(fiscalYearId, number) |
 
@@ -149,7 +149,7 @@ Key: **PK** primary key, **U** unique, **IX** index, **FK** foreign key, **CHK**
 ### 4.3 Parties, invoices, payments, open items
 | Model | Key fields | Constraints |
 | --- | --- | --- |
-| `Party` | administrationId, code, name, isCustomer, isSupplier, registrationNumber, taxNumber, email, phone, address, currency, paymentTermDays, defaultAccountId, defaultTaxCodeId, iban/bankAccount, status | U(administrationId, code); IX(administrationId, name) |
+| `Party` | administrationId, code, name, isCustomer, isSupplier, registrationNumber, taxNumber, email, phone, address, currency, paymentTermDays, defaultAccountId, defaultTaxCodeId, kkfNumber, btwNumber, district, bankName, bankAccountNumber, bankAccountCurrency, status | U(administrationId, code); IX(administrationId, name) |
 | `SalesInvoice` | administrationId, partyId, number (assigned on finalise), kind (INVOICE, CREDIT_NOTE), creditsInvoiceId, invoiceDate, dueDate, currency, rate snapshot, netAmount, taxAmount, grossAmount, status (DRAFT, FINALISED, SENT, PARTIALLY_PAID, PAID, CANCELLED_BY_CREDIT), templateId, pdfDocumentId, entryId, sentAt | U(administrationId, number) where not null |
 | `PurchaseInvoice` | administrationId, partyId, supplierInvoiceNumber, kind, invoiceDate, dueDate, currency, amounts, status (DRAFT, REVIEW, APPROVED, POSTED, PARTIALLY_PAID, PAID), documentId, entryId | U(administrationId, partyId, supplierInvoiceNumber, kind) — duplicate guard |
 | `InvoiceLine` | invoiceType, invoiceId, lineNo, description, quantity, unitPrice, discountPct, netAmount, taxCodeId, taxAmount, accountId, costCenterId, projectId | |
@@ -161,8 +161,8 @@ Key: **PK** primary key, **U** unique, **IX** index, **FK** foreign key, **CHK**
 ### 4.4 Banking and current accounts
 | Model | Key fields | Constraints |
 | --- | --- | --- |
-| `BankAccount` | administrationId, name, bankName, accountNumber/IBAN, currency, ledgerAccountId, journalId, kind (BANK, CASH), importProfileId | U(administrationId, accountNumber) |
-| `BankImportProfile` | administrationId, format (CSV, CAMT053, MT940), columnMapping (JSONB), dateFormat, decimalSeparator | |
+| `BankAccount` | administrationId, name, bankCode (DSB, HAKRIN, FINA, REPUBLIC, SCB, GODO, VCB, SPSB, AMANAH, OTHER), accountNumber (local, no IBAN), currency, ledgerAccountId, journalId, kind (BANK, CASH, CAMBIO_CASH), importProfileId | U(administrationId, bankCode, accountNumber, currency) |
+| `BankImportProfile` | administrationId, bankCode, format (CSV, XLSX, PDF_VIA_SCAN), columnMapping (JSONB), dateFormat, decimalSeparator | |
 | `BankStatement` | bankAccountId, statementNumber, fromDate, toDate, openingBalance, closingBalance, fileDocumentId, fileHash | U(bankAccountId, fileHash) |
 | `BankTransaction` | statementId, bankAccountId, bookingDate, valueDate, amount, currency, counterpartyName, counterpartyAccount, description, bankReference, lineHash, status (UNMATCHED, PARTIAL, MATCHED, IGNORED) | U(bankAccountId, lineHash) — duplicate import guard |
 | `BankMatch` | bankTransactionId, targetType (OPEN_ITEM, ENTRY, NEW_ENTRY), targetId, amount, matchedBy (USER, RULE, SUGGESTION_ACCEPTED), confidence | |
@@ -191,8 +191,8 @@ Applying a template **copies** rows into the administration (with `templateAccou
 | Model | Key fields |
 | --- | --- |
 | `Currency` | code PK, name, nameNl, symbol, decimals, isActive |
-| `ExchangeRateSource` | code (MANUAL, CBVS, ECB, CUSTOM_API), name, config, isActive |
-| `ExchangeRate` | organizationId? (null = platform), administrationId?, base, quote, rateType (SPOT, DAILY, AVERAGE_MONTH, CLOSING, CUSTOM), rate, effectiveDate, sourceId, status (PENDING, APPROVED, REJECTED), approvedById — never updated after approval |
+| `ExchangeRateSource` | code (MANUAL, CBVS, BANK_STATEMENT, CAMBIO_RECEIPT), name, config, isActive |
+| `ExchangeRate` | organizationId? (null = platform), administrationId?, base, quote, rateType (CBVS_BUY, CBVS_SELL, CBVS_MID, CBVS_MONTH_AVG, CLOSING, BANK, CAMBIO, MANUAL), rate, effectiveDate, sourceId, status (PENDING, APPROVED, REJECTED), approvedById — never updated after approval |
 | `ExchangeRatePolicy` | administrationId, transactionType (SALES, PURCHASE, BANK, REVALUATION, REPORTING_PL, REPORTING_BS), rateType, sourcePriority, dateBasis (DOCUMENT, POSTING, PAYMENT), requireApproved |
 | `CurrencyRevaluation` | administrationId, periodId, revaluationDate, rateSetHash, scope, status (PROPOSED, POSTED, REVERSED), entryId, autoReverseEntryId — U(administrationId, periodId, scope) where status = POSTED |
 | `ExchangeDifference` | administrationId, kind (REALISED, UNREALISED), sourceType, sourceId, currency, txAmount, rateFrom, rateTo, amountBase, entryId |
@@ -204,7 +204,7 @@ Applying a template **copies** rows into the administration (with `templateAccou
 `ReportTemplate` / `ReportTemplateVersion` / `ReportingLine` (code, parent, sign, kind: BALANCE_SHEET, PROFIT_LOSS, CASHFLOW_DIRECT/INDIRECT, EQUITY) / `AccountReportMapping` (administration override of template mapping) • `ReportPeriod` • `GeneratedReport` (parameters, data snapshot JSONB, documentId, generatedById, ledgerHash, so a report records exactly which data it was built on) • `YearEndClosing` (fiscalYearId U, status: DRAFT, REVIEW, ADJUSTMENTS, FINAL_REVIEW, APPROVAL, CLOSED) • `YearEndChecklistItem` (code, mandatory, status, assigneeId, dueDate, evidenceDocumentIds, comments, completedAt, approvedById) • `YearEndAdjustment` (type, entryId) • `AnnualAccount` (fiscalYearId, frameworkTemplateVersionId, status: DRAFT, REVIEW, APPROVED, FINAL, content JSONB, comparativeFiscalYearId, pdfDocumentId) • `FinancialDisclosure` (annualAccountId, code, title, body rich text, order, auto/manual).
 
 ### 4.10 Tax
-`TaxJurisdiction` (country, region) • `TaxRuleVersion` (jurisdictionId, taxType: TURNOVER/VAT, CORPORATE_INCOME, INCOME, WITHHOLDING, OTHER; effectiveFrom/To; parameters JSONB: rates, brackets, thresholds; legalStatus; citations) • `TaxCode` (administrationId, code, name, ruleVersionId, rate, direction: SALES, PURCHASE; deductiblePct, taxAccountId, reportBox) • `TaxConfiguration` (administrationId, filing frequency, registrations) • `TaxReturn` (administrationId, taxType, periodFrom/To, status: DRAFT, DATA_COLLECTION, CALCULATION, REVIEW, APPROVAL, READY_FOR_FILING, FILED, ARCHIVED; filedAt only with `filingEvidenceDocumentId`) • `TaxCalculation` (returnId, lines JSONB with source drill-down keys) • `TaxAdjustment` (fiscal adjustment: kind, amount, reason, accountId?) • `TaxReconciliation` (returnId, ledgerAmount, returnAmount, difference, explanation).
+`TaxJurisdiction` (Suriname; kept as a table so rules stay data) • `TaxRuleVersion` (jurisdictionId, taxType: BTW, IB_RECHTSPERSONEN, IB_NATUURLIJKE_PERSONEN, DIVIDENDBELASTING, HUURWAARDEBELASTING, OTHER; effectiveFrom/To; parameters JSONB: rates, brackets, thresholds; legalStatus; citations) • `TaxCode` (administrationId, code, name, ruleVersionId, rate, direction: SALES, PURCHASE; deductiblePct, taxAccountId, reportBox) • `TaxConfiguration` (administrationId, isBtwOndernemer, BTW period = month, voorlopige aanslag amounts and instalments, tax holiday until) • `TaxReturn` (administrationId, taxType, periodFrom/To, status: DRAFT, DATA_COLLECTION, CALCULATION, REVIEW, APPROVAL, READY_FOR_FILING, FILED, ARCHIVED; filedAt only with `filingEvidenceDocumentId`) • `TaxCalculation` (returnId, lines JSONB with source drill-down keys) • `TaxAdjustment` (fiscal adjustment: kind, amount, reason, accountId?) • `TaxReconciliation` (returnId, ledgerAmount, returnAmount, difference, explanation).
 
 ### 4.11 Documents, AI, automation, quality
 `Document` (organizationId, administrationId, storageKey, fileName, mimeType, sizeBytes, sha256, pages, status: DRAFT, UPLOADED, PROCESSING, RECOGNIZED, REVIEW_REQUIRED, APPROVED, POSTED, ARCHIVED; uploadedById; source: WEB, MOBILE, EMAIL, IMPORT) — IX(administrationId, sha256) • `OCRResult` (documentId, provider, rawText, layout JSONB, durationMs) • `AIExtraction` (documentId, provider, model, fields JSONB `{value, confidence, source}`, suggestions JSONB, acceptedFields, correctedFields) • `AutomationRule` (administrationId, trigger, conditions JSONB, actions JSONB, mode: SUGGEST, AUTO_WITH_APPROVAL, AUTO; minConfidence; requiredPermission; enabled) • `AutomationExecution` (ruleId?, jobName, subject, status: SUCCEEDED, FAILED, SKIPPED, OVERRIDDEN; durationMs, error, outcome: SUGGESTED, APPROVED, EXECUTED) • `QualityIssue` (administrationId, checkCode, severity: ERROR, WARNING, INFO; subjectType/Id; message key + params; recommendedAction; assigneeId; status: OPEN, IN_PROGRESS, RESOLVED, ACCEPTED, FALSE_POSITIVE; resolvedById, resolution note; fingerprint U(administrationId, fingerprint) so rescans do not duplicate).
@@ -213,7 +213,7 @@ Applying a template **copies** rows into the administration (with `templateAccou
 `Approval` (organizationId, subjectType, subjectId, step, requiredPermission, status, decidedById, decidedAt, comment) • `AuditLog` (append-only, hash-chained; see SECURITY.md) • `Notification` • `Plan` (code, name, billing periods, isActive) • `PlanEntitlement` (planId, module, limitKey, limitValue) • `Subscription` (organizationId U, planId, period: MONTHLY, ANNUAL; status: TRIAL, ACTIVE, PAST_DUE, SUSPENDED, CANCELLED; trialEndsAt, currentPeriodEnd) • `SubscriptionInvoice` • `SubscriptionPayment` (method MANUAL_BANK, reference, confirmedById) • `UsageRecord` (organizationId, metric: USERS, ADMINISTRATIONS, DOCUMENTS_PROCESSED, STORAGE_BYTES, month, value) • `PlatformSetting`.
 
 ### 4.13 Practice management
-`Task` (organizationId, companyId?, administrationId?, title, type, assigneeId, dueDate, status, recurrence, linkedSubject) • `Deadline` (companyId, kind: VAT_RETURN, ANNUAL_ACCOUNTS, CORPORATE_TAX …, dueDate, status) • `ClientNote`.
+`Task` (organizationId, companyId?, administrationId?, title, type, assigneeId, dueDate, status, recurrence, linkedSubject) • `Deadline` (companyId, kind: BTW_AANGIFTE, IB_AANGIFTE, VOORLOPIGE_AANSLAG_TERMIJN, DIVIDENDBELASTING, JAARREKENING, KKF …, dueDate, status) • `ClientNote`.
 
 ---
 
