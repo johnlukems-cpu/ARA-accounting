@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getFormatter, getTranslations } from "next-intl/server";
-import { Bell, BookOpen, Briefcase, Building2, LayoutDashboard, Library, List, LogOut, NotebookText, Scale, Search, ShieldCheck, User, Users } from "lucide-react";
+import { Bell, BookOpen, Briefcase, Building2, Contact, Landmark, LayoutDashboard, Library, List, LogOut, NotebookText, Percent, Receipt, Scale, Search, ShieldCheck, ShoppingCart, User, Users, Wallet } from "lucide-react";
 import { requireUser } from "@/core/auth/context";
 import { can } from "@/core/auth/access";
 import { withTenant } from "@/core/tenancy/tenant";
@@ -11,7 +11,7 @@ import { switchContextAction } from "@/actions/organization";
 import { ContextSelect } from "@/components/shell/context-select";
 import { NAV } from "@/components/shell/nav";
 
-const ICONS = { dashboard: LayoutDashboard, building: Building2, briefcase: Briefcase, book: BookOpen, users: Users, shield: ShieldCheck, user: User, list: List, scale: Scale, library: Library, notebook: NotebookText };
+const ICONS = { dashboard: LayoutDashboard, building: Building2, briefcase: Briefcase, book: BookOpen, users: Users, shield: ShieldCheck, user: User, list: List, scale: Scale, library: Library, notebook: NotebookText, receipt: Receipt, cart: ShoppingCart, contact: Contact, wallet: Wallet, landmark: Landmark, percent: Percent };
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const t = await getTranslations();

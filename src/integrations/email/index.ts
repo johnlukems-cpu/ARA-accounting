@@ -9,6 +9,7 @@ export interface EmailMessage {
   to: string;
   subject: string;
   text: string;
+  attachments?: { filename: string; content: Buffer | Uint8Array; contentType: string }[];
 }
 
 export interface EmailSender {
@@ -24,7 +25,11 @@ class SmtpSender implements EmailSender {
   });
 
   async send(message: EmailMessage) {
-    await this.transport.sendMail({ from: process.env.SMTP_FROM ?? "ARA Accounting <no-reply@localhost>", ...message });
+    await this.transport.sendMail({
+      from: process.env.SMTP_FROM ?? "ARA Accounting <no-reply@localhost>",
+      ...message,
+      attachments: message.attachments?.map((a) => ({ ...a, content: Buffer.from(a.content) })),
+    });
   }
 }
 
