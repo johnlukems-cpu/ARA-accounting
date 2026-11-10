@@ -3,8 +3,9 @@
 Status: **Phase 0 design**. The Prisma schema is written per phase from this document, and this file is updated alongside each migration.
 
 Conventions
-- PostgreSQL 16. Table names are `snake_case` (Prisma `@@map`). Primary keys are `cuid()` text, except reference tables keyed by code (currency ISO code).
-- Every tenant table has `organization_id`, plus `administration_id` where the data belongs to a set of books. RLS policy on `organization_id`.
+- PostgreSQL 16. **Prisma default naming** (decided in Phase 1): table names are the model names (`"JournalEntry"`) and columns camelCase (`"organizationId"`); the snake_case names used below are descriptive. Primary keys are `cuid()` text, except reference tables keyed by code (currency ISO code) and the audit log (`seq` bigint).
+- Every tenant table has `organizationId`, plus `administrationId` where the data belongs to a set of books. RLS policy on `organizationId` via `ara_enable_tenant_rls()` (see the Phase 1 security migration).
+- Implemented so far: see `prisma/schema.prisma` (Phase 1: identity, tenancy, roles, companies, branches, administrations, fiscal years, periods, audit log, notifications).
 - Money columns are `NUMERIC(20,4)`, rates `NUMERIC(24,10)` and percentages `NUMERIC(9,4)`. Never `float`.
 - Timestamps are `timestamptz`. Accounting dates (`entry_date`, `document_date`, …) are `date`.
 - Soft states (`ACTIVE`/`ARCHIVED`) instead of deletes for master data that is referenced by postings.

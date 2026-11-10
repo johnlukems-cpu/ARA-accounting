@@ -44,7 +44,7 @@ describe("message catalogues", () => {
     const all = new Set(keys(nl));
     for (const f of files) {
       const src = readFileSync(f, "utf8");
-      const ns = src.match(/getTranslations\("([\w.]+)"\)/)?.[1];
+      const ns = src.match(/(?:getTranslations|useTranslations)\("([\w.]+)"\)/)?.[1];
       for (const m of src.matchAll(/\bt\("([\w.]+)"/g)) {
         const key = ns ? `${ns}.${m[1]}` : m[1]!;
         expect(all.has(key), `${f}: ${key}`).toBe(true);

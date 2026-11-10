@@ -13,7 +13,8 @@
     "db:migrate": "prisma migrate deploy",
     "db:seed": "tsx scripts/seed.ts",
     "postinstall": "prisma generate",
-    "vercel-build": "node scripts/vercel-build.mjs"
+    "vercel-build": "node scripts/vercel-build.mjs",
+    "test:e2e": "playwright test"
   },
   "engines": {
     "node": ">=22"
@@ -25,6 +26,7 @@
     "lucide-react": "^1.71.0",
     "next": "16.4.3",
     "next-intl": "^4.14.10",
+    "nodemailer": "^7.0.13",
     "prisma": "^6.19.3",
     "qrcode": "^1.5.4",
     "react": "19.3.0",
@@ -33,8 +35,10 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "@tailwindcss/postcss": "^4.3.5",
     "@types/node": "^22.20.5",
+    "@types/nodemailer": "^8.0.2",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",

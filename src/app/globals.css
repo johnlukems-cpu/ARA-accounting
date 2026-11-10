@@ -20,6 +20,7 @@
   --accent: var(--emerald-600);
   --accent-soft: var(--emerald-50);
   --warning: #b7791f;
+  --danger: #c0392b;
 }
 
 @theme inline {
@@ -34,7 +35,9 @@
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
   --color-warning: var(--warning);
+  --color-danger: var(--danger);
   --color-navy-950: var(--navy-950);
+  --color-navy-900: var(--navy-900);
   --color-navy-800: var(--navy-800);
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
 }

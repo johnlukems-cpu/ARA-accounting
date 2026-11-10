@@ -1,11 +1,11 @@
 # ARA Accounting — Security Design
 
 ## 1. Authentication
-- Email + password (bcrypt cost 12), policy: ≥ 12 characters and not in a breached-password top list.
-- Sessions: a random 256-bit token in an `HttpOnly`, `Secure`, `SameSite=Lax` cookie. Only its SHA-256 hash is stored. Idle timeout 2 h, absolute 12 h. A password change or MFA reset revokes all other sessions. (ARA Payroll pattern.)
-- **MFA (TOTP, RFC 6238)** with recovery codes. Organisations can require it per role (default required for Owner, Firm Admin and Platform Admin). Sessions record `mfaVerifiedAt`, and sensitive actions (closing a year, managing users, exports, platform admin) require a recent MFA check.
-- Login rate limit per email and per IP (database-backed, so it works across instances). Responses are constant-time for unknown accounts.
-- Invitations and password resets use single-use, hashed, expiring tokens.
+- Email + password hashed with **scrypt** (N=2^15, r=8, p=1, 16-byte salt; parameters stored per hash so they can be raised). Policy: at least 12 characters. A breached-password check is still open (Phase 12).
+- Sessions: a random 256-bit token in an `HttpOnly`, `Secure`, `SameSite=Lax` cookie. Only its SHA-256 hash is stored. Idle timeout 2 h, absolute 12 h. A password change, password reset or MFA change revokes all other sessions. Implemented in `src/core/auth/session.ts`.
+- **MFA (TOTP, RFC 6238, verified against the RFC test vectors)** with 8 single-use recovery codes (stored as SHA-256 hashes). The secret is encrypted with AES-256-GCM (`ENCRYPTION_KEY`). Organisations require it for Owners and Firm Administrators by default (`Organization.requireMfaForAdmins`). **Grace period:** an administrator may work for 7 days after joining before MFA is enforced; a banner shows the deadline. After that, pages redirect to the account page and server actions are refused until MFA is set up. Sessions record `mfaVerifiedAt`. Step-up MFA for sensitive actions (closing a year, exports) is planned with those features.
+- Rate limits (database table `LoginAttempt`, works across serverless instances): login 5 per 15 min per e-mail and per IP; MFA codes 5 per 15 min; registration 5 per hour per IP; password reset 3 per hour. Unknown e-mail addresses go through a dummy scrypt verification so timing does not reveal accounts.
+- Invitations (7 days), password resets (1 hour; 24 hours when created by an administrator) and e-mail verification (48 hours) use single-use, SHA-256-hashed tokens claimed atomically. Without SMTP configuration no e-mail is pretended: the invitation or reset link is shown once to the administrator. An administrator cannot create a reset link for a user who belongs to several organisations.
 
 ## 2. Authorisation
 - Permission codes are `<module>.<action>`, with actions view, create, edit, approve, post, reverse, export, close, manageUsers and manageSettings.
@@ -14,6 +14,9 @@
 - Platform administration lives under `/platform` with `platform.*` permissions. Platform admins do **not** get implicit access to customer books. Support access needs a time-boxed, customer-approved `SupportGrant`, which is audited.
 
 ## 3. Tenant isolation
+
+**Implemented (Phase 1).** The app connects as the database owner; `withTenant` (`src/core/tenancy/tenant.ts`) opens a transaction, runs `SET LOCAL ROLE ara_app` (a NOLOGIN role without BYPASSRLS) and sets `app.org_id` / `app.user_id`. Policies are created in `prisma/migrations/20261110202700_phase1_security`. `ara_app` has no access to `Session`, `UserToken` or `LoginAttempt`. Integration tests prove that reads, updates, deletes and inserts across organisations are blocked by the database.
+
 - Application layer: a tenant-scoped Prisma client. IDs from the client are always re-resolved within the tenant scope (no IDOR).
 - Database layer: PostgreSQL RLS on all tenant tables, with session variables set per transaction. The app role has no `BYPASSRLS`.
 - Object storage keys are random and prefixed with the organisation id. Downloads only go through an authorised handler that checks document ownership, with `Content-Disposition: attachment`.
@@ -30,7 +33,7 @@
 - Server actions use Next.js origin checks (CSRF). Route handlers that mutate require a same-origin check and a session.
 - Zod validation on every input. Amounts are parsed as decimal strings, never `parseFloat`.
 - CSV/Excel exports neutralise formula injection.
-- Headers: CSP (nonce-based), HSTS, X-Frame-Options DENY, nosniff, Referrer-Policy, Permissions-Policy (camera allowed for self on `/scan`).
+- Headers: CSP (nonce per request, set in `src/proxy.ts`; `strict-dynamic`, no inline scripts), HSTS, X-Frame-Options DENY, nosniff, Referrer-Policy, Permissions-Policy (camera allowed for self on `/scan`).
 - Rate limiting on auth, uploads, exports and AI calls.
 - Dependency audit in CI. Lockfile committed.
 

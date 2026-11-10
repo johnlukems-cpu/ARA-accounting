@@ -4,6 +4,8 @@ import { Banknote, Building2, CheckCircle2, CircleDot, Circle, Landmark, Scale }
 import { setLocale } from "./actions";
 import { LOCALES } from "@/i18n/config";
 import { PHASES, type PhaseState } from "@/lib/roadmap";
+import { isDatabaseConfigured } from "@/core/db/client";
+import Link from "next/link";
 
 const stateStyle: Record<PhaseState, string> = {
   done: "bg-accent-soft text-accent",
@@ -37,6 +39,10 @@ export default async function StatusPage() {
             </span>
             <span className="hidden text-sm text-white/70 sm:inline">{t("brand.company")}</span>
           </div>
+          <div className="flex items-center gap-3">
+          {isDatabaseConfigured() && (
+            <Link href="/login" className="rounded-lg bg-accent px-3 py-1.5 text-sm font-semibold hover:bg-accent/90">{t("auth.login")}</Link>
+          )}
           <form action={setLocale} className="flex items-center gap-1 text-sm" aria-label={t("language.label")}>
             {LOCALES.map((l) => (
               <button
@@ -50,6 +56,7 @@ export default async function StatusPage() {
               </button>
             ))}
           </form>
+          </div>
         </div>
         <div className="mx-auto max-w-5xl px-4 pb-14 pt-8 sm:px-6">
           <span className="inline-flex items-center rounded-full bg-accent px-3 py-1 text-xs font-semibold uppercase tracking-wide">
@@ -57,7 +64,7 @@ export default async function StatusPage() {
           </span>
           <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">{t("brand.tagline")}</h1>
           <p className="mt-4 max-w-3xl text-white/80">{t("status.intro")}</p>
-          <p className="mt-3 max-w-3xl text-sm text-white/60">{t("status.notYetAvailable")}</p>
+          {!isDatabaseConfigured() && <p className="mt-3 max-w-3xl text-sm text-white/60">{t("status.notYetAvailable")}</p>}
         </div>
       </header>
 

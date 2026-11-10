@@ -1,7 +1,9 @@
 /** Development phases shown on the status page. Keep in sync with PROJECT_STATUS.md. */
 export type PhaseState = "done" | "active" | "planned";
 
+const DONE = 1; // highest completed phase
+
 export const PHASES: ReadonlyArray<{ number: number; state: PhaseState }> = Array.from({ length: 13 }, (_, n) => ({
   number: n,
-  state: n === 0 ? "done" : n === 1 ? "active" : "planned",
+  state: n <= DONE ? "done" : n === DONE + 1 ? "active" : "planned",
 }));

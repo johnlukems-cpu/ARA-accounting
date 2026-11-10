@@ -48,7 +48,7 @@ Gaps: a double-entry ledger, a chart of accounts, journals with gapless numberin
 | Web framework | **Next.js 16** App Router, React 19, server actions + route handlers | One deployable app with a typed server/client boundary. |
 | Database | **PostgreSQL 16** | `NUMERIC`, row-level security, deferred constraint triggers, advisory locks, JSONB |
 | ORM / migrations | **Prisma 6** (`prisma migrate`), raw SQL migrations for triggers and RLS | Proven in the ARA suite |
-| Decimal maths | **decimal.js** (via `Prisma.Decimal`) wrapped in `src/lib/money` | Decimal arithmetic required. No `number` for money. |
+| Decimal maths | **decimal.js** wrapped in `src/core/money` | Decimal arithmetic required. No `number` for money. |
 | Validation | Zod 4 | Proven in the ARA suite |
 | i18n | next-intl, `nl` default, `en` secondary | Proven in the ARA suite |
 | UI | Tailwind CSS 4, own component library, lucide-react, Recharts | ARA Accounting tokens. |
@@ -105,6 +105,8 @@ Rules:
 ---
 
 ## 4. Multi-tenant model
+
+> **Implemented in Phase 1:** `src/core/tenancy/tenant.ts` (`withTenant`), `src/core/auth/access.ts` (access per organisation and company), `src/core/auth/context.ts` (active organisation, company, administration and fiscal year per request), `src/core/auth/permissions.ts` (role matrix).
 
 ```
 Platform

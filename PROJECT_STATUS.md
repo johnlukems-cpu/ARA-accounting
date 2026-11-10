@@ -2,27 +2,29 @@
 
 | Item | Value |
 | --- | --- |
-| Current phase | **1 — Foundation (in progress)** |
-| Completed | 0 — Repository audit & architecture |
+| Current phase | **2 — Accounting core (next)** |
+| Completed | 0 — Architecture · **1 — Foundation** |
 | Last update | 2026-11-10 |
 
-## Phase 1 progress (in progress)
+## Phase 1 — Foundation: COMPLETED (2026-11-10)
 
-**Done (step 1: deployable foundation)**
-- Next.js 16.4.3 / React 19.3 / TypeScript strict, Tailwind CSS 4 with ARA Accounting design tokens (deep navy, emerald)
-- next-intl: Dutch (nl-SR) default, English secondary, language switch (server action, HttpOnly cookie), time zone America/Paramaribo
-- Public status page (`/`) with the honest development status. No login or app screens yet, by design.
-- `GET /api/health`
-- Security headers (HSTS, X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy with camera for ARA Scan)
-- `vercel.json`: Next.js, region `iad1`. `.env.example` lists the variables for later steps.
-- `src/core/money`: the decimal Money type for the ledger engine (rounding half away from zero, ISO codes, conversion, loss-free allocation, nl/en amount parsing and formatting)
-- Built independently: no code or configuration is copied from ARA Payroll (product owner decision)
+**Features implemented**
+- PostgreSQL schema + migrations: users, sessions, tokens, login attempts, organisations (business / accounting firm), roles and permissions, memberships, companies (legal form, KKF, tax and BTW numbers, district), company assignments, branches, administrations (base currency SRD default), fiscal years (calendar or deviating), periods 0–13, append-only hash-chained audit log, notifications
+- Tenant isolation: `ara_app` role without BYPASSRLS, RLS policies on all tenant tables, `withTenant` per transaction
+- Authentication: registration, login, logout, sessions (hashed token, idle 2 h, absolute 12 h), password reset (e-mail when SMTP is configured, otherwise a one-time admin link), e-mail verification (when SMTP is configured), invitations, MFA (TOTP + recovery codes) with organisation enforcement and 7-day grace period, rate limiting, CSP with nonce
+- Permissions: 9 tenant roles + platform-administrator flag, module.action permissions (view/create/edit/approve/post/reverse/export/close/manage), organisation-wide vs per-company assignment; enforced in services and actions
+- UI (nl/en): login, register, MFA, forgot/reset password, invitation, onboarding (company → administration), app shell (sidebar, organisation/company/administration/fiscal-year switchers, search, notifications, user), dashboard, organisation profile and settings, companies (create, edit, archive, branches, administrations, staff access), administration (fiscal years, period open/soft-close/close/reopen), users (invite, role, deactivate, reset link), audit log with chain verification, account (profile, language, password, MFA), notifications, search, 404 page
 
-**Tests:** 30 unit tests passed (money 26, i18n catalogue 4). Typecheck, lint and production build pass. Manual browser check at 1280 px and 390 px: no horizontal overflow; language switch works.
-
-**Remaining in Phase 1:** PostgreSQL + Prisma, authentication + MFA, organisations (business / accounting firm), users, roles and permissions, companies, administrations, fiscal years and periods, tenant isolation (RLS) with its test suite, audit log, application shell (sidebar, company / administration / fiscal-year selectors).
-
-**Deployment:** connect the GitHub repository `johnlukems-cpu/ARA-accounting` to Vercel (see README). No environment variables are needed yet.
+**Database migrations:** `20261110202605_phase1_foundation`, `20261110202700_phase1_security`
+**Tests:** 47 unit, 12 integration, 4 e2e — all passed (see docs/TESTING_REPORT.md)
+**Outstanding / limitations**
+- Platform administrator area (organisations, subscriptions, global account deactivation) is Phase 11; the `isPlatformAdmin` flag exists.
+- Custom roles per organisation: the data model supports them, no UI yet.
+- E-mail delivery needs SMTP settings (none configured); until then invitation and reset links are shown once to administrators.
+- Breached-password check and step-up MFA for sensitive actions: planned (Phase 12 / with those actions).
+**Security considerations:** see docs/SECURITY.md (RLS, scrypt, AES-GCM, CSP, rate limits, audit chain).
+**Deployment:** add the Neon database and `ENCRYPTION_KEY` in Vercel (docs/DEPLOYMENT_GUIDE.md); the build then migrates automatically.
+**Next phase:** 2 — chart of accounts, journals, ledger engine with DB-enforced balance and immutability, opening balances, general ledger, trial balance, period locks.
 
 ## Phase 0 checkpoint
 
@@ -62,3 +64,4 @@
 - 2026-11-03: Scope set to **the Surinamese market only** at the product owner's request. Netherlands/international assumptions removed (BW2, KvK, IBAN, PSD2, CAMT/MT940, ECB). Suriname market profile added and all documents aligned.
 - 2026-11-04: Hosting decided: **Vercel**. Background jobs redesigned as a PostgreSQL job table with short resumable steps (`after()` + Vercel Cron) instead of a separate worker.
 - 2026-11-10: Phase 1 started. Deployable foundation built (status page, i18n, design tokens, health endpoint, money module, Vercel config). ARA Accounting is implemented independently of ARA Payroll at the product owner's request.
+- 2026-11-10: Gap analysis (docs/GAP_ANALYSIS.md). Phase 1 completed: database, RLS, auth + MFA, organisations, companies, administrations, fiscal years, permissions, audit chain, UI, 63 automated tests passing.
