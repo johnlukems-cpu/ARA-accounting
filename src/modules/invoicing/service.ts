@@ -107,8 +107,8 @@ async function taxCodeMap(tx: Tx, administrationId: string) {
 export async function saveInvoice(access: Access, input: InvoiceInput) {
   return withTenant(scope(access), async (tx) => {
     const admin = await adminFor(tx, input.administrationId);
-    const module = input.type === "SALES" ? "sales" : "purchase";
-    assertCan(access, `${module}.${input.id ? "edit" : "create"}` as "sales.create", admin.companyId);
+    const area = input.type === "SALES" ? "sales" : "purchase";
+    assertCan(access, `${area}.${input.id ? "edit" : "create"}` as "sales.create", admin.companyId);
     const party = await tx.party.findUnique({ where: { id: input.partyId } });
     if (!party || party.administrationId !== admin.id || party.status !== "ACTIVE") throw new UserError("invoicing.invalidParty");
     if (input.type === "SALES" ? !party.isCustomer : !party.isSupplier) throw new UserError("invoicing.invalidParty");
