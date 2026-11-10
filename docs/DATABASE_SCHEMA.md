@@ -134,6 +134,9 @@ Key: **PK** primary key, **U** unique, **IX** index, **FK** foreign key, **CHK**
 | `AccountingPeriod` | fiscalYearId, number (0 = opening, 1..12, 13 = closing), startDate, endDate, status (OPEN, SOFT_CLOSED, CLOSED), closedById, closedAt | U(fiscalYearId, number) |
 
 ### 4.2 Ledger
+
+> **Implemented (Phase 2):** `Account`, `Journal`, `JournalEntry`, `JournalLine`, `DimensionValue`, `NumberSequence`. Decisions: opening balances are period-0 entries in the OPN journal (no separate `OpeningBalance` table); `PostingBatch` and `AccountPeriodBalance` are deferred until a module needs them (the trial balance is computed from indexed posted lines; Phase 12 load tests decide on the snapshot table). Party and tax-code columns on lines exist and get their foreign keys in Phase 3.
+
 | Model | Key fields | Constraints |
 | --- | --- | --- |
 | `Account` (ChartOfAccount) | administrationId, number, name, nameEn, description, category (ASSET, LIABILITY, EQUITY, REVENUE, COST_OF_SALES, OPERATING_EXPENSE, FINANCIAL_INCOME, FINANCIAL_EXPENSE, TAX, SUSPENSE), type (DETAIL, HEADER), parentId, normalBalance (DEBIT, CREDIT), controlType (NONE, RECEIVABLE, PAYABLE, BANK, CASH, CURRENT_ACCOUNT, FIXED_ASSET, TAX, ROUNDING, FX_RESULT, RETAINED_EARNINGS), currencyRestriction, defaultTaxCodeId, requiresDimensions, status (ACTIVE, ARCHIVED), templateAccountRef | U(administrationId, number); CHK posting only to DETAIL accounts |

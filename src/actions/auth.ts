@@ -33,7 +33,8 @@ async function sendVerificationEmail(userId: string, email: string) {
 export async function registerAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
     const meta = await requestMeta();
-    if (meta.ip && (await isRateLimited([`register:${meta.ip}`], 5, 60))) throw new UserError("errors.tooManyAttempts");
+    const maxPerHour = Number(process.env.REGISTER_LIMIT_PER_HOUR ?? 5);
+    if (meta.ip && (await isRateLimited([`register:${meta.ip}`], maxPerHour, 60))) throw new UserError("errors.tooManyAttempts");
     if (meta.ip) await recordAttempt([`register:${meta.ip}`]);
     const input = registerSchema.parse(formObject(fd));
     const { userId } = await registerOrganization(input, meta.ip ?? undefined);

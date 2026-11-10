@@ -2,6 +2,28 @@
 
 Only results from real runs are recorded here. Environment: Node 22, PostgreSQL 16.15 (local), Chromium (Playwright 1.63).
 
+## Phase 2 — Accounting core (2026-11-10)
+
+| Suite | Result |
+| --- | --- |
+| Unit | **54 / 54 passed** (adds ledger domain incl. a 2 000-case property test: every accepted entry balances, every line has exactly one side) |
+| Integration (PostgreSQL) | **29 / 29 passed** (17 new) |
+| End-to-end | **6 / 6 passed** (2 new) |
+| Typecheck / lint (incl. engine-only write rule) / build | passed |
+
+| Phase 2 acceptance | Evidence |
+| --- | --- |
+| Journal creation, debit/credit validation | unit `buildLines`; integration "refuses unbalanced entries…"; e2e live difference + refusal message |
+| Posting, gapless numbering, idempotency | integration "draft → post…", "concurrent postings never share or skip a number" (8 parallel), "an idempotency key never creates a second entry" |
+| Reversal and correction | integration "reversal creates a linked mirror entry…", "correction = reversal + editable draft copy"; e2e reversal |
+| Opening balances | integration "opening balances go to period 0…" (approval + segregation of duties) |
+| General ledger movements, trial balance | integration "shows opening, period and closing columns…" (exact figures, drafts excluded, account range, running balance); e2e TB → GL drill-down, CSV export |
+| Period locking | integration "posting into a CLOSED period is refused by the database", "a period with unposted entries cannot be closed" |
+| Audit history / immutability | integration "posted entries and lines cannot be updated or deleted, even by the database owner", "an unbalanced entry cannot be committed as POSTED", "lines cannot point to an account of another administration" |
+| Permissions and isolation | integration "a bookkeeper can post but not reverse or approve" (bookkeepers lack `ledger.post`), "ledger data of another organisation is invisible" |
+
+Defects found and fixed: trial-balance query dropped accounts with lines only in other years/drafts (moved filters into a subquery); a component defined during render (lint); editor showed `500.00` instead of `500,00`.
+
 ## Phase 1 — Foundation (2026-11-10)
 
 | Suite | Command | Result |

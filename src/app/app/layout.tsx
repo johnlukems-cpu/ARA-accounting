@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getFormatter, getTranslations } from "next-intl/server";
-import { Bell, BookOpen, Briefcase, Building2, LayoutDashboard, LogOut, Search, ShieldCheck, User, Users } from "lucide-react";
+import { Bell, BookOpen, Briefcase, Building2, LayoutDashboard, Library, List, LogOut, NotebookText, Scale, Search, ShieldCheck, User, Users } from "lucide-react";
 import { requireUser } from "@/core/auth/context";
 import { can } from "@/core/auth/access";
 import { withTenant } from "@/core/tenancy/tenant";
@@ -11,7 +11,7 @@ import { switchContextAction } from "@/actions/organization";
 import { ContextSelect } from "@/components/shell/context-select";
 import { NAV } from "@/components/shell/nav";
 
-const ICONS = { dashboard: LayoutDashboard, building: Building2, briefcase: Briefcase, book: BookOpen, users: Users, shield: ShieldCheck, user: User };
+const ICONS = { dashboard: LayoutDashboard, building: Building2, briefcase: Briefcase, book: BookOpen, users: Users, shield: ShieldCheck, user: User, list: List, scale: Scale, library: Library, notebook: NotebookText };
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const t = await getTranslations();
@@ -34,13 +34,17 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <Image src="/brand/ara-accounting-logo.png" alt={t("brand.product")} width={96} height={42} priority />
         </Link>
         <nav aria-label={t("nav.label")} className="flex-1 space-y-0.5 px-3">
-          {nav.map((item) => {
+          {nav.map((item, i) => {
             const Icon = ICONS[item.icon];
+            const heading = item.section && item.section !== nav[i - 1]?.section;
             return (
-              <Link key={item.key} href={item.href} className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-white/80 hover:bg-white/10 hover:text-white">
-                <Icon aria-hidden className="size-4" />
-                {t(`nav.${item.key}`)}
-              </Link>
+              <div key={item.key}>
+                {heading && <p className="mb-1 mt-5 px-3 text-[11px] font-semibold uppercase tracking-wider text-white/40">{t(`nav.sections.${item.section}`)}</p>}
+                <Link href={item.href} className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-white/80 hover:bg-white/10 hover:text-white">
+                  <Icon aria-hidden className="size-4" />
+                  {t(`nav.${item.key}`)}
+                </Link>
+              </div>
             );
           })}
         </nav>

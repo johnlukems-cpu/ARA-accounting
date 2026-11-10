@@ -2,9 +2,18 @@
 
 | Item | Value |
 | --- | --- |
-| Current phase | **2 — Accounting core (next)** |
-| Completed | 0 — Architecture · **1 — Foundation** |
+| Current phase | **3 — Financial operations (next)** |
+| Completed | 0 — Architecture · 1 — Foundation · **2 — Accounting core** |
 | Last update | 2026-11-10 |
+
+## Phase 2 — Accounting core: COMPLETED (2026-11-10)
+
+**Features:** standard Surinamese chart of accounts (hierarchical, categories, normal side, control accounts, currency restriction) and 11 journals per administration; account management (create, rename, re-parent, archive with balance check); journals (approval flag) and dimensions (cost centre, project, department); accounting engine in `src/core/ledger` (draft → submit → approve with segregation of duties → post, gapless numbers per journal and fiscal year, idempotency keys, control-account rule, period rules 0/1–12/13, soft-closed periods, foreign-currency lines with rounding line, reversal and correction entries); database triggers for immutability, balance, closed periods and account ownership; journal-entry list (filters, search, pagination), entry editor with live balance, entry detail with history; trial balance (opening/movement/closing, fiscal year, period range, account range, journal filter, zero rows) with drill-down to the general ledger card (running balance) and to entries; CSV exports (audited); period closing blocked while unposted entries exist; lint rule that only the engine writes journal entries.
+
+**Migrations:** `20261110205336_phase2_ledger`, `20261110205400_phase2_ledger_integrity` (schema and migrations verified identical with `prisma migrate diff`).
+**Tests:** 54 unit, 29 integration, 6 e2e — all passed.
+**Outstanding:** year-end closing entries themselves (period 13 workflow) are Phase 9; PDF/Excel exports are Phase 8; account-period balance snapshots only if load tests require them (Phase 12).
+**Next phase:** 3 — relations (customers/suppliers), sales and purchase invoices with BTW codes, open items and payment allocation, aging, bank/cash with CSV import and matching, current accounts, fixed assets and depreciation.
 
 ## Phase 1 — Foundation: COMPLETED (2026-11-10)
 
@@ -65,3 +74,4 @@
 - 2026-11-04: Hosting decided: **Vercel**. Background jobs redesigned as a PostgreSQL job table with short resumable steps (`after()` + Vercel Cron) instead of a separate worker.
 - 2026-11-10: Phase 1 started. Deployable foundation built (status page, i18n, design tokens, health endpoint, money module, Vercel config). ARA Accounting is implemented independently of ARA Payroll at the product owner's request.
 - 2026-11-10: Gap analysis (docs/GAP_ANALYSIS.md). Phase 1 completed: database, RLS, auth + MFA, organisations, companies, administrations, fiscal years, permissions, audit chain, UI, 63 automated tests passing.
+- 2026-11-10: Phase 2 completed: accounting engine with database-enforced integrity, chart of accounts, journals, entries, trial balance, general ledger, CSV exports; 89 automated tests passing.

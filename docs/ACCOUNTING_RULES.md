@@ -2,6 +2,8 @@
 
 These rules are binding for every module. Surinamese defaults and their legal sources are in [SURINAME_MARKET.md](SURINAME_MARKET.md). Each rule lists where it is enforced (A = application/service, D = database, T = automated test).
 
+> **Implementation status (Phase 2, 2026-11-10).** L1–L5, P1–P6 and F1–F3 are implemented in `src/core/ledger` (engine and pure `domain.ts`) and in the database migration `20261110205400_phase2_ledger_integrity` (immutability trigger, deferred balance trigger, closed-period trigger, line/account trigger, CHECK constraints). Opening balances are entries in the opening journal (OPN) in period 0, dated on the first day of the fiscal year; they may use control accounts. Period 13 is reserved for entries of kind ADJUSTMENT/CLOSING dated on the last day of the fiscal year. Soft-closed periods accept postings only from users with `periods.close`. Segregation of duties is on by default (`Administration.settings.segregationOfDuties`).
+
 ## 1. Double entry
 | # | Rule | Enforced |
 | --- | --- | --- |

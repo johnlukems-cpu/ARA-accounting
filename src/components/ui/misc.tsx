@@ -72,8 +72,8 @@ export function Table({ head, children }: { head: ReactNode[]; children: ReactNo
   );
 }
 
-export function Td({ children, className }: { children?: ReactNode; className?: string }) {
-  return <td className={cn("px-5 py-2.5 align-middle", className)}>{children}</td>;
+export function Td({ children, className, colSpan }: { children?: ReactNode; className?: string; colSpan?: number }) {
+  return <td colSpan={colSpan} className={cn("px-5 py-2.5 align-middle", className)}>{children}</td>;
 }
 
 export function TextLink({ href, children }: { href: string; children: ReactNode }) {

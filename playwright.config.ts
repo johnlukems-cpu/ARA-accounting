@@ -26,6 +26,8 @@ export default defineConfig({
       ENCRYPTION_KEY: Buffer.alloc(32, 2).toString("base64"),
       SESSION_SECRET: "e2e-session-secret",
       APP_URL: `http://localhost:${PORT}`,
+      // Many registrations from 127.0.0.1 in one run; production keeps the default of 5 per hour.
+      REGISTER_LIMIT_PER_HOUR: "1000",
     },
   },
 });

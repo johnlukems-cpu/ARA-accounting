@@ -51,3 +51,18 @@ All mutations validate input with the Zod schemas in `src/modules/organization/s
 | `assignCompanyAction`, `removeAssignmentAction` | organization.ts | `organization.manageUsers` or `companies.manageUsers` for that company | |
 | `markNotificationsReadAction` | organization.ts | session | |
 
+### Server actions — Phase 2 (`src/actions/ledger.ts`)
+| Action | Permission | Notes |
+| --- | --- | --- |
+| `createAccountAction`, `updateAccountAction` | `administrations.edit` | Number, category and type are fixed after creation; archiving requires zero balance and no drafts |
+| `saveJournalAction`, `createDimensionAction` | `administrations.edit` | Journal type locked once the journal has entries |
+| `saveEntryAction` | `ledger.create` / `ledger.edit` (+ `ledger.post` for "save and post") | Lines as JSON (`entrySchema`); idempotency key generated per form |
+| `entryTransitionAction` (`submit`, `approve`, `post`, `delete`) | `ledger.create` / `ledger.approve` / `ledger.post` / `ledger.edit` | Approval: segregation of duties |
+| `reverseEntryAction` (`reverse` or `correct`) | `ledger.reverse` | Reason required |
+
+### Route handlers — Phase 2
+| Route | Permission | Output |
+| --- | --- | --- |
+| `GET /api/ledger/trial-balance?fiscalYearId&fromPeriod&toPeriod&accountFrom&accountTo&journalId&hideZero` | `ledger.export` or `reports.export` | CSV (semicolon, UTF-8 BOM, formula-injection safe); audited |
+| `GET /api/ledger/general-ledger?account&fiscalYearId&fromPeriod&toPeriod` | `ledger.export` or `reports.export` | CSV with running balance; audited |
+
