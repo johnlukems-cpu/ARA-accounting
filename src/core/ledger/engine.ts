@@ -1,8 +1,9 @@
-import { randomUUID } from "node:crypto";
 import type { ControlType, EntryKind, JournalEntry, SourceType } from "@prisma/client";
 import type { Tx } from "@/core/db/client";
 import { audit } from "@/core/audit/audit";
+import { nextSequence } from "@/core/numbering";
 import { assertCan, can, type Access } from "@/core/auth/access";
+import type { Permission } from "@/core/auth/permissions";
 import { UserError } from "@/core/errors";
 import { buildLines, LedgerError, reverseLines, totals, type LineInput } from "./domain";
 
@@ -25,6 +26,28 @@ export interface EntryInput {
   sourceId?: string | null;
   idempotencyKey?: string | null;
 }
+
+/**
+ * Permissions per source: manual entries need ledger.*, module postings need that module's permission
+ * (so a bookkeeper may post a sales invoice without being allowed free-form memorial entries).
+ */
+const SOURCE_PERMISSIONS: Record<SourceType, { create: Permission; post: Permission; reverse: Permission }> = {
+  MANUAL: { create: "ledger.create", post: "ledger.post", reverse: "ledger.reverse" },
+  OPENING: { create: "ledger.create", post: "ledger.post", reverse: "ledger.reverse" },
+  IMPORT: { create: "ledger.create", post: "ledger.post", reverse: "ledger.reverse" },
+  SALES_INVOICE: { create: "sales.create", post: "sales.post", reverse: "sales.post" },
+  PURCHASE_INVOICE: { create: "purchase.create", post: "purchase.post", reverse: "purchase.post" },
+  PAYMENT: { create: "banking.create", post: "banking.post", reverse: "banking.post" },
+  BANK: { create: "banking.create", post: "banking.post", reverse: "banking.post" },
+  CURRENT_ACCOUNT: { create: "currentAccounts.create", post: "currentAccounts.post", reverse: "currentAccounts.post" },
+  ASSET: { create: "assets.create", post: "assets.post", reverse: "assets.post" },
+  DEPRECIATION: { create: "assets.create", post: "assets.post", reverse: "assets.post" },
+  FX_REVALUATION: { create: "currency.create", post: "currency.post", reverse: "currency.post" },
+  YEAR_END: { create: "yearEnd.edit", post: "yearEnd.post", reverse: "yearEnd.post" },
+  TAX: { create: "tax.edit", post: "ledger.post", reverse: "ledger.reverse" },
+  SCAN: { create: "scan.create", post: "scan.post", reverse: "purchase.post" },
+};
+export const permissionsFor = (source: SourceType) => SOURCE_PERMISSIONS[source];
 
 /** Control accounts that only their owning module may post to (L4). Opening entries are the exception. */
 const MODULE_ONLY: ControlType[] = ["RECEIVABLE", "PAYABLE", "BANK", "CASH", "CURRENT_ACCOUNT", "FIXED_ASSET"];
@@ -129,7 +152,7 @@ function lineRows(organizationId: string, administrationId: string, entryId: str
 /** Creates a DRAFT entry (or returns the existing one for a repeated idempotency key). */
 export async function createEntry(tx: Tx, access: Access, input: EntryInput): Promise<JournalEntry> {
   const admin = await loadAdministration(tx, input.administrationId);
-  assertCan(access, "ledger.create", admin.companyId);
+  assertCan(access, permissionsFor(input.sourceType ?? "MANUAL").create, admin.companyId);
   if (input.idempotencyKey) {
     const existing = await tx.journalEntry.findUnique({ where: { administrationId_idempotencyKey: { administrationId: admin.id, idempotencyKey: input.idempotencyKey } } });
     if (existing) return existing;
@@ -220,23 +243,13 @@ export async function approveEntry(tx: Tx, access: Access, entryId: string) {
   return updated;
 }
 
-async function nextNumber(tx: Tx, organizationId: string, journalId: string, fiscalYearId: string): Promise<number> {
-  await tx.$executeRaw`
-    INSERT INTO "NumberSequence" (id, "organizationId", scope, "scopeId", "fiscalYearId", "nextValue")
-    VALUES (${randomUUID()}, ${organizationId}, 'JOURNAL', ${journalId}, ${fiscalYearId}, 1)
-    ON CONFLICT (scope, "scopeId", "fiscalYearId") DO NOTHING`;
-  const rows = await tx.$queryRaw<{ id: string; nextValue: number }[]>`
-    SELECT id, "nextValue" FROM "NumberSequence"
-     WHERE scope = 'JOURNAL' AND "scopeId" = ${journalId} AND "fiscalYearId" = ${fiscalYearId} FOR UPDATE`;
-  const row = rows[0]!;
-  await tx.$executeRaw`UPDATE "NumberSequence" SET "nextValue" = ${row.nextValue + 1} WHERE id = ${row.id}`;
-  return row.nextValue;
-}
+const nextNumber = (tx: Tx, organizationId: string, journalId: string, fiscalYearId: string) =>
+  nextSequence(tx, organizationId, "JOURNAL", journalId, fiscalYearId);
 
 /** Posts an entry: re-validates against current accounts/periods, assigns the gapless number, locks it. */
 export async function postEntry(tx: Tx, access: Access, entryId: string): Promise<JournalEntry> {
   const { entry, admin } = await loadEntry(tx, entryId);
-  assertCan(access, "ledger.post", admin.companyId);
+  assertCan(access, permissionsFor(entry.sourceType).post, admin.companyId);
   if (entry.status === "POSTED") throw new UserError("ledger.alreadyPosted");
   if (entry.journal.requiresApproval && entry.status !== "APPROVED") throw new UserError("ledger.approvalRequired");
   const lines = await tx.journalLine.findMany({ where: { entryId }, orderBy: { lineNo: "asc" } });
@@ -275,9 +288,10 @@ export async function createAndPost(tx: Tx, access: Access, input: EntryInput): 
 }
 
 /** Reversal: a posted mirror entry in an open period, linked both ways. The original stays untouched. */
-export async function reverseEntry(tx: Tx, access: Access, entryId: string, opts: { entryDate: string; reason: string }) {
+export async function reverseEntry(tx: Tx, access: Access, entryId: string, opts: { entryDate: string; reason: string; viaSource?: boolean }) {
   const { entry, admin } = await loadEntry(tx, entryId);
-  assertCan(access, "ledger.reverse", admin.companyId);
+  assertCan(access, opts.viaSource ? permissionsFor(entry.sourceType).reverse : "ledger.reverse", admin.companyId);
+  if (!opts.viaSource && entry.sourceType !== "MANUAL" && entry.sourceType !== "OPENING" && entry.sourceType !== "IMPORT") throw new UserError("ledger.reverseViaSource");
   if (entry.status !== "POSTED") throw new UserError("ledger.onlyPostedReversible");
   if (entry.reversedByEntryId) throw new UserError("ledger.alreadyReversed");
   if (entry.kind === "REVERSAL") throw new UserError("ledger.cannotReverseReversal");

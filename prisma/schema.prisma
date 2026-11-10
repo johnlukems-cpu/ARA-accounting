@@ -604,3 +604,286 @@ model NumberSequence {
   @@unique([scope, scopeId, fiscalYearId])
   @@index([organizationId])
 }
+
+// ───────────────────────── Financial operations (Phase 3) ─────────────────────────
+
+/// Customer and/or supplier of one administration.
+model Party {
+  id                      String       @id @default(cuid())
+  organizationId          String
+  administrationId        String
+  code                    String
+  name                    String
+  isCustomer              Boolean      @default(false)
+  isSupplier              Boolean      @default(false)
+  kkfNumber               String?
+  taxNumber               String?
+  btwNumber               String?
+  email                   String?
+  phone                   String?
+  address                 String?
+  district                District?
+  currency                String       @default("SRD")
+  paymentTermDays         Int          @default(30)
+  defaultRevenueAccountId String?
+  defaultExpenseAccountId String?
+  defaultTaxCodeId        String?
+  bankName                String?
+  bankAccountNumber       String?
+  status                  RecordStatus @default(ACTIVE)
+  createdAt               DateTime     @default(now())
+  updatedAt               DateTime     @updatedAt
+  invoices                Invoice[]
+  openItems               OpenItem[]
+  payments                Payment[]
+
+  @@unique([administrationId, code])
+  @@index([organizationId])
+  @@index([administrationId, name])
+}
+
+enum TaxDirection {
+  SALES
+  PURCHASE
+  BOTH
+}
+
+enum TaxKind {
+  STANDARD
+  LUXURY
+  ZERO
+  EXEMPT
+  IMPORT
+  NONE
+}
+
+enum LegalStatus {
+  VERIFIED
+  SOURCE_FOUND
+  PENDING_VERIFICATION
+}
+
+/// BTW codes are data, never code (ACCOUNTING_RULES T1). The rate is snapshotted on every invoice line.
+model TaxCode {
+  id               String       @id @default(cuid())
+  organizationId   String
+  administrationId String
+  code             String
+  name             String
+  nameEn           String?
+  kind             TaxKind
+  direction        TaxDirection @default(BOTH)
+  rate             Decimal      @db.Decimal(9, 4) // percentage, e.g. 10.0000
+  deductiblePct    Decimal      @default(100) @db.Decimal(9, 4)
+  outputAccountId  String? // sales: BTW payable
+  inputAccountId   String? // purchases: BTW receivable
+  legalStatus      LegalStatus  @default(PENDING_VERIFICATION)
+  legalSource      String?
+  reportBox        String?
+  validFrom        DateTime?    @db.Date
+  validTo          DateTime?    @db.Date
+  status           RecordStatus @default(ACTIVE)
+  createdAt        DateTime     @default(now())
+
+  @@unique([administrationId, code])
+  @@index([organizationId])
+}
+
+enum FinancialAccountKind {
+  BANK
+  CASH
+}
+
+/// Bank and cash accounts. Each has its own ledger (control) account and journal.
+model FinancialAccount {
+  id               String               @id @default(cuid())
+  organizationId   String
+  administrationId String
+  kind             FinancialAccountKind
+  name             String
+  bankCode         String? // DSB, HAKRIN, FINA, REPUBLIC, SCB, GODO, VCB, SPSB, AMANAH, OTHER
+  accountNumber    String?
+  currency         String
+  ledgerAccountId  String
+  journalId        String
+  importProfile    Json? // CSV column mapping (Phase 3B)
+  status           RecordStatus         @default(ACTIVE)
+  createdAt        DateTime             @default(now())
+  payments         Payment[]
+
+  @@unique([administrationId, kind, bankCode, accountNumber, currency])
+  @@index([organizationId])
+}
+
+enum InvoiceType {
+  SALES
+  PURCHASE
+}
+
+enum InvoiceKind {
+  INVOICE
+  CREDIT_NOTE
+}
+
+enum InvoiceStatus {
+  DRAFT
+  REVIEW
+  APPROVED
+  POSTED
+  PARTIALLY_PAID
+  PAID
+}
+
+model Invoice {
+  id               String        @id @default(cuid())
+  organizationId   String
+  administrationId String
+  type             InvoiceType
+  kind             InvoiceKind   @default(INVOICE)
+  partyId          String
+  number           String? // sales: gapless, assigned when posted; purchase: internal number when posted
+  externalNumber   String? // supplier's invoice number (purchases)
+  invoiceDate      DateTime      @db.Date
+  dueDate          DateTime      @db.Date
+  currency         String
+  exchangeRate     Decimal       @default(1) @db.Decimal(24, 10)
+  rateSource       String?
+  description      String?
+  notes            String?
+  status           InvoiceStatus @default(DRAFT)
+  netAmount        Decimal       @default(0) @db.Decimal(20, 4)
+  taxAmount        Decimal       @default(0) @db.Decimal(20, 4)
+  grossAmount      Decimal       @default(0) @db.Decimal(20, 4)
+  grossBase        Decimal       @default(0) @db.Decimal(20, 4)
+  creditsInvoiceId String?
+  entryId          String?       @unique
+  documentId       String?
+  sentAt           DateTime?
+  sentTo           String?
+  createdById      String
+  approvedById     String?
+  approvedAt       DateTime?
+  postedById       String?
+  postedAt         DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  party            Party         @relation(fields: [partyId], references: [id])
+  lines            InvoiceLine[]
+
+  @@unique([administrationId, type, number])
+  @@index([organizationId])
+  @@index([administrationId, type, status])
+  @@index([partyId])
+}
+
+model InvoiceLine {
+  id             String  @id @default(cuid())
+  organizationId String
+  invoiceId      String
+  lineNo         Int
+  description    String
+  quantity       Decimal @default(1) @db.Decimal(18, 4)
+  unitPrice      Decimal @db.Decimal(20, 4)
+  discountPct    Decimal @default(0) @db.Decimal(9, 4)
+  netAmount      Decimal @db.Decimal(20, 4)
+  taxCodeId      String?
+  taxRate        Decimal @default(0) @db.Decimal(9, 4)
+  taxAmount      Decimal @default(0) @db.Decimal(20, 4)
+  accountId      String
+  costCenterId   String?
+  projectId      String?
+  invoice        Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@unique([invoiceId, lineNo])
+  @@index([organizationId])
+}
+
+enum OpenItemSide {
+  RECEIVABLE
+  PAYABLE
+}
+
+enum OpenItemStatus {
+  OPEN
+  SETTLED
+}
+
+/// Sub-ledger item (invoice, credit note, payment on account). Amount is signed: + increases the claim/debt.
+model OpenItem {
+  id               String         @id @default(cuid())
+  organizationId   String
+  administrationId String
+  partyId          String?
+  currentAccountId String?
+  side             OpenItemSide
+  sourceType       String // INVOICE, PAYMENT, OPENING, CURRENT_ACCOUNT
+  sourceId         String
+  documentNumber   String
+  description      String?
+  date             DateTime       @db.Date
+  dueDate          DateTime       @db.Date
+  currency         String
+  originalAmount   Decimal        @db.Decimal(20, 4)
+  remainingAmount  Decimal        @db.Decimal(20, 4)
+  originalRate     Decimal        @default(1) @db.Decimal(24, 10)
+  ledgerAccountId  String
+  status           OpenItemStatus @default(OPEN)
+  lastReminderAt   DateTime?
+  createdAt        DateTime       @default(now())
+  party            Party?         @relation(fields: [partyId], references: [id])
+  allocations      Allocation[]
+
+  @@unique([sourceType, sourceId])
+  @@index([organizationId])
+  @@index([administrationId, side, status])
+  @@index([partyId, status])
+}
+
+enum PaymentDirection {
+  IN
+  OUT
+}
+
+model Payment {
+  id                 String           @id @default(cuid())
+  organizationId     String
+  administrationId   String
+  direction          PaymentDirection
+  partyId            String?
+  financialAccountId String
+  date               DateTime         @db.Date
+  currency           String
+  amount             Decimal          @db.Decimal(20, 4)
+  exchangeRate       Decimal          @default(1) @db.Decimal(24, 10)
+  reference          String?
+  description        String?
+  bankTransactionId  String?
+  entryId            String?          @unique
+  idempotencyKey     String?
+  createdById        String
+  createdAt          DateTime         @default(now())
+  party              Party?           @relation(fields: [partyId], references: [id])
+  financialAccount   FinancialAccount @relation(fields: [financialAccountId], references: [id])
+  allocations        Allocation[]
+
+  @@unique([administrationId, idempotencyKey])
+  @@index([organizationId])
+  @@index([administrationId, date])
+}
+
+/// Settles (part of) an open item, by a payment or by another open item (e.g. a credit note).
+model Allocation {
+  id                String   @id @default(cuid())
+  organizationId    String
+  openItemId        String
+  paymentId         String?
+  counterOpenItemId String?
+  amount            Decimal  @db.Decimal(20, 4) // in the open item's currency, positive
+  createdById       String
+  createdAt         DateTime @default(now())
+  openItem          OpenItem @relation(fields: [openItemId], references: [id])
+  payment           Payment? @relation(fields: [paymentId], references: [id])
+
+  @@index([organizationId])
+  @@index([openItemId])
+}

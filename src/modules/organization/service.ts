@@ -9,6 +9,7 @@ import { ADMIN_ROLES, rolesForKind, SYSTEM_ROLES, type RoleCode } from "@/core/a
 import { UserError } from "@/core/errors";
 import { fiscalYearCode, fiscalYearRange, planPeriods } from "./periods";
 import { installStandardChart } from "@/modules/ledger/service";
+import { installOperations } from "@/modules/invoicing/setup";
 import type {
   administrationSchema, assignmentSchema, branchSchema, companySchema, inviteSchema, membershipUpdateSchema,
   organizationSchema, periodStatusSchema, registerSchema,
@@ -158,7 +159,10 @@ export async function createAdministration(access: Access, input: Omit<z.infer<t
         },
       });
       const fy = await insertFiscalYear(tx, access.organizationId, admin.id, startDate, endDate);
-      if (input.chart !== "EMPTY") await installStandardChart(tx, access.organizationId, admin.id);
+      if (input.chart !== "EMPTY") {
+        await installStandardChart(tx, access.organizationId, admin.id);
+        await installOperations(tx, access.organizationId, admin.id);
+      }
       await audit(tx, {
         organizationId: access.organizationId, userId: access.userId, action: "administration.created", entity: "Administration", entityId: admin.id,
         details: { code: admin.code, baseCurrency: admin.baseCurrency, firstFiscalYear: fy.code, chart: input.chart ?? "STANDARD" },
