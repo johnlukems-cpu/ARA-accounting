@@ -8,28 +8,40 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run tests/unit"
+    "test": "vitest run tests/unit",
+    "test:integration": "vitest run --config vitest.integration.mts",
+    "db:migrate": "prisma migrate deploy",
+    "db:seed": "tsx scripts/seed.ts",
+    "postinstall": "prisma generate",
+    "vercel-build": "node scripts/vercel-build.mjs"
   },
   "engines": {
     "node": ">=22"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",
+    "@prisma/client": "^6.19.3",
     "decimal.js": "^10.6.0",
     "lucide-react": "^1.71.0",
     "next": "16.4.3",
     "next-intl": "^4.14.10",
+    "prisma": "^6.19.3",
+    "qrcode": "^1.5.4",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "server-only": "^0.0.1",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.5",
     "@types/node": "^22.20.5",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.4.3",
     "tailwindcss": "^4.3.5",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "vitest": "^5.1.0"
   }

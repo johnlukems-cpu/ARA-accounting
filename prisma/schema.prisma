@@ -1,0 +1,365 @@
+// ARA Accounting — database schema (PostgreSQL 16).
+// Conventions: see docs/DATABASE_SCHEMA.md. Money columns are Decimal(20,4), rates Decimal(24,10).
+// Every tenant table carries organizationId and is protected by row-level security (prisma/migrations/*_rls).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+// ───────────────────────── Identity ─────────────────────────
+
+model User {
+  id               String    @id @default(cuid())
+  email            String    @unique // stored lowercase
+  name             String
+  passwordHash     String
+  locale           String    @default("nl")
+  emailVerifiedAt  DateTime?
+  mfaEnabled       Boolean   @default(false)
+  mfaSecretEnc     String? // AES-256-GCM encrypted TOTP secret
+  mfaRecoveryCodes Json? // array of SHA-256 hashes of unused recovery codes
+  isPlatformAdmin  Boolean   @default(false)
+  isActive         Boolean   @default(true)
+  lastLoginAt      DateTime?
+  passwordChangedAt DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  sessions      Session[]
+  memberships   OrganizationMembership[]
+  assignments   CompanyAssignment[]
+  tokens        UserToken[]
+  notifications Notification[]
+}
+
+/// id = SHA-256 of the session token; the raw token only lives in the HttpOnly cookie.
+model Session {
+  id                     String    @id
+  userId                 String
+  activeOrganizationId   String?
+  activeCompanyId        String?
+  activeAdministrationId String?
+  activeFiscalYearId     String?
+  mfaVerifiedAt          DateTime?
+  createdAt              DateTime  @default(now())
+  lastSeenAt             DateTime  @default(now())
+  expiresAt              DateTime
+  ip                     String?
+  userAgent              String?
+  user                   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+enum UserTokenKind {
+  PASSWORD_RESET
+  EMAIL_VERIFICATION
+  INVITATION
+}
+
+/// Single-use tokens (only the SHA-256 hash is stored).
+model UserToken {
+  id             String        @id @default(cuid())
+  tokenHash      String        @unique
+  kind           UserTokenKind
+  userId         String
+  organizationId String?
+  expiresAt      DateTime
+  usedAt         DateTime?
+  createdAt      DateTime      @default(now())
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, kind])
+}
+
+/// Failed login attempts for rate limiting (database-backed so it works across serverless instances).
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  key       String // "email:<email>" or "ip:<ip>"
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
+}
+
+// ───────────────────────── Tenancy ─────────────────────────
+
+enum OrganizationKind {
+  BUSINESS
+  ACCOUNTING_FIRM
+}
+
+enum OrganizationStatus {
+  TRIAL
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+}
+
+model Organization {
+  id                String             @id @default(cuid())
+  name              String
+  kind              OrganizationKind
+  status            OrganizationStatus @default(TRIAL)
+  email             String?
+  phone             String?
+  address           String?
+  district          District?
+  kkfNumber         String?
+  defaultLocale     String             @default("nl")
+  requireMfaForAdmins Boolean          @default(true)
+  ownerUserId       String
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  memberships OrganizationMembership[]
+  companies   Company[]
+  roles       Role[]
+}
+
+/// System roles have organizationId = null; organisations may add custom roles later.
+model Role {
+  id             String           @id @default(cuid())
+  organizationId String?
+  code           String
+  name           String
+  nameEn         String
+  orgWide        Boolean          @default(false) // applies to every company of the organisation
+  isSystem       Boolean          @default(false)
+  createdAt      DateTime         @default(now())
+  organization   Organization?    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  permissions    RolePermission[]
+  memberships    OrganizationMembership[]
+  assignments    CompanyAssignment[]
+
+  @@unique([organizationId, code])
+}
+
+model RolePermission {
+  roleId     String
+  permission String
+  role       Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permission])
+}
+
+enum MembershipStatus {
+  INVITED
+  ACTIVE
+  DISABLED
+}
+
+model OrganizationMembership {
+  id             String           @id @default(cuid())
+  organizationId String
+  userId         String
+  roleId         String
+  status         MembershipStatus @default(ACTIVE)
+  createdAt      DateTime         @default(now())
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           Role             @relation(fields: [roleId], references: [id])
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+}
+
+enum LegalForm {
+  EENMANSZAAK
+  VOF
+  CV
+  NV
+  STICHTING
+  VERENIGING
+  COOPERATIE
+  OVERHEIDS_NV
+  KERKGENOOTSCHAP
+}
+
+enum District {
+  PARAMARIBO
+  WANICA
+  NICKERIE
+  CORONIE
+  SARAMACCA
+  COMMEWIJNE
+  MAROWIJNE
+  PARA
+  BROKOPONDO
+  SIPALIWINI
+}
+
+enum RecordStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+model Company {
+  id              String       @id @default(cuid())
+  organizationId  String
+  name            String
+  legalName       String?
+  legalForm       LegalForm
+  kkfNumber       String?
+  taxNumber       String?
+  btwNumber       String?
+  isBtwRegistered Boolean      @default(false)
+  address         String?
+  district        District?
+  email           String?
+  phone           String?
+  status          RecordStatus @default(ACTIVE)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  assignments     CompanyAssignment[]
+  branches        Branch[]
+  administrations Administration[]
+
+  @@unique([organizationId, kkfNumber])
+  @@index([organizationId])
+}
+
+model CompanyAssignment {
+  id             String   @id @default(cuid())
+  organizationId String
+  companyId      String
+  userId         String
+  roleId         String
+  createdAt      DateTime @default(now())
+  company        Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           Role     @relation(fields: [roleId], references: [id])
+
+  @@unique([companyId, userId])
+  @@index([organizationId])
+  @@index([userId])
+}
+
+model Branch {
+  id             String       @id @default(cuid())
+  organizationId String
+  companyId      String
+  code           String
+  name           String
+  address        String?
+  district       District?
+  status         RecordStatus @default(ACTIVE)
+  createdAt      DateTime     @default(now())
+  company        Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, code])
+  @@index([organizationId])
+}
+
+enum AdministrationStatus {
+  SETUP
+  ACTIVE
+  ARCHIVED
+}
+
+model Administration {
+  id                String               @id @default(cuid())
+  organizationId    String
+  companyId         String
+  code              String
+  name              String
+  baseCurrency      String               @default("SRD")
+  reportingCurrency String?
+  framework         String? // annual-accounts template code (Phase 9)
+  status            AdministrationStatus @default(SETUP)
+  settings          Json                 @default("{}")
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  company           Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  fiscalYears       FiscalYear[]
+
+  @@unique([companyId, code])
+  @@index([organizationId])
+}
+
+enum FiscalYearStatus {
+  OPEN
+  CLOSING
+  CLOSED
+}
+
+/// Overlap between fiscal years of one administration is prevented by an exclusion constraint (migration SQL).
+model FiscalYear {
+  id               String             @id @default(cuid())
+  organizationId   String
+  administrationId String
+  code             String
+  startDate        DateTime           @db.Date
+  endDate          DateTime           @db.Date
+  status           FiscalYearStatus   @default(OPEN)
+  createdAt        DateTime           @default(now())
+  administration   Administration     @relation(fields: [administrationId], references: [id], onDelete: Cascade)
+  periods          AccountingPeriod[]
+
+  @@unique([administrationId, code])
+  @@index([organizationId])
+}
+
+enum PeriodStatus {
+  OPEN
+  SOFT_CLOSED
+  CLOSED
+}
+
+/// Period 0 = opening balances, 1..12 = months, 13 = year-end adjustments.
+model AccountingPeriod {
+  id             String       @id @default(cuid())
+  organizationId String
+  fiscalYearId   String
+  number         Int
+  startDate      DateTime     @db.Date
+  endDate        DateTime     @db.Date
+  status         PeriodStatus @default(OPEN)
+  closedById     String?
+  closedAt       DateTime?
+  fiscalYear     FiscalYear   @relation(fields: [fiscalYearId], references: [id], onDelete: Cascade)
+
+  @@unique([fiscalYearId, number])
+  @@index([organizationId])
+}
+
+// ───────────────────────── Governance ─────────────────────────
+
+/// Append-only and hash-chained per organisation (triggers in migration SQL). Never updated or deleted.
+model AuditLog {
+  seq            BigInt   @id @default(autoincrement())
+  organizationId String?
+  userId         String?
+  action         String
+  entity         String
+  entityId       String?
+  details        Json?
+  ip             String?
+  createdAt      DateTime @default(now())
+  prevHash       String   @default("")
+  hash           String   @default("")
+
+  @@index([organizationId, seq])
+}
+
+model Notification {
+  id             String    @id @default(cuid())
+  organizationId String
+  userId         String
+  type           String
+  params         Json      @default("{}")
+  link           String?
+  readAt         DateTime?
+  createdAt      DateTime  @default(now())
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([organizationId])
+}
