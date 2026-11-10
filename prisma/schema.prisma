@@ -15,21 +15,21 @@ datasource db {
 // ───────────────────────── Identity ─────────────────────────
 
 model User {
-  id               String    @id @default(cuid())
-  email            String    @unique // stored lowercase
-  name             String
-  passwordHash     String
-  locale           String    @default("nl")
-  emailVerifiedAt  DateTime?
-  mfaEnabled       Boolean   @default(false)
-  mfaSecretEnc     String? // AES-256-GCM encrypted TOTP secret
-  mfaRecoveryCodes Json? // array of SHA-256 hashes of unused recovery codes
-  isPlatformAdmin  Boolean   @default(false)
-  isActive         Boolean   @default(true)
-  lastLoginAt      DateTime?
+  id                String    @id @default(cuid())
+  email             String    @unique // stored lowercase
+  name              String
+  passwordHash      String
+  locale            String    @default("nl")
+  emailVerifiedAt   DateTime?
+  mfaEnabled        Boolean   @default(false)
+  mfaSecretEnc      String? // AES-256-GCM encrypted TOTP secret
+  mfaRecoveryCodes  Json? // array of SHA-256 hashes of unused recovery codes
+  isPlatformAdmin   Boolean   @default(false)
+  isActive          Boolean   @default(true)
+  lastLoginAt       DateTime?
   passwordChangedAt DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   sessions      Session[]
   memberships   OrganizationMembership[]
@@ -102,20 +102,20 @@ enum OrganizationStatus {
 }
 
 model Organization {
-  id                String             @id @default(cuid())
-  name              String
-  kind              OrganizationKind
-  status            OrganizationStatus @default(TRIAL)
-  email             String?
-  phone             String?
-  address           String?
-  district          District?
-  kkfNumber         String?
-  defaultLocale     String             @default("nl")
-  requireMfaForAdmins Boolean          @default(true)
-  ownerUserId       String
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  id                  String             @id @default(cuid())
+  name                String
+  kind                OrganizationKind
+  status              OrganizationStatus @default(TRIAL)
+  email               String?
+  phone               String?
+  address             String?
+  district            District?
+  kkfNumber           String?
+  defaultLocale       String             @default("nl")
+  requireMfaForAdmins Boolean            @default(true)
+  ownerUserId         String
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
 
   memberships OrganizationMembership[]
   companies   Company[]
@@ -124,15 +124,15 @@ model Organization {
 
 /// System roles have organizationId = null; organisations may add custom roles later.
 model Role {
-  id             String           @id @default(cuid())
+  id             String                   @id @default(cuid())
   organizationId String?
   code           String
   name           String
   nameEn         String
-  orgWide        Boolean          @default(false) // applies to every company of the organisation
-  isSystem       Boolean          @default(false)
-  createdAt      DateTime         @default(now())
-  organization   Organization?    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  orgWide        Boolean                  @default(false) // applies to every company of the organisation
+  isSystem       Boolean                  @default(false)
+  createdAt      DateTime                 @default(now())
+  organization   Organization?            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   permissions    RolePermission[]
   memberships    OrganizationMembership[]
   assignments    CompanyAssignment[]
@@ -302,6 +302,7 @@ model FiscalYear {
   createdAt        DateTime           @default(now())
   administration   Administration     @relation(fields: [administrationId], references: [id], onDelete: Cascade)
   periods          AccountingPeriod[]
+  entries          JournalEntry[]
 
   @@unique([administrationId, code])
   @@index([organizationId])
@@ -315,16 +316,17 @@ enum PeriodStatus {
 
 /// Period 0 = opening balances, 1..12 = months, 13 = year-end adjustments.
 model AccountingPeriod {
-  id             String       @id @default(cuid())
+  id             String         @id @default(cuid())
   organizationId String
   fiscalYearId   String
   number         Int
-  startDate      DateTime     @db.Date
-  endDate        DateTime     @db.Date
-  status         PeriodStatus @default(OPEN)
+  startDate      DateTime       @db.Date
+  endDate        DateTime       @db.Date
+  status         PeriodStatus   @default(OPEN)
   closedById     String?
   closedAt       DateTime?
-  fiscalYear     FiscalYear   @relation(fields: [fiscalYearId], references: [id], onDelete: Cascade)
+  fiscalYear     FiscalYear     @relation(fields: [fiscalYearId], references: [id], onDelete: Cascade)
+  entries        JournalEntry[]
 
   @@unique([fiscalYearId, number])
   @@index([organizationId])
@@ -361,5 +363,244 @@ model Notification {
   user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, readAt])
+  @@index([organizationId])
+}
+
+// ───────────────────────── Ledger (Phase 2) ─────────────────────────
+
+enum AccountCategory {
+  ASSET
+  LIABILITY
+  EQUITY
+  REVENUE
+  COST_OF_SALES
+  OPERATING_EXPENSE
+  FINANCIAL_INCOME
+  FINANCIAL_EXPENSE
+  TAX
+  SUSPENSE
+}
+
+enum AccountType {
+  HEADER
+  DETAIL
+}
+
+enum BalanceSide {
+  DEBIT
+  CREDIT
+}
+
+/// Control accounts accept postings only from their owning module (ACCOUNTING_RULES L4).
+enum ControlType {
+  NONE
+  RECEIVABLE
+  PAYABLE
+  BANK
+  CASH
+  CURRENT_ACCOUNT
+  FIXED_ASSET
+  TAX
+  ROUNDING
+  FX_RESULT
+  RETAINED_EARNINGS
+  RESULT_CURRENT_YEAR
+  SUSPENSE
+}
+
+model Account {
+  id                 String          @id @default(cuid())
+  organizationId     String
+  administrationId   String
+  number             String
+  name               String
+  nameEn             String?
+  description        String?
+  category           AccountCategory
+  type               AccountType     @default(DETAIL)
+  parentId           String?
+  normalBalance      BalanceSide
+  controlType        ControlType     @default(NONE)
+  currency           String? // restricts postings to one transaction currency (e.g. a USD bank account)
+  status             RecordStatus    @default(ACTIVE)
+  templateAccountRef String?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  parent             Account?        @relation("AccountTree", fields: [parentId], references: [id])
+  children           Account[]       @relation("AccountTree")
+  lines              JournalLine[]
+
+  @@unique([administrationId, number])
+  @@index([organizationId])
+}
+
+enum JournalType {
+  PURCHASE
+  SALES
+  BANK
+  CASH
+  GENERAL
+  OPENING
+  FIXED_ASSET
+  DEPRECIATION
+  TAX
+  FX_ADJUSTMENT
+  CLOSING
+}
+
+model Journal {
+  id               String         @id @default(cuid())
+  organizationId   String
+  administrationId String
+  code             String
+  name             String
+  type             JournalType
+  requiresApproval Boolean        @default(false)
+  status           RecordStatus   @default(ACTIVE)
+  createdAt        DateTime       @default(now())
+  entries          JournalEntry[]
+
+  @@unique([administrationId, code])
+  @@index([organizationId])
+}
+
+enum EntryStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  POSTED
+}
+
+enum EntryKind {
+  NORMAL
+  OPENING
+  REVERSAL
+  CORRECTION
+  ADJUSTMENT
+  CLOSING
+}
+
+enum SourceType {
+  MANUAL
+  SALES_INVOICE
+  PURCHASE_INVOICE
+  PAYMENT
+  BANK
+  CURRENT_ACCOUNT
+  ASSET
+  DEPRECIATION
+  FX_REVALUATION
+  YEAR_END
+  OPENING
+  TAX
+  IMPORT
+  SCAN
+}
+
+/// Posted entries are immutable (database trigger); corrections are reversal/correction entries.
+model JournalEntry {
+  id                String           @id @default(cuid())
+  organizationId    String
+  administrationId  String
+  journalId         String
+  fiscalYearId      String
+  periodId          String
+  entryNumber       Int? // gapless per journal per fiscal year, assigned when posted
+  entryDate         DateTime         @db.Date // posting date: decides the period
+  documentDate      DateTime?        @db.Date
+  description       String
+  reference         String?
+  currency          String // base currency of the administration
+  status            EntryStatus      @default(DRAFT)
+  kind              EntryKind        @default(NORMAL)
+  sourceType        SourceType       @default(MANUAL)
+  sourceId          String?
+  reversesEntryId   String?          @unique
+  reversedByEntryId String?          @unique
+  reason            String?
+  idempotencyKey    String?
+  totalDebitBase    Decimal          @default(0) @db.Decimal(20, 4)
+  totalCreditBase   Decimal          @default(0) @db.Decimal(20, 4)
+  createdById       String
+  submittedById     String?
+  approvedById      String?
+  approvedAt        DateTime?
+  postedById        String?
+  postedAt          DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  journal           Journal          @relation(fields: [journalId], references: [id])
+  period            AccountingPeriod @relation(fields: [periodId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  fiscalYear        FiscalYear       @relation(fields: [fiscalYearId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  reverses          JournalEntry?    @relation("Reversal", fields: [reversesEntryId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  reversedBy        JournalEntry?    @relation("Reversal")
+  lines             JournalLine[]
+
+  @@unique([administrationId, idempotencyKey])
+  @@unique([journalId, fiscalYearId, entryNumber])
+  @@index([organizationId])
+  @@index([administrationId, periodId, status])
+  @@index([administrationId, status, entryDate])
+}
+
+model JournalLine {
+  id               String       @id @default(cuid())
+  organizationId   String
+  administrationId String
+  entryId          String
+  lineNo           Int
+  accountId        String
+  description      String?
+  debitBase        Decimal      @default(0) @db.Decimal(20, 4)
+  creditBase       Decimal      @default(0) @db.Decimal(20, 4)
+  txCurrency       String
+  txAmount         Decimal      @db.Decimal(20, 4) // signed: debit positive, credit negative
+  exchangeRate     Decimal      @default(1) @db.Decimal(24, 10) // 1 txCurrency = rate × base currency
+  rateDate         DateTime?    @db.Date
+  rateSource       String? // IDENTITY, MANUAL, CBVS_SELL, BANK, …
+  costCenterId     String?
+  projectId        String?
+  departmentId     String?
+  partyId          String? // Phase 3
+  taxCodeId        String? // Phase 3
+  isRounding       Boolean      @default(false)
+  entry            JournalEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  account          Account      @relation(fields: [accountId], references: [id])
+
+  @@unique([entryId, lineNo])
+  @@index([organizationId])
+  @@index([administrationId, accountId])
+}
+
+enum DimensionType {
+  COST_CENTER
+  PROJECT
+  DEPARTMENT
+}
+
+model DimensionValue {
+  id               String        @id @default(cuid())
+  organizationId   String
+  administrationId String
+  type             DimensionType
+  code             String
+  name             String
+  status           RecordStatus  @default(ACTIVE)
+  createdAt        DateTime      @default(now())
+
+  @@unique([administrationId, type, code])
+  @@index([organizationId])
+}
+
+/// Gapless number sequences (locked FOR UPDATE inside the posting transaction).
+model NumberSequence {
+  id             String @id @default(cuid())
+  organizationId String
+  scope          String // "JOURNAL", "SALES_INVOICE", …
+  scopeId        String
+  fiscalYearId   String
+  nextValue      Int    @default(1)
+
+  @@unique([scope, scopeId, fiscalYearId])
   @@index([organizationId])
 }

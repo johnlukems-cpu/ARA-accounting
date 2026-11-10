@@ -64,6 +64,7 @@ export const administrationSchema = z.object({
   baseCurrency: currencyCode.default("SRD"),
   startYear: z.coerce.number().int().min(2000, "validation.year").max(2100, "validation.year"),
   startMonth: z.coerce.number().int().min(1).max(12).default(1),
+  chart: z.enum(["STANDARD", "EMPTY"]).default("STANDARD"),
 });
 
 export const fiscalYearSchema = z.object({ administrationId: z.string().min(1) });

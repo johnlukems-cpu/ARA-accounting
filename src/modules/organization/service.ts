@@ -8,6 +8,7 @@ import { hashPassword, randomToken, sha256 } from "@/core/auth/crypto";
 import { ADMIN_ROLES, rolesForKind, SYSTEM_ROLES, type RoleCode } from "@/core/auth/permissions";
 import { UserError } from "@/core/errors";
 import { fiscalYearCode, fiscalYearRange, planPeriods } from "./periods";
+import { installStandardChart } from "@/modules/ledger/service";
 import type {
   administrationSchema, assignmentSchema, branchSchema, companySchema, inviteSchema, membershipUpdateSchema,
   organizationSchema, periodStatusSchema, registerSchema,
@@ -143,7 +144,7 @@ async function insertFiscalYear(tx: Tx, organizationId: string, administrationId
   return fy;
 }
 
-export async function createAdministration(access: Access, input: z.infer<typeof administrationSchema>) {
+export async function createAdministration(access: Access, input: Omit<z.infer<typeof administrationSchema>, "chart"> & { chart?: "STANDARD" | "EMPTY" }) {
   assertCan(access, "administrations.create", input.companyId);
   const { startDate, endDate } = fiscalYearRange(input.startYear, input.startMonth);
   try {
@@ -157,9 +158,10 @@ export async function createAdministration(access: Access, input: z.infer<typeof
         },
       });
       const fy = await insertFiscalYear(tx, access.organizationId, admin.id, startDate, endDate);
+      if (input.chart !== "EMPTY") await installStandardChart(tx, access.organizationId, admin.id);
       await audit(tx, {
         organizationId: access.organizationId, userId: access.userId, action: "administration.created", entity: "Administration", entityId: admin.id,
-        details: { code: admin.code, baseCurrency: admin.baseCurrency, firstFiscalYear: fy.code },
+        details: { code: admin.code, baseCurrency: admin.baseCurrency, firstFiscalYear: fy.code, chart: input.chart ?? "STANDARD" },
       });
       return { administration: admin, fiscalYear: fy };
     });
@@ -196,7 +198,11 @@ export async function setPeriodStatus(access: Access, input: z.infer<typeof peri
     if (period.status === input.status) return period;
     const reopening = PERIOD_ORDER[input.status] < PERIOD_ORDER[period.status];
     if (reopening && !input.reason) throw new UserError("errors.reasonRequired");
-    // Phase 2 adds: closing requires no unposted entries dated in the period (ACCOUNTING_RULES F3).
+    // F3: a period can only be (soft-)closed when no unposted entries are dated in it.
+    if (!reopening) {
+      const unposted = await tx.journalEntry.count({ where: { periodId: period.id, status: { not: "POSTED" } } });
+      if (unposted > 0) throw new UserError("errors.periodHasUnposted", { count: unposted });
+    }
     const updated = await tx.accountingPeriod.update({
       where: { id: period.id },
       data: {
