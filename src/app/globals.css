@@ -42,6 +42,13 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  /* Tabular figures so amounts line up in tables. */
-  font-feature-settings: "tnum" 1;
+}
+
+/*
+ * Tabular figures only where amounts must line up (tables, totals). Not on body text:
+ * in Inter, "tnum" also gives the hyphen a fixed figure width, which puts gaps in
+ * words such as "rekening-courant". Use the class "amount" (or Tailwind's tabular-nums).
+ */
+.amount {
+  font-variant-numeric: tabular-nums;
 }
