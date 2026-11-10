@@ -12,11 +12,13 @@ Market: **Suriname only**. Every default, template, tax rule, bank format and te
 | --- | --- | --- |
 | Session working directory | Empty. No ARA Accounting code exists. | Greenfield project, `ara-accounting`. Nothing to preserve or migrate. |
 | `johnlukems-cpu/ARA-Intelligent-Solutions` | Marketing website (Next.js, nl/en). It has an Accounting product page but no application code. | Use it only for brand assets and positioning. Link "Inloggen/Demo" from the website to the app later. |
-| `johnlukems-cpu/ara-payroll` | Production sister product with 14 migrations, 81 unit, 26 integration and 6 e2e tests, and a production audit in `docs/PRODUCTION_AUDIT.md`. | **Reference stack and source of proven patterns.** ARA Accounting adopts the same stack so the suite stays coherent and can later share login and code. |
+| `johnlukems-cpu/ara-payroll` | Production sister product with 14 migrations, 81 unit, 26 integration and 6 e2e tests, and a production audit in `docs/PRODUCTION_AUDIT.md`. | Reviewed for reference only. **ARA Accounting is implemented independently; no code or configuration is copied from ARA Payroll** (product owner decision, 2026-11-10). |
 
-### Reusable from ARA Payroll (copy, then adapt)
+### Patterns reviewed in ARA Payroll (reference only, not copied)
 
-| Pattern | Payroll location | Reuse in Accounting |
+The table lists concepts that proved themselves in ARA Payroll. ARA Accounting builds its own implementation of each one.
+
+| Pattern | Seen in Payroll | ARA Accounting's own implementation |
 | --- | --- | --- |
 | Session auth: SHA-256-hashed token, HttpOnly cookie, bcrypt, login rate limit | `src/lib/server/session.ts`, `auth.ts`, `rate-limit.ts` | As is, then extended with MFA (TOTP) and organisation-level context |
 | Permission matrix as single source of truth, `requirePermission` / `requirePage` | `src/lib/permissions.ts`, `src/lib/server/auth.ts` | Extended: per-permission **actions** (view/create/edit/approve/post/reverse/export/close/manage) and **per-client** assignment |
@@ -42,19 +44,19 @@ Gaps: a double-entry ledger, a chart of accounts, journals with gapless numberin
 
 | Layer | Choice | Reason |
 | --- | --- | --- |
-| Runtime | Node.js ≥ 22, TypeScript (strict) | Same as Payroll |
-| Web framework | **Next.js 16** App Router, React 19, server actions + route handlers | Same as Payroll. One deployable app with a typed server/client boundary. |
+| Runtime | Node.js ≥ 22, TypeScript (strict) | Proven in the ARA suite |
+| Web framework | **Next.js 16** App Router, React 19, server actions + route handlers | One deployable app with a typed server/client boundary. |
 | Database | **PostgreSQL 16** | `NUMERIC`, row-level security, deferred constraint triggers, advisory locks, JSONB |
-| ORM / migrations | **Prisma 6** (`prisma migrate`), raw SQL migrations for triggers and RLS | Same as Payroll |
+| ORM / migrations | **Prisma 6** (`prisma migrate`), raw SQL migrations for triggers and RLS | Proven in the ARA suite |
 | Decimal maths | **decimal.js** (via `Prisma.Decimal`) wrapped in `src/lib/money` | Decimal arithmetic required. No `number` for money. |
-| Validation | Zod 4 | Same as Payroll |
-| i18n | next-intl, `nl` default, `en` secondary | Same as Payroll |
-| UI | Tailwind CSS 4, own component library, lucide-react, Recharts | Same as Payroll. ARA Accounting tokens. |
+| Validation | Zod 4 | Proven in the ARA suite |
+| i18n | next-intl, `nl` default, `en` secondary | Proven in the ARA suite |
+| UI | Tailwind CSS 4, own component library, lucide-react, Recharts | ARA Accounting tokens. |
 | Background jobs | **PostgreSQL job table** (`Job`, claimed with `FOR UPDATE SKIP LOCKED`) processed by Vercel functions: started immediately through `after()` and picked up by a **Vercel Cron** sweep every minute | Runs entirely on Vercel, with no extra worker. Jobs are split into short, resumable, idempotent steps that each finish well within the function time limit. |
 | Files | S3-compatible object storage (local disk in development); on Vercel an S3 bucket or Vercel Blob behind the same storage interface | Same as Payroll (`S3_BUCKET` required on Vercel) |
 | OCR / AI | `DocumentExtractor` interface. Implementations: PDF text layer (built-in), a vision-LLM provider (Claude API) and a manual provider. | Provider-independent. Works without AI (manual entry). |
-| PDF / Excel | pdf-lib, exceljs | Same as Payroll |
-| Tests | Vitest (unit + integration on a real PostgreSQL), Playwright (e2e, nl + en, mobile) | Same as Payroll |
+| PDF / Excel | pdf-lib, exceljs | Proven in the ARA suite |
+| Tests | Vitest (unit + integration on a real PostgreSQL), Playwright (e2e, nl + en, mobile) | Proven in the ARA suite |
 | Monitoring | Structured logs (pino), `/api/health`, Sentry-compatible error hook | Open item in the Payroll audit |
 
 **Not chosen:** a separate SPA + REST backend (doubles the auth surface, no benefit at this stage), microservices (premature) and floating-point money.
@@ -261,7 +263,7 @@ Write dependencies always point *down* to the ledger. Monitors and practice mana
 - No local hyperscale cloud exists in Suriname. Use the closest region (US-East or São Paulo), disclose this in the terms, and offer full data export. ARA Scan is offline-tolerant for unreliable connections.
 - **Platform: Vercel** (decided by the product owner, the same as ARA Payroll). The function region is `iad1` (Washington DC, US-East), the closest region to Suriname, and the database sits in the same region.
 - **Database:** managed PostgreSQL 16 (Neon through the Vercel Marketplace, or another provider in US-East). The pooled connection string is used for the app and the direct one for migrations. RLS policies and triggers are created by SQL migrations.
-- **Build:** `vercel-build` = `prisma generate && prisma migrate deploy && seed reference data && next build` (the ARA Payroll pattern). Preview deployments use a separate preview database branch, never production data.
+- **Build:** `vercel-build` = `prisma generate && prisma migrate deploy && seed reference data && next build` . Preview deployments use a separate preview database branch, never production data.
 - **Files:** an S3 bucket (`S3_BUCKET`) or Vercel Blob for documents, scans and generated PDFs. Never the function filesystem.
 - **Background work on Vercel:** OCR, bank imports, revaluation, depreciation runs and report packs are queued in the `Job` table. They start immediately via `after()` and are retried by a Vercel Cron call to `/api/jobs/run` every minute. Each job step is short and resumable (for example one document per OCR step, 500 bank lines per import step, one report section per step), and a step's progress is committed before the next starts. Large Excel/PDF report packs are generated in steps and assembled at the end.
 - **Limits to watch:** function duration (set `maxDuration` per route; Pro plan needed for longer steps and minute-level cron), request body size for uploads (documents go **directly from the browser to storage** with a signed upload URL, not through a function), and database connections (pooled).

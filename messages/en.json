@@ -1,0 +1,41 @@
+{
+  "brand": {
+    "product": "ARA Accounting",
+    "company": "ARA Intelligent Solutions",
+    "tagline": "Accounting and financial management for Suriname",
+    "metaDescription": "Cloud accounting for Surinamese businesses and accounting firms: SRD, USD and EUR, CBvS rates, BTW and annual accounts."
+  },
+  "status": {
+    "badge": "In development",
+    "intro": "ARA Accounting is being built for the Surinamese market: double-entry bookkeeping, receivables and payables, bank and cash, fixed assets, budgets, reporting, year-end closing, BTW returns and annual accounts — in one integrated platform.",
+    "notYetAvailable": "The application is not yet available for use. This page shows the progress.",
+    "roadmapTitle": "Development phases",
+    "phase": "Phase {number}",
+    "state": { "done": "Completed", "active": "In progress", "planned": "Planned" },
+    "phases": {
+      "p0": "Architecture and Suriname market profile",
+      "p1": "Foundation: sign-in, organisations, permissions, administrations",
+      "p2": "Accounting core: ledger, journals, journal entries, trial balance",
+      "p3": "Purchases, sales, bank and cash, current accounts, fixed assets",
+      "p4": "Industry templates for Surinamese sectors",
+      "p5": "Foreign currency: CBvS rates, exchange differences, revaluation",
+      "p6": "Budget management and forecasts",
+      "p7": "ARA Scan: document scanning and booking suggestions",
+      "p8": "Reporting, cash flow and KPIs",
+      "p9": "Year-end closing, annual accounts and tax returns",
+      "p10": "Quality monitor and automation",
+      "p11": "Subscriptions and practice management for accounting firms",
+      "p12": "Final testing and go-live"
+    },
+    "highlightsTitle": "Built for Suriname",
+    "highlights": {
+      "currency": "SRD, USD and EUR with Centrale Bank van Suriname rates",
+      "tax": "BTW (10% / 25% / 0%) and income tax as configurable, verifiable rules",
+      "law": "Annual accounts under the Wet op de Jaarrekening (S.B. 2017 no. 84)",
+      "banks": "Import profiles for Surinamese banks and cash books per currency"
+    },
+    "verification": "Tax and legal settings are only marked as verified after review by a Surinamese tax advisor and accountant."
+  },
+  "language": { "label": "Language", "nl": "Nederlands", "en": "English" },
+  "footer": "© {year} ARA Intelligent Solutions"
+}

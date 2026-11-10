@@ -1,0 +1,41 @@
+{
+  "brand": {
+    "product": "ARA Accounting",
+    "company": "ARA Intelligent Solutions",
+    "tagline": "Boekhouding en financieel beheer voor Suriname",
+    "metaDescription": "Cloudboekhouding voor Surinaamse ondernemingen en accountantskantoren: SRD, USD en EUR, CBvS-koersen, BTW en jaarrekening."
+  },
+  "status": {
+    "badge": "In ontwikkeling",
+    "intro": "ARA Accounting wordt gebouwd voor de Surinaamse markt: dubbel boekhouden, debiteuren en crediteuren, bank en kas, vaste activa, budgetten, rapportages, jaarafsluiting, BTW-aangifte en jaarrekening — in één geïntegreerd platform.",
+    "notYetAvailable": "De applicatie is nog niet beschikbaar voor gebruik. Op deze pagina ziet u de voortgang.",
+    "roadmapTitle": "Ontwikkelfasen",
+    "phase": "Fase {number}",
+    "state": { "done": "Afgerond", "active": "Bezig", "planned": "Gepland" },
+    "phases": {
+      "p0": "Architectuur en marktprofiel Suriname",
+      "p1": "Fundament: inloggen, organisaties, rechten, administraties",
+      "p2": "Boekhoudkern: grootboek, dagboeken, journaalposten, proefbalans",
+      "p3": "Inkoop, verkoop, bank en kas, rekening-courant, vaste activa",
+      "p4": "Branchesjablonen voor Surinaamse sectoren",
+      "p5": "Vreemde valuta: CBvS-koersen, koersverschillen, herwaardering",
+      "p6": "Budgetbeheer en prognoses",
+      "p7": "ARA Scan: documenten scannen en boekingsvoorstellen",
+      "p8": "Rapportages, kasstroom en kengetallen",
+      "p9": "Jaarafsluiting, jaarrekening en belastingaangiften",
+      "p10": "Kwaliteitsmonitor en automatisering",
+      "p11": "Abonnementen en praktijkbeheer voor accountantskantoren",
+      "p12": "Eindtest en livegang"
+    },
+    "highlightsTitle": "Gebouwd voor Suriname",
+    "highlights": {
+      "currency": "SRD, USD en EUR met koersen van de Centrale Bank van Suriname",
+      "tax": "BTW (10% / 25% / 0%) en inkomstenbelasting, als configureerbare en verifieerbare regels",
+      "law": "Jaarrekening volgens de Wet op de Jaarrekening (S.B. 2017 no. 84)",
+      "banks": "Importprofielen voor Surinaamse banken en kasboeken per valuta"
+    },
+    "verification": "Fiscale en wettelijke instellingen worden pas als geverifieerd gemarkeerd na controle door een Surinaamse belastingadviseur en accountant."
+  },
+  "language": { "label": "Taal", "nl": "Nederlands", "en": "English" },
+  "footer": "© {year} ARA Intelligent Solutions"
+}

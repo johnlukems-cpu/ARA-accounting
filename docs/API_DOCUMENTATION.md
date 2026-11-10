@@ -21,4 +21,13 @@ Status: **conventions defined (Phase 0)**. Endpoints are added to this file as t
 - REST versioning: `/api/v1`. Breaking changes need a new version.
 
 ## 3. Implemented endpoints
-_None yet. The first endpoints arrive in Phase 1 (`/api/health`, auth actions)._
+### `GET /api/health`
+Liveness check for Vercel and monitoring. No authentication. Returns no tenant data. `Cache-Control: no-store`.
+
+```json
+{ "status": "ok", "service": "ara-accounting", "version": "0.1.0", "commit": "17067ee", "region": "iad1", "time": "2026-11-10T19:38:08.304Z" }
+```
+`commit` and `region` are `null` outside Vercel.
+
+### Server action `setLocale(formData)`
+Sets the interface language cookie (`ARA_ACC_LOCALE`, HttpOnly, 1 year). `locale` must be `nl` or `en`; other values are ignored.

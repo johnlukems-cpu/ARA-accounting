@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+/* ARA Accounting design tokens: deep navy, emerald, white, greys. */
+:root {
+  --navy-950: #06142b;
+  --navy-900: #0a1f44;
+  --navy-800: #11305f;
+  --emerald-600: #0f9d6b;
+  --emerald-500: #16b47c;
+  --emerald-50: #e8f8f1;
+
+  --background: #f5f7fa;
+  --surface: #ffffff;
+  --foreground: #0b1730;
+  --muted: #eef1f5;
+  --muted-foreground: #5a6578;
+  --border: #dfe4ec;
+  --primary: var(--navy-900);
+  --primary-foreground: #ffffff;
+  --accent: var(--emerald-600);
+  --accent-soft: var(--emerald-50);
+  --warning: #b7791f;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-warning: var(--warning);
+  --color-navy-950: var(--navy-950);
+  --color-navy-800: var(--navy-800);
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  /* Tabular figures so amounts line up in tables. */
+  font-feature-settings: "tnum" 1;
+}
