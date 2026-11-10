@@ -31,3 +31,4 @@ Requires Node.js 22 or later.
 - [API conventions](docs/API_DOCUMENTATION.md)
 - [Roadmap & risks](docs/DEVELOPMENT_ROADMAP.md)
 - [Suriname market profile](docs/SURINAME_MARKET.md)
+- [Prompt to finish the build with Claude](docs/CLAUDE_BUILD_PROMPT.md)
