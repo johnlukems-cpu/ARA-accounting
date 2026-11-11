@@ -6,8 +6,8 @@
     "metaDescription": "Cloudboekhouding voor Surinaamse ondernemingen en accountantskantoren: SRD, USD en EUR, CBvS-koersen, BTW en jaarrekening."
   },
   "status": {
-    "badge": "In ontwikkeling",
-    "intro": "ARA Accounting wordt gebouwd voor de Surinaamse markt: dubbel boekhouden, debiteuren en crediteuren, bank en kas, vaste activa, budgetten, rapportages, jaarafsluiting, BTW-aangifte en jaarrekening — in één geïntegreerd platform.",
+    "badge": "Release-kandidaat",
+    "intro": "ARA Accounting is gebouwd voor de Surinaamse markt: dubbel boekhouden, debiteuren en crediteuren, bank en kas, vaste activa, budgetten, rapportages, jaarafsluiting, BTW-aangifte en jaarrekening — in één geïntegreerd platform.",
     "notYetAvailable": "De applicatie is nog niet beschikbaar voor gebruik. Op deze pagina ziet u de voortgang.",
     "roadmapTitle": "Ontwikkelfasen",
     "phase": "Fase {number}",
@@ -319,10 +319,7 @@
     "noAdministrationHint": "Maak een administratie aan om boekjaren en periodes te beheren.",
     "createAdministration": "Administratie aanmaken",
     "contextTitle": "Huidige omgeving",
-    "role": "Uw rol",
-    "nextTitle": "In ontwikkeling",
-    "nextBody": "Fase 11 is afgerond. Volgende stap: eindtest, beveiligingsreview, handleiding en oplevering (fase 12).",
-    "phaseBadge": "Fase 12 · Eindtest en oplevering"
+    "role": "Uw rol"
   },
   "shell": {
     "organization": "Organisatie",
@@ -342,7 +339,6 @@
     "users": "Gebruikers",
     "audit": "Auditlog",
     "account": "Mijn account",
-    "phaseNote": "Meer modules volgen per ontwikkelfase.",
     "entries": "Journaalposten",
     "trialBalance": "Proefbalans",
     "generalLedger": "Grootboekkaart",
@@ -2145,5 +2141,12 @@
     "reactivate": "heractiveren",
     "confirmPayment": "Betaling bevestigen",
     "void": "Laten vervallen"
+  },
+  "appError": {
+    "title": "Er is iets misgegaan",
+    "body": "De pagina kon niet worden geladen of de bewerking is niet voltooid. Probeer het opnieuw of neem contact op met de beheerder en vermeld de referentie.",
+    "reference": "Referentie: {digest}",
+    "retry": "Opnieuw proberen",
+    "back": "Naar het dashboard"
   }
 }

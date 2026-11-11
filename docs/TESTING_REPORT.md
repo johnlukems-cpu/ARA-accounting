@@ -2,6 +2,29 @@
 
 Only results from real runs are recorded here. Environment: Node 22, PostgreSQL 16.15 (local), Chromium (Playwright 1.63).
 
+## Phase 12 — Final QA (2026-11-11)
+
+| Suite | Result |
+| --- | --- |
+| Unit | **116 / 116 passed** |
+| Integration (PostgreSQL) | **81 / 81 passed**: Phase 8 extended with an SQL-vs-application fingerprint equality check; Phase 11 invoice numbering made re-runnable |
+| End-to-end | **24 / 24 passed** (release walk-through: nl + en × desktop + Pixel 7; manual screenshots skipped unless `MANUAL_SCREENSHOTS=1`) |
+| Load (`npm run test:load`) | **passed**: 1 000 000 lines in one administration. Trial balance 3.7 s, general ledger 1.5 s, statements 4.3 s, quality scan 3.9 s |
+| Backup/restore drill | **passed**: rows, policies/triggers/constraints, ledger balance and audit chain identical |
+| Typecheck / lint / build / migration drift | passed |
+| `npm audit --omit=dev` | 1 advisory (deepmerge-ts via the Prisma CLI), accepted, see PRODUCTION_AUDIT §5.3 |
+| DAST | **not run**: no scanner API key in this environment |
+
+**Defects found in Phase 12 and fixed:**
+1. The registration language was not kept (English → Dutch after sign-up).
+2. The trial-balance filter row overflowed a 1280 px desktop.
+3. There was no translated error page.
+4. The trial balance took 9.7 s at 1 M lines (now 3.7 s).
+5. The Phase 11 invoice-numbering test failed on re-runs against a database that already held invoices for the same
+   random year.
+
+Full go/no-go evidence: `docs/PRODUCTION_AUDIT.md`.
+
 ## Phase 11 — SaaS & practice management (2026-11-11)
 
 | Suite | Result |

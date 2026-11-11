@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import Decimal from "decimal.js";
 import type { Tx } from "@/core/db/client";
 import { BS_ASSETS, BS_LIABILITIES, CURRENT_ASSETS, CURRENT_LIABILITIES, bsLine, isPL, plLine, type AccountMeta, type LineCode } from "./mapping";
@@ -8,18 +7,27 @@ export type Balance = AccountMeta & { opening: Decimal; movement: Decimal; closi
 
 export async function loadBalances(tx: Tx, q: { administrationId: string; fiscalYearId: string; fromPeriod: number; toPeriod: number }): Promise<Balance[]> {
   const rows = await tx.$queryRaw<(Omit<AccountMeta, "parentNumber"> & { parentNumber: string | null; opening: string; movement: string; dep: string })[]>`
+    -- Aggregate per account and period first (see ledger trialBalance), then attach the accounts.
+    -- Closing-journal entries (year-end transfer of the result, and their reversals) are left out: statements show the
+    -- result of the year, and retained earnings without this year's transfer.
+    WITH m AS MATERIALIZED (
+      SELECT l."accountId", ap.number AS pn, SUM(l."debitBase" - l."creditBase") AS net,
+             SUM(l."creditBase" - l."debitBase") FILTER (WHERE e."sourceType" = 'DEPRECIATION') AS dep
+        FROM "JournalEntry" e
+        JOIN "AccountingPeriod" ap ON ap.id = e."periodId"
+        JOIN "JournalLine" l ON l."entryId" = e.id
+       WHERE e."administrationId" = ${q.administrationId} AND e.status = 'POSTED' AND e."fiscalYearId" = ${q.fiscalYearId}
+         AND ap.number <= ${q.toPeriod}
+         AND NOT EXISTS (SELECT 1 FROM "Journal" j WHERE j.id = e."journalId" AND j.type = 'CLOSING')
+       GROUP BY l."accountId", ap.number
+    )
     SELECT a.id, a.number, a.name, a.category, a."controlType", a."normalBalance", p.number AS "parentNumber",
-           COALESCE(SUM(l."debitBase" - l."creditBase") FILTER (WHERE ap.number < ${q.fromPeriod}), 0)::text AS opening,
-           COALESCE(SUM(l."debitBase" - l."creditBase") FILTER (WHERE ap.number >= ${q.fromPeriod}), 0)::text AS movement,
-           COALESCE(SUM(l."creditBase" - l."debitBase") FILTER (WHERE ap.number >= ${q.fromPeriod} AND e."sourceType" = 'DEPRECIATION'), 0)::text AS dep
+           COALESCE(SUM(m.net) FILTER (WHERE m.pn < ${q.fromPeriod}), 0)::text AS opening,
+           COALESCE(SUM(m.net) FILTER (WHERE m.pn >= ${q.fromPeriod}), 0)::text AS movement,
+           COALESCE(SUM(m.dep) FILTER (WHERE m.pn >= ${q.fromPeriod}), 0)::text AS dep
       FROM "Account" a
       LEFT JOIN "Account" p ON p.id = a."parentId"
-      LEFT JOIN "JournalLine" l ON l."accountId" = a.id
-      -- Closing-journal entries (year-end transfer of the result, and their reversals) are left out: statements show the
-      -- result of the year, and retained earnings without this year's transfer.
-      LEFT JOIN "JournalEntry" e ON e.id = l."entryId" AND e.status = 'POSTED' AND e."fiscalYearId" = ${q.fiscalYearId}
-        AND NOT EXISTS (SELECT 1 FROM "Journal" j WHERE j.id = e."journalId" AND j.type = 'CLOSING')
-      LEFT JOIN "AccountingPeriod" ap ON ap.id = e."periodId" AND ap.number <= ${q.toPeriod}
+      LEFT JOIN m ON m."accountId" = a.id
      WHERE a."administrationId" = ${q.administrationId} AND a.type = 'DETAIL'
      GROUP BY a.id, p.number
      ORDER BY a.number`;
@@ -151,10 +159,11 @@ export function computeKpis(k: KpiInput): Kpi[] {
 
 /** Count and SHA-256 of the posted entries a report is built from (fiscal year, periods ≤ toPeriod), plus the parameters. */
 export async function ledgerFingerprint(tx: Tx, q: { administrationId: string; fiscalYearId: string; toPeriod: number; params: Record<string, unknown> }) {
-  const rows = await tx.$queryRaw<{ id: string }[]>`
-    SELECT e.id FROM "JournalEntry" e JOIN "AccountingPeriod" p ON p.id = e."periodId"
-     WHERE e."administrationId" = ${q.administrationId} AND e."fiscalYearId" = ${q.fiscalYearId} AND e.status = 'POSTED' AND p.number <= ${q.toPeriod}
-     ORDER BY e.id`;
-  const hash = createHash("sha256").update(JSON.stringify(q.params)).update("|").update(rows.map((r) => r.id).join(",")).digest("hex");
-  return { entryCount: rows.length, fingerprint: hash };
+  // SHA-256 over `params|id,id,…` (ids sorted), computed in the database so a large year is not shipped to the app.
+  const [row] = await tx.$queryRaw<{ n: bigint; hash: string }[]>`
+    SELECT count(*) AS n,
+           encode(sha256(convert_to(${JSON.stringify(q.params)} || '|' || COALESCE(string_agg(e.id, ',' ORDER BY e.id COLLATE "C"), ''), 'UTF8')), 'hex') AS hash
+      FROM "JournalEntry" e JOIN "AccountingPeriod" p ON p.id = e."periodId"
+     WHERE e."administrationId" = ${q.administrationId} AND e."fiscalYearId" = ${q.fiscalYearId} AND e.status = 'POSTED' AND p.number <= ${q.toPeriod}`;
+  return { entryCount: Number(row!.n), fingerprint: row!.hash };
 }

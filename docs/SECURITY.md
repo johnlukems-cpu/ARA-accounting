@@ -1,5 +1,24 @@
 # ARA Accounting — Security Design
 
+## 0. Status at release (Phase 12 review)
+
+The sections below describe the security design. The Phase 12 review (`docs/PRODUCTION_AUDIT.md` §5, OWASP ASVS L2)
+checked every statement against the code. **The following parts of the design are NOT implemented at release:**
+
+| Design statement | Status |
+| --- | --- |
+| Support access through a time-boxed `SupportGrant`, impersonation | Not built. Platform admins have no access to customer books at all. |
+| Rate limits on uploads, exports and AI calls | Not built. Only authentication is rate-limited; uploads are capped per month by the plan. |
+| Virus-scan hook / ClamAV adapter | Not built (no scanner on Vercel functions). |
+| Error monitoring hook (Sentry-compatible) | Not built. Errors show a digest; the server log holds the details. |
+| Organisation export as ZIP | Not built. Reports, ledgers and documents can be exported one by one. |
+| Step-up MFA for sensitive actions | Not built. |
+| Breached-password check | Not built. |
+| Dependency audit in CI | No CI pipeline in the repository; `npm audit` is run manually (see PRODUCTION_AUDIT §5.3). |
+| Audit fields: before/after diff, user agent, request id, impersonation | The audit log stores action, entity, details, IP and the hash chain. User agent and request id are not stored. |
+| Audit chain verification job | **Implemented:** checked on the audit page and daily by `/api/cron/quality`, which logs `audit.chainBroken`. |
+
+
 ## 1. Authentication
 - Email + password hashed with **scrypt** (N=2^15, r=8, p=1, 16-byte salt; parameters stored per hash so they can be raised). Policy: at least 12 characters. A breached-password check is still open (Phase 12).
 - Sessions: a random 256-bit token in an `HttpOnly`, `Secure`, `SameSite=Lax` cookie. Only its SHA-256 hash is stored. Idle timeout 2 h, absolute 12 h. A password change, password reset or MFA change revokes all other sessions. Implemented in `src/core/auth/session.ts`.

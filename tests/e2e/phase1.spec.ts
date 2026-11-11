@@ -134,7 +134,7 @@ test("wrong password is refused and the language can be switched", async ({ page
 
   await page.goto("/");
   await page.getByRole("button", { name: "English" }).click();
-  await expect(page.getByText("In development")).toBeVisible();
+  await expect(page.getByText("Release candidate")).toBeVisible();
   await page.getByRole("button", { name: "Nederlands" }).click();
-  await expect(page.getByText("In ontwikkeling")).toBeVisible();
+  await expect(page.getByText("Release-kandidaat")).toBeVisible();
 });

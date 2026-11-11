@@ -36,7 +36,7 @@ export interface ChainCheck {
 }
 
 /** Recomputes the hash chain of one organisation (visible rows only) and reports the first break. */
-export async function verifyAuditChain(tx: Tx, organizationId: string): Promise<ChainCheck> {
+export async function verifyAuditChain(tx: Pick<Tx, "$queryRaw">, organizationId: string): Promise<ChainCheck> {
   const rows = await tx.$queryRaw<{ seq: bigint; ok: boolean; linked: boolean }[]>`
     SELECT seq,
            hash = audit_log_hash("prevHash", seq, "organizationId", "userId", action, entity, "entityId", details, "createdAt") AS ok,

@@ -46,7 +46,7 @@ export default async function TrialBalancePage({ searchParams }: { searchParams:
         }
       />
       <Card>
-        <form className="mb-4 grid gap-2 sm:grid-cols-3 lg:grid-cols-[9rem_6rem_6rem_7rem_7rem_11rem_auto_auto]">
+        <form className="mb-4 flex flex-wrap items-center gap-2 [&>input]:w-28">
           <select name="fiscalYearId" defaultValue={fiscalYearId} aria-label={t("shell.fiscalYear")} className="h-9 rounded-lg border border-border px-2 text-sm">
             {ctx.fiscalYears.map((y) => <option key={y.id} value={y.id}>{y.code}</option>)}
           </select>

@@ -14,7 +14,9 @@
     "db:seed": "tsx scripts/seed.ts",
     "postinstall": "prisma generate",
     "vercel-build": "node scripts/vercel-build.mjs",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:load": "vitest run --config vitest.load.mts",
+    "manual:screenshots": "MANUAL_SCREENSHOTS=1 playwright test tests/e2e/manual.spec.ts --project desktop --trace off"
   },
   "engines": {
     "node": ">=22"

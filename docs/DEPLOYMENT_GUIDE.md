@@ -27,10 +27,32 @@ npm run dev
 ```bash
 npm test                    # unit
 npm run test:integration    # needs PostgreSQL; TEST_DATABASE_URL (default: local ara_accounting_test)
-npm run build && npm run test:e2e   # Playwright against a production build and the test database
+npm run build && npm run test:e2e   # Playwright against a production build and the test database (desktop + phone)
+npm run test:load           # 1 M journal lines in one administration; LOAD_DATABASE_URL (default: local ara_accounting_load)
+npm run manual:screenshots  # regenerates docs/manual/*.png for the user manual (after npm run build)
 ```
+
+The release checklist is in `docs/RELEASE_CHECKLIST.md`, and the go/no-go report is in `docs/PRODUCTION_AUDIT.md`.
 
 ## Backups and recovery
 - Neon provides point-in-time restore (retention depends on the plan). Check the retention period in the Neon console.
-- Add a periodic logical backup (`pg_dump`) to separate storage before going live, and test a restore every quarter (Phase 12 checklist).
+- Add a periodic logical backup (`pg_dump --format=custom`) to separate storage before going live.
+- **Restore drill** (quarterly): `SOURCE_URL=<db> TARGET_ADMIN_URL=<server>/postgres scripts/backup-restore-drill.sh`.
+  It restores into a new database and proves the copy is complete and still protected:
+  - identical row counts;
+  - identical RLS policies, triggers and constraints;
+  - every posted entry balanced;
+  - an identical audit hash chain.
+
+  It then drops the copy; set `KEEP_RESTORE=1` to keep it.
 - The audit log is append-only by database trigger: restoring it is only possible from a backup, never by editing.
+
+## Monitoring
+- `GET /api/health` returns no tenant data. Use it for uptime checks.
+- The daily cron (`/api/cron/quality`, 09:17 UTC, see `vercel.json`):
+  - runs the quality scan for every active administration;
+  - re-verifies every organisation's audit hash chain;
+  - returns `{ scanned, failed, auditChainsChecked, brokenChains }`.
+
+  A broken chain is logged as the JSON event `audit.chainBroken`, with ids only. Alert on it in the log drain or error monitor.
+- Application errors show the user a reference (digest). The matching server log entry contains the details.

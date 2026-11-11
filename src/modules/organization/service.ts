@@ -1,3 +1,4 @@
+import { isLocale } from "@/i18n/config";
 import type { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { systemDb, type Tx } from "@/core/db/client";
@@ -40,13 +41,16 @@ function isUniqueViolation(err: unknown, target?: string): boolean {
 
 // ───────────────────────── Registration ─────────────────────────
 
-/** Creates a user, an organisation and the owner membership. Runs as system (no tenant exists yet). */
-export async function registerOrganization(input: z.infer<typeof registerSchema>, ip?: string) {
+/**
+ * Creates a user, an organisation and the owner membership. Runs as system (no tenant exists yet).
+ * `locale` is the interface language chosen before registering (language cookie); it becomes the user's preference.
+ */
+export async function registerOrganization(input: z.infer<typeof registerSchema>, ip?: string, locale?: string) {
   const passwordHash = await hashPassword(input.password);
   const ownerRole: RoleCode = input.kind === "ACCOUNTING_FIRM" ? "FIRM_ADMIN" : "ORGANIZATION_OWNER";
   try {
     return await systemDb.$transaction(async (tx) => {
-      const user = await tx.user.create({ data: { email: input.email, name: input.name, passwordHash, passwordChangedAt: new Date() } });
+      const user = await tx.user.create({ data: { email: input.email, name: input.name, passwordHash, passwordChangedAt: new Date(), ...(isLocale(locale) ? { locale } : {}) } });
       const org = await tx.organization.create({ data: { name: input.organizationName, kind: input.kind, ownerUserId: user.id, trialEndsAt: new Date(Date.now() + trialDays() * 86_400_000) } });
       await tx.organizationMembership.create({
         data: { organizationId: org.id, userId: user.id, roleId: await systemRoleId(tx, ownerRole), status: "ACTIVE" },

@@ -6,8 +6,8 @@
     "metaDescription": "Cloud accounting for Surinamese businesses and accounting firms: SRD, USD and EUR, CBvS rates, BTW and annual accounts."
   },
   "status": {
-    "badge": "In development",
-    "intro": "ARA Accounting is being built for the Surinamese market: double-entry bookkeeping, receivables and payables, bank and cash, fixed assets, budgets, reporting, year-end closing, BTW returns and annual accounts — in one integrated platform.",
+    "badge": "Release candidate",
+    "intro": "ARA Accounting is built for the Surinamese market: double-entry bookkeeping, receivables and payables, bank and cash, fixed assets, budgets, reporting, year-end closing, BTW returns and annual accounts — in one integrated platform.",
     "notYetAvailable": "The application is not yet available for use. This page shows the progress.",
     "roadmapTitle": "Development phases",
     "phase": "Phase {number}",
@@ -319,10 +319,7 @@
     "noAdministrationHint": "Create an administration to manage fiscal years and periods.",
     "createAdministration": "Create administration",
     "contextTitle": "Current environment",
-    "role": "Your role",
-    "nextTitle": "In development",
-    "nextBody": "Phase 11 is complete. Next: final testing, security review, manual and delivery (phase 12).",
-    "phaseBadge": "Phase 12 · Final QA and delivery"
+    "role": "Your role"
   },
   "shell": {
     "organization": "Organisation",
@@ -342,7 +339,6 @@
     "users": "Users",
     "audit": "Audit log",
     "account": "My account",
-    "phaseNote": "More modules follow with each development phase.",
     "entries": "Journal entries",
     "trialBalance": "Trial balance",
     "generalLedger": "General ledger",
@@ -2145,5 +2141,12 @@
     "reactivate": "reactivate",
     "confirmPayment": "Confirm payment",
     "void": "Void"
+  },
+  "appError": {
+    "title": "Something went wrong",
+    "body": "The page could not be loaded or the operation did not complete. Try again or contact your administrator and quote the reference.",
+    "reference": "Reference: {digest}",
+    "retry": "Try again",
+    "back": "Back to the dashboard"
   }
 }

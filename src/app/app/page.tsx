@@ -2,7 +2,7 @@ import { getFormatter, getTranslations } from "next-intl/server";
 import { requireApp } from "@/core/auth/context";
 import { can } from "@/core/auth/access";
 import { withTenant } from "@/core/tenancy/tenant";
-import { Badge, Card, Dl, EmptyState, PageHeader, TextLink } from "@/components/ui/misc";
+import { Card, Dl, EmptyState, PageHeader, TextLink } from "@/components/ui/misc";
 import { PeriodBadge } from "@/components/finance/period-badge";
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ denied?: string }> }) {
@@ -63,10 +63,6 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
               [t("shell.administration"), ctx.administration ? `${ctx.administration.name} (${ctx.administration.baseCurrency})` : null],
               [t("dashboard.role"), ctx.roleCode ? t(`roles.${ctx.roleCode}`) : null],
             ]} />
-          </Card>
-          <Card title={t("dashboard.nextTitle")}>
-            <p className="text-sm text-muted-foreground">{t("dashboard.nextBody")}</p>
-            <div className="mt-3"><Badge tone="info">{t("dashboard.phaseBadge")}</Badge></div>
           </Card>
         </div>
       </div>

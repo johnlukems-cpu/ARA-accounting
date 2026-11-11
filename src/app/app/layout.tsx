@@ -51,7 +51,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             );
           })}
         </nav>
-        <p className="px-6 py-4 text-xs text-white/40">{t("nav.phaseNote")}</p>
       </aside>
 
       <div className="flex min-w-0 flex-col">
@@ -81,7 +80,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               <Bell aria-hidden className="size-5" />
               {unread > 0 && <span className="absolute -right-0.5 -top-0.5 rounded-full bg-accent px-1.5 text-[10px] font-semibold">{unread}</span>}
             </Link>
-            <span className="hidden text-sm text-white/70 md:inline">{ctx.user.name}</span>
+            <span className="hidden text-sm text-white/70 2xl:inline">{ctx.user.name}</span>
             <form action={logoutAction}>
               <button className="rounded-lg p-2 hover:bg-white/10" aria-label={t("auth.logout")} title={t("auth.logout")}>
                 <LogOut aria-hidden className="size-5" />

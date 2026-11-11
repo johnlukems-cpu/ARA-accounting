@@ -1,6 +1,8 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { LOCALE_COOKIE } from "@/i18n/config";
 import { z } from "zod";
 import { systemDb } from "@/core/db/client";
 import { audit } from "@/core/audit/audit";
@@ -37,7 +39,7 @@ export async function registerAction(_prev: ActionState, fd: FormData): Promise<
     if (meta.ip && (await isRateLimited([`register:${meta.ip}`], maxPerHour, 60))) throw new UserError("errors.tooManyAttempts");
     if (meta.ip) await recordAttempt([`register:${meta.ip}`]);
     const input = registerSchema.parse(formObject(fd));
-    const { userId } = await registerOrganization(input, meta.ip ?? undefined);
+    const { userId } = await registerOrganization(input, meta.ip ?? undefined, (await cookies()).get(LOCALE_COOKIE)?.value);
     await sendVerificationEmail(userId, input.email).catch(() => false);
     await createSession(userId, { mfaVerified: false });
   } catch (err) {

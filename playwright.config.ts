@@ -14,6 +14,8 @@ export default defineConfig({
   use: { baseURL: `http://localhost:${PORT}`, locale: "nl-SR", trace: "retain-on-failure" },
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"], launchOptions: { executablePath: process.env.PW_CHROMIUM ?? undefined } } },
+    // Phone: the release walk-through (every page, both languages) on a small touch screen.
+    { name: "mobile", testMatch: /release\.spec\.ts/, use: { ...devices["Pixel 7"], launchOptions: { executablePath: process.env.PW_CHROMIUM ?? undefined } } },
   ],
   webServer: {
     command: `npx next start -p ${PORT}`,

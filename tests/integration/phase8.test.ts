@@ -4,7 +4,9 @@ import { withTenant } from "@/core/tenancy/tenant";
 import { resolveAccess } from "@/core/auth/access";
 import * as engine from "@/core/ledger/engine";
 import type { LineInput } from "@/core/ledger/domain";
+import { createHash } from "node:crypto";
 import { buildReports, recordRun } from "@/modules/reporting/service";
+import { ledgerFingerprint } from "@/modules/reporting/statements";
 import { proposeDepreciation, registerAsset } from "@/modules/assets/service";
 import { assignCompany, createAdministration, createCompany, inviteMember } from "@/modules/organization/service";
 import { companyInput, newOrganization, refresh, uid } from "./helpers";
@@ -82,6 +84,11 @@ describe("Phase 8: financial statements", () => {
     expect((await build()).fingerprint).toBe(a1.fingerprint); // drafts do not count
     await b.post("2026-01-12", [["1340", "d", "1"], ["8010", "c", "1"]]);
     expect((await build()).fingerprint).not.toBe(a1.fingerprint);
+    // Computed in SQL; must equal SHA-256 over `params|sorted ids` as computed in the application before Phase 12.
+    const params = { kind: "check", toPeriod: 1 };
+    const sql = await withTenant(b.access, (tx) => ledgerFingerprint(tx, { administrationId: b.adminId, fiscalYearId: b.fyId, toPeriod: 1, params }));
+    const ids = (await systemDb.journalEntry.findMany({ where: { administrationId: b.adminId, status: "POSTED" }, select: { id: true } })).map((e) => e.id).sort();
+    expect(sql).toEqual({ entryCount: 2, fingerprint: createHash("sha256").update(JSON.stringify(params)).update("|").update(ids.join(",")).digest("hex") });
 
     const run = await withTenant(b.access, (tx) => recordRun(tx, b.access, { administrationId: b.adminId, kind: "pl", format: "PDF", params: { fromPeriod: 1, toPeriod: 1 }, fingerprint: a1.fingerprint, entryCount: a1.entryCount }));
     await expect(systemDb.reportRun.update({ where: { id: run.id }, data: { fingerprint: "x" } })).rejects.toThrow(/append-only|immutable/i);

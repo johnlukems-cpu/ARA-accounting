@@ -175,7 +175,7 @@ Report pages (`/app/reports?view=…`) are read-only server components; they nee
 | --- | --- | --- |
 | `scanAction` | `quality.view` | Runs the 12 checks for the active administration |
 | `issueAction` | `quality.edit` | Assign (notifies the assignee) and change status; closing needs a note |
-| `GET /api/cron/quality` | `Authorization: Bearer $CRON_SECRET` | Daily scan of all active administrations (Vercel Cron, `vercel.json`); returns `{ scanned, failed }` |
+| `GET /api/cron/quality` | `Authorization: Bearer $CRON_SECRET` | Daily scan of all active administrations (Vercel Cron, `vercel.json`); then re-verifies every organisation's audit hash chain; returns `{ scanned, failed, auditChainsChecked, brokenChains }` |
 
 ### Phase 11 (`src/actions/saas.ts`)
 | Action | Permission | Notes |

@@ -55,9 +55,12 @@ describe("Phase 11: subscriptions and entitlements", () => {
     await expect(setSubscription(adminId, { organizationId: a.organizationId, status: "SUSPENDED" })).rejects.toMatchObject({ key: "errors.reasonRequired" });
     await setSubscription(adminId, { organizationId: a.organizationId, status: "SUSPENDED", reason: "Factuur niet betaald" });
     const year = String(2090 + Math.floor(Math.random() * 9));
+    // Tests never truncate: earlier runs may already hold numbers for this year. Gapless means "the next ones".
+    const before = await systemDb.subscriptionInvoice.count({ where: { number: { startsWith: `SUB-${year}-` } } });
+    const no = (n: number) => `SUB-${year}-${String(before + n).padStart(5, "0")}`;
     const i1 = await createSubscriptionInvoice(adminId, { organizationId: a.organizationId, periodFrom: `${year}-01-01`, periodTo: `${year}-01-31`, currency: "SRD", amount: "1500" });
     const i2 = await createSubscriptionInvoice(adminId, { organizationId: b.organizationId, periodFrom: `${year}-01-01`, periodTo: `${year}-01-31`, currency: "USD", amount: "40" });
-    expect([i1.number, i2.number]).toEqual([`SUB-${year}-00001`, `SUB-${year}-00002`]);
+    expect([i1.number, i2.number]).toEqual([no(1), no(2)]);
     await expect(confirmPayment(adminId, { invoiceId: i1.id, reference: "", reactivate: true })).rejects.toMatchObject({ key: "saas.referenceRequired" });
     await confirmPayment(adminId, { invoiceId: i1.id, reference: "DSB overboeking 123", reactivate: true });
     expect((await systemDb.organization.findUniqueOrThrow({ where: { id: a.organizationId } })).status).toBe("ACTIVE");
