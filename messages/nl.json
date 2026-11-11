@@ -321,8 +321,8 @@
     "contextTitle": "Huidige omgeving",
     "role": "Uw rol",
     "nextTitle": "In ontwikkeling",
-    "nextBody": "Fase 8 is afgerond. Volgende stap: jaarafsluiting, jaarrekening en belastingaangiften (fase 9).",
-    "phaseBadge": "Fase 9 · Jaarafsluiting en belastingen"
+    "nextBody": "Fase 9 is afgerond. Volgende stap: de kwaliteitsmonitor met 12 controles (fase 10).",
+    "phaseBadge": "Fase 10 · Kwaliteit en automatisering"
   },
   "shell": {
     "organization": "Organisatie",
@@ -369,7 +369,8 @@
     "automation": "Automatisering en AI",
     "reports": "Rapportage",
     "yearEnd": "Jaarafsluiting",
-    "tax": "Belastingen"
+    "tax": "Belastingen",
+    "annual": "Jaarrekening"
   },
   "audit": {
     "title": "Auditlog",
@@ -1878,5 +1879,74 @@
     "openingMismatch": "De beginbalans sluit niet aan op de eindbalans; afsluiten is afgebroken.",
     "plNotClosed": "Resultaatrekeningen zijn niet nul na afsluiting; afsluiten is afgebroken.",
     "nextYearClosed": "Het volgende boekjaar is al afgesloten; heropen dat eerst."
+  },
+  "annual": {
+    "pageTitle": "Jaarrekening {year}",
+    "intro": "Gegenereerd uit het afgesloten boekjaar: balans, resultatenrekening, kasstroom, vermogensverloop, verloop vaste activa en toelichting, met vergelijkende cijfers.",
+    "yearOpenNote": "Het boekjaar is nog niet afgesloten. U kunt een concept maken; definitief maken kan pas na de jaarafsluiting.",
+    "title": "Jaarrekening",
+    "titleSole": "Jaarstukken",
+    "titleFoundation": "Jaarrekening",
+    "frameworks": {
+      "NV_IFRS_SME": "NV — Wet op de Jaarrekening (S.B. 2017 no. 84), IFRS for SMEs-grondslag",
+      "NV_FULL_IFRS": "NV — volledige IFRS",
+      "SOLE_PROPRIETOR": "Eenmanszaak / VOF — jaarstukken",
+      "FOUNDATION": "Stichting / vereniging / kerkgenootschap"
+    },
+    "statuses": {
+      "DRAFT": "Concept",
+      "REVIEW": "Ter goedkeuring",
+      "APPROVED": "Goedgekeurd",
+      "FINAL": "Definitief"
+    },
+    "generateTitle": "Jaarrekening genereren",
+    "regenerateTitle": "Opnieuw genereren",
+    "generateIntro": "Maakt een momentopname van het grootboek. Zelf bewerkte toelichtingen blijven behouden bij opnieuw genereren.",
+    "framework": "Kader",
+    "generate": "Genereren",
+    "regenerate": "Opnieuw genereren",
+    "generated": "Jaarrekening gegenereerd.",
+    "summary": "Kerncijfers",
+    "downloadPdf": "PDF downloaden",
+    "assetSchedule": "Verloop materiële vaste activa",
+    "noAssets": "Geen vaste activa.",
+    "costOpening": "Aanschafwaarde begin",
+    "additions": "Investeringen",
+    "disposals": "Desinvesteringen",
+    "costClosing": "Aanschafwaarde eind",
+    "depOpening": "Cum. afschrijving begin",
+    "depreciation": "Afschrijvingen",
+    "depClosing": "Cum. afschrijving eind",
+    "bookValue": "Boekwaarde",
+    "notes": "Toelichting",
+    "notesIntro": "Concepteksten als startpunt; de accountant stelt de definitieve tekst vast.",
+    "noteTitle": "Titel",
+    "noteCode": "Code",
+    "noteBody": "Tekst",
+    "addNote": "Toelichting toevoegen",
+    "autoNote": "Automatisch; wordt na bewerken niet meer overschreven.",
+    "workflow": "Goedkeuring",
+    "submit": "Indienen ter goedkeuring",
+    "approve": "Goedkeuren",
+    "finalize": "Definitief maken",
+    "step": {
+      "submit": "Ingediend.",
+      "approve": "Goedgekeurd.",
+      "return": "Teruggestuurd.",
+      "finalize": "Jaarrekening definitief."
+    },
+    "help": {
+      "DRAFT": "Controleer de cijfers en de toelichting en dien in.",
+      "REVIEW": "Een collega keurt de jaarrekening goed.",
+      "APPROVED": "Definitief maken kan als het boekjaar is afgesloten en het grootboek sinds het genereren niet is gewijzigd.",
+      "FINAL": "Definitief en onwijzigbaar."
+    },
+    "incomeAndExpenditure": "Staat van baten en lasten",
+    "funds": "Verloop fondsen en reserves",
+    "draftLabel": "CONCEPT — niet gecontroleerd",
+    "finalLabel": "Definitief vastgesteld in ARA Accounting",
+    "notDraft": "Alleen een concept kan worden gewijzigd.",
+    "yearNotClosed": "Het boekjaar is niet afgesloten.",
+    "ledgerChanged": "Het grootboek is gewijzigd sinds het genereren; laat de jaarrekening terugsturen en genereer opnieuw."
   }
 }

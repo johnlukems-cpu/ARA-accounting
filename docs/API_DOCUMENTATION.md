@@ -152,3 +152,20 @@ Every action re-checks the permission inside the module service for the company 
 | `GET /api/reports/[kind]?format=pdf\|csv&from&to&fiscalYearId` — kind `pl`, `balance`, `cashflow`, `equity`, `kpis`, `pack` | `reports.export` | PDF (A4, fingerprint in the footer) or CSV (plain decimals); every export is archived in `ReportRun` with parameters and fingerprint |
 
 Report pages (`/app/reports?view=…`) are read-only server components; they need `reports.view`.
+
+### Server actions — Phase 9
+| Action | Permission | Notes |
+| --- | --- | --- |
+| `startYearEndAction`, `checklistItemAction`, `adjustmentAction` (year-end) | `yearEnd.edit` (+ `ledger.create/post` for adjustments) | 24-item checklist; auto items only when their check passes; period-13 adjustments |
+| `yearEndStepAction` (`submit`, `approve`, `return`, `close`, `reopen`) | `yearEnd.edit` / `yearEnd.approve` / `yearEnd.close` | Approval by another user; close = closing + next year + opening + verification in one transaction; reopen needs a reason |
+| `prepareReturnAction` (BTW month, IB year, dividend) | `tax.edit` | Rule version selected by date (T1) |
+| `adjustmentAction` (tax) | `tax.edit` | IB fiscal adjustments, draft only |
+| `approveReturnAction` | `tax.approve` | Not by the preparer; acknowledgement for unverified rules (T2); explanation for a BTW difference; posts the settlement |
+| `fileReturnAction` | `tax.edit` | Evidence file (PDF/JPG/PNG) + confirmation (T4) |
+| `generateAnnualAction`, `saveNoteAction` | `annualAccounts.edit` | Draft only |
+| `annualStepAction` (`submit`, `approve`, `return`, `finalize`) | `annualAccounts.edit` / `annualAccounts.approve` | Finalise needs a closed year and an unchanged ledger fingerprint |
+
+### Route handlers — Phase 9
+| Route | Permission | Output |
+| --- | --- | --- |
+| `GET /api/annual-accounts/[id]/pdf` | `annualAccounts.export` | Annual accounts PDF (statements, asset schedule, notes); audited |

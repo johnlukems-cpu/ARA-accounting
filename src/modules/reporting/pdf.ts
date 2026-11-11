@@ -2,7 +2,7 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf
 
 /** Generic A4 report PDF: sections of rows with right-aligned amount columns; page breaks; fingerprint footer (R1). */
 export type ReportPdfRow = { label: string; values: string[]; bold?: boolean; indent?: boolean };
-export type ReportPdf = { title: string; subtitle: string[]; columns: string[]; sections: { heading: string; rows: ReportPdfRow[] }[]; footer: string };
+export type ReportPdf = { title: string; subtitle: string[]; columns: string[]; sections: { heading: string; rows: ReportPdfRow[]; paragraphs?: string[]; columns?: string[] }[]; footer: string };
 
 const A4 = { w: 595.28, h: 841.89 };
 const M = 44;
@@ -47,10 +47,33 @@ export async function renderReportPdf(d: ReportPdf): Promise<Uint8Array> {
     y -= 4;
     text(section.heading, M, y, 10, bold, NAVY);
     y -= 14;
+    for (const para of section.paragraphs ?? []) {
+      // Simple word wrap at the content width.
+      const words = safe(para).split(/\s+/);
+      let line = "";
+      const flush = () => {
+        if (y < M + 20) newPage();
+        text(line, M, y, 9);
+        y -= 12;
+        line = "";
+      };
+      for (const w of words) {
+        const next = line ? `${line} ${w}` : w;
+        if (font.widthOfTextAtSize(next, 9) > A4.w - 2 * M) flush();
+        line = line ? `${line} ${w}` : w;
+      }
+      if (line) flush();
+      y -= 4;
+    }
+    if (section.columns) {
+      if (y < M + 40) newPage();
+      section.columns.slice(1).forEach((c, i) => right(c, colRight(i), y, 7, bold));
+      y -= 11;
+    }
     for (const row of section.rows) {
       if (y < M + 20) newPage();
       const f = row.bold ? bold : font;
-      text(row.label.slice(0, 70), M + (row.indent ? 12 : 0), y, row.indent ? 8 : 9, f);
+      text(row.label.slice(0, row.indent ? 120 : 70), M + (row.indent ? 12 : 0), y, row.indent ? 8 : 9, f);
       row.values.forEach((v, i) => right(v, colRight(i), y, row.indent ? 8 : 9, f));
       y -= row.indent ? 11 : 13;
     }

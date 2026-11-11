@@ -1608,3 +1608,58 @@ model TaxAdjustment {
 
   @@index([organizationId])
 }
+
+// ───────────── Phase 9: annual accounts ─────────────
+
+enum AnnualFramework {
+  NV_IFRS_SME
+  NV_FULL_IFRS
+  SOLE_PROPRIETOR
+  FOUNDATION
+}
+
+enum AnnualAccountStatus {
+  DRAFT
+  REVIEW
+  APPROVED
+  FINAL
+}
+
+/// Annual accounts (jaarrekening) generated from the closed ledger; FINAL is immutable (trigger).
+model AnnualAccount {
+  id               String                @id @default(cuid())
+  organizationId   String
+  administrationId String
+  fiscalYearId     String                @unique
+  framework        AnnualFramework
+  status           AnnualAccountStatus   @default(DRAFT)
+  snapshot         Json
+  fingerprint      String
+  entryCount       Int
+  submittedById    String?
+  approvedById     String?
+  approvedAt       DateTime?
+  finalizedById    String?
+  finalizedAt      DateTime?
+  createdById      String
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  disclosures      FinancialDisclosure[]
+
+  @@index([organizationId])
+}
+
+model FinancialDisclosure {
+  id              String        @id @default(cuid())
+  organizationId  String
+  annualAccountId String
+  code            String
+  title           String
+  body            String
+  sortOrder       Int
+  auto            Boolean       @default(false)
+  annualAccount   AnnualAccount @relation(fields: [annualAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([annualAccountId, code])
+  @@index([organizationId])
+}

@@ -321,8 +321,8 @@
     "contextTitle": "Current environment",
     "role": "Your role",
     "nextTitle": "In development",
-    "nextBody": "Phase 8 is complete. Next: year-end closing, annual accounts and tax returns (phase 9).",
-    "phaseBadge": "Phase 9 · Year-end and tax"
+    "nextBody": "Phase 9 is complete. Next: the quality monitor with 12 checks (phase 10).",
+    "phaseBadge": "Phase 10 · Quality and automation"
   },
   "shell": {
     "organization": "Organisation",
@@ -369,7 +369,8 @@
     "automation": "Automation and AI",
     "reports": "Reports",
     "yearEnd": "Year-end",
-    "tax": "Taxes"
+    "tax": "Taxes",
+    "annual": "Annual accounts"
   },
   "audit": {
     "title": "Audit log",
@@ -1878,5 +1879,74 @@
     "openingMismatch": "The opening balance does not agree with the closing balance; closing was aborted.",
     "plNotClosed": "P&L accounts are not zero after closing; closing was aborted.",
     "nextYearClosed": "The next fiscal year is already closed; reopen it first."
+  },
+  "annual": {
+    "pageTitle": "Annual accounts {year}",
+    "intro": "Generated from the closed fiscal year: balance sheet, income statement, cash flow, changes in equity, fixed asset movements and notes, with comparatives.",
+    "yearOpenNote": "The fiscal year has not been closed yet. You can create a draft; finalising is only possible after the year-end closing.",
+    "title": "Annual accounts",
+    "titleSole": "Financial statements",
+    "titleFoundation": "Annual accounts",
+    "frameworks": {
+      "NV_IFRS_SME": "NV — Annual Accounts Act (S.B. 2017 no. 84), IFRS for SMEs basis",
+      "NV_FULL_IFRS": "NV — full IFRS",
+      "SOLE_PROPRIETOR": "Sole proprietorship / partnership — financial statements",
+      "FOUNDATION": "Foundation / association / church"
+    },
+    "statuses": {
+      "DRAFT": "Draft",
+      "REVIEW": "In review",
+      "APPROVED": "Approved",
+      "FINAL": "Final"
+    },
+    "generateTitle": "Generate annual accounts",
+    "regenerateTitle": "Regenerate",
+    "generateIntro": "Takes a snapshot of the ledger. Notes you edited are kept when regenerating.",
+    "framework": "Framework",
+    "generate": "Generate",
+    "regenerate": "Regenerate",
+    "generated": "Annual accounts generated.",
+    "summary": "Key figures",
+    "downloadPdf": "Download PDF",
+    "assetSchedule": "Movements in fixed assets",
+    "noAssets": "No fixed assets.",
+    "costOpening": "Cost opening",
+    "additions": "Additions",
+    "disposals": "Disposals",
+    "costClosing": "Cost closing",
+    "depOpening": "Accumulated depreciation opening",
+    "depreciation": "Depreciation",
+    "depClosing": "Accumulated depreciation closing",
+    "bookValue": "Book value",
+    "notes": "Notes",
+    "notesIntro": "Draft texts as a starting point; the accountant sets the final text.",
+    "noteTitle": "Title",
+    "noteCode": "Code",
+    "noteBody": "Text",
+    "addNote": "Add note",
+    "autoNote": "Automatic; no longer overwritten once edited.",
+    "workflow": "Approval",
+    "submit": "Submit for approval",
+    "approve": "Approve",
+    "finalize": "Finalise",
+    "step": {
+      "submit": "Submitted.",
+      "approve": "Approved.",
+      "return": "Sent back.",
+      "finalize": "Annual accounts final."
+    },
+    "help": {
+      "DRAFT": "Check the figures and notes, then submit.",
+      "REVIEW": "A colleague approves the annual accounts.",
+      "APPROVED": "Finalising requires a closed fiscal year and an unchanged ledger since generation.",
+      "FINAL": "Final and immutable."
+    },
+    "incomeAndExpenditure": "Statement of income and expenditure",
+    "funds": "Movements in funds and reserves",
+    "draftLabel": "DRAFT — not audited",
+    "finalLabel": "Finalised in ARA Accounting",
+    "notDraft": "Only a draft can be changed.",
+    "yearNotClosed": "The fiscal year is not closed.",
+    "ledgerChanged": "The ledger changed since generation; send the accounts back and regenerate."
   }
 }

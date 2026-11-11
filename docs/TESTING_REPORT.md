@@ -2,6 +2,24 @@
 
 Only results from real runs are recorded here. Environment: Node 22, PostgreSQL 16.15 (local), Chromium (Playwright 1.63).
 
+## Phase 9 — Year-end & tax (2026-11-11)
+
+| Suite | Result |
+| --- | --- |
+| Unit | **114 / 114 passed** |
+| Integration (PostgreSQL) | **75 / 75 passed** (9 new: 9A 3, 9B 4, 9C 2) |
+| End-to-end | **18 / 18 passed** (3 new: year-end, BTW return, annual accounts) |
+| Typecheck / lint / build / migration drift / seed | passed |
+
+| Acceptance | Evidence |
+| --- | --- |
+| Workflow 7 / F4 checklist and approval | integration "F4: the checklist blocks until mandatory items pass…"; e2e year-end UI |
+| F5 closing, carry-forward, verification | same test (result 8,000 to retained earnings; opening equals closing per account); foreign-currency carry-forward after revaluation (USD 1,000 / SRD 38,000) |
+| F6 reopening | integration "F6: reopening needs a reason, reverses opening and closing…" |
+| Workflow 8 / T1 rules as data, T2 acknowledgement, T4 filing evidence, T5 BTW reconciliation | integration "calculates output and input BTW per code…", "a difference with the BTW ledger accounts needs an explanation…"; e2e BTW return |
+| T6 IB rechtspersonen, dividend tax | integration "commercial result + fiscal adjustments × rate − voorlopige aanslag…", "a fiscal loss gives no tax; a dividend declaration…" |
+| Workflow 9 annual accounts | integration "generates statements with notes and asset schedule…", "cannot be finalized when the year is open or the ledger changed…"; e2e annual accounts + PDF |
+
 ## Phase 8 — Financial reporting (2026-11-11)
 
 | Suite | Result |

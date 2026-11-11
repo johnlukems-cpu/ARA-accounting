@@ -8,7 +8,7 @@ export interface NavItem {
   key: string;
   href: string | ((ids: { administrationId?: string }) => string | null);
   permission?: Permission;
-  icon: "dashboard" | "building" | "briefcase" | "book" | "users" | "shield" | "user" | "list" | "scale" | "library" | "notebook" | "receipt" | "cart" | "contact" | "wallet" | "landmark" | "percent" | "transfer" | "factory" | "template" | "coins" | "target" | "scan" | "bot" | "chart" | "yearEnd" | "tax";
+  icon: "dashboard" | "building" | "briefcase" | "book" | "users" | "shield" | "user" | "list" | "scale" | "library" | "notebook" | "receipt" | "cart" | "contact" | "wallet" | "landmark" | "percent" | "transfer" | "factory" | "template" | "coins" | "target" | "scan" | "bot" | "chart" | "yearEnd" | "tax" | "annual";
   /** Section heading shown above the item in the sidebar. */
   section?: "operations" | "accounting" | "settings";
 }
@@ -29,6 +29,7 @@ export const NAV: NavItem[] = [
   { key: "currency", href: "/app/currency", permission: "currency.view", icon: "coins", section: "accounting" },
   { key: "tax", href: "/app/tax", permission: "tax.view", icon: "tax", section: "accounting" },
   { key: "yearEnd", href: "/app/year-end", permission: "yearEnd.view", icon: "yearEnd", section: "accounting" },
+  { key: "annual", href: "/app/annual-accounts", permission: "annualAccounts.view", icon: "annual", section: "accounting" },
   { key: "entries", href: "/app/ledger/entries", permission: "ledger.view", icon: "list", section: "accounting" },
   { key: "trialBalance", href: "/app/ledger/trial-balance", permission: "ledger.view", icon: "scale", section: "accounting" },
   { key: "generalLedger", href: "/app/ledger/general-ledger", permission: "ledger.view", icon: "notebook", section: "accounting" },

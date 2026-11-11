@@ -2,8 +2,8 @@
 
 | Item | Value |
 | --- | --- |
-| Current phase | **9 — Year-end & tax (next)** |
-| Completed | 0 — Architecture · 1 — Foundation · 2 — Accounting core · 3 — Financial operations · 4 — Industry templates · 5 — Multi-currency · 6 — Budgets · 7 — ARA Scan & AI · **8 — Financial reporting** |
+| Current phase | **10 — Quality & automation (next)** |
+| Completed | 0 — Architecture · 1 — Foundation · 2 — Accounting core · 3 — Financial operations · 4 — Industry templates · 5 — Multi-currency · 6 — Budgets · 7 — ARA Scan & AI · 8 — Financial reporting · **9 — Year-end & tax** |
 | Last update | 2026-11-11 |
 
 ## Phase 8 — Financial reporting: COMPLETED (2026-11-11)
@@ -33,6 +33,23 @@
 
 **Next phase:** 9 — year-end and tax.
 
+## Phase 9 — Year-end & tax: COMPLETED (2026-11-11)
+
+**Summary:** year-end closing with checklist and carry-forward (A), tax rules as data with BTW, IB rechtspersonen and dividend tax (B), and an annual accounts generator (C). Acceptance workflows 7, 8 and 9 and rules F4–F6 and T1–T6 are covered by tests.
+
+**Migrations:** `phase9_year_end`, `phase9_tax`, `phase9_annual_accounts`.
+
+**Tests:** 114 unit, 75 integration and 18 e2e tests, all passing.
+
+**Outstanding:**
+- every tax rule must be VERIFIED by a Surinamese tax advisor, and every annual-accounts template and note text needs review by a SUVA accountant;
+- an Inkomstenbelasting natuurlijke personen schedule;
+- the size categories and publication duties of S.B. 2017 no. 84 (still to extract from the law text);
+- an English version of the annual accounts PDF (the labels follow the user's language; the note texts are Dutch);
+- the voorlopige aanslag instalment schedule.
+
+**Next phase:** 10 — quality and automation.
+
 ### Phase 9 step A — Year-end closing (2026-11-11)
 - **Checklist (F4)** — 24 items, 10 of them checked automatically from the ledger: no drafts, periods closed, banks reconciled, sub-ledgers equal control accounts, depreciation complete, FX revaluation, suspense cleared, trial balance. Mandatory items must be completed; optional ones can be marked not applicable with a comment. Submission is followed by approval by another user. The checklist is immutable once approved (trigger).
 - **Adjustments** — correction entries in period 13.
@@ -55,6 +72,13 @@
 - **Filing (T4)** — FILED only with an evidence document and a confirmation (database CHECK). Filed returns are immutable (trigger).
 - **Reports** — statements leave out the closing journal, so a closed year still shows its result.
 - **Tests** — integration "Phase 9B" (4 tests) and e2e BTW return.
+
+### Phase 9 step C — Annual accounts (2026-11-11)
+- **Frameworks** — NV on an IFRS for SMEs basis, NV full IFRS, eenmanszaak/VOF (with a placeholder for the accountant's compilation statement), and stichting/vereniging/kerk (income and expenditure, funds).
+- **Content** — a snapshot of the closed year: balance sheet, P&L, cash flow, equity statement with comparatives, and the fixed-asset movement schedule. Note texts are marked CONCEPT. Edited notes become manual and survive regeneration.
+- **Approval** — by another user. FINAL requires a closed year and the same ledger fingerprint as at generation; an approved set can be sent back. FINAL accounts are immutable (trigger), and the notes of approved accounts too.
+- **PDF** — statements, asset schedule and notes, labelled draft or final, with the fingerprint.
+- **Tests** — integration "Phase 9C" (2 tests) and e2e annual accounts.
 
 ## Phase 7 — ARA Scan & AI: COMPLETED (2026-11-11)
 
@@ -253,3 +277,4 @@ A template can add accounts, journals, asset categories, dimension values and KP
 - 2026-11-11: Phase 6 completed: budgets with versions and approval, prior-year basis, distribution, CSV import, budget versus actual with alerts, rolling forecast; 178 automated tests passing.
 - 2026-11-11: Phase 7 completed: ARA Scan (capture, text-layer and optional Claude recognition, suggestions, duplicate detection, review), automation rules and monitor; 187 automated tests passing.
 - 2026-11-11: Phase 8 completed: balance sheet, P&L, cash flow, equity statement, KPIs, cash-flow forecast, PDF/CSV exports with ledger fingerprint; 195 automated tests passing.
+- 2026-11-11: Phase 9 completed: year-end closing with carry-forward, BTW/IB/dividend tax with versioned rules and four-eyes approval, annual accounts generator; 207 automated tests passing.
