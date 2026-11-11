@@ -9,6 +9,7 @@ import { ADMIN_ROLES, rolesForKind, SYSTEM_ROLES, type RoleCode } from "@/core/a
 import { UserError } from "@/core/errors";
 import { fiscalYearCode, fiscalYearRange, planPeriods } from "./periods";
 import { installStandardChart } from "@/modules/ledger/service";
+import { applyTemplateToNewAdministration } from "@/modules/industry/service";
 import { installOperations } from "@/modules/invoicing/setup";
 import type {
   administrationSchema, assignmentSchema, branchSchema, companySchema, inviteSchema, membershipUpdateSchema,
@@ -145,7 +146,7 @@ async function insertFiscalYear(tx: Tx, organizationId: string, administrationId
   return fy;
 }
 
-export async function createAdministration(access: Access, input: Omit<z.infer<typeof administrationSchema>, "chart"> & { chart?: "STANDARD" | "EMPTY" }) {
+export async function createAdministration(access: Access, input: Omit<z.infer<typeof administrationSchema>, "chart" | "templateId"> & { chart?: "STANDARD" | "EMPTY"; templateId?: string }) {
   assertCan(access, "administrations.create", input.companyId);
   const { startDate, endDate } = fiscalYearRange(input.startYear, input.startMonth);
   try {
@@ -159,13 +160,15 @@ export async function createAdministration(access: Access, input: Omit<z.infer<t
         },
       });
       const fy = await insertFiscalYear(tx, access.organizationId, admin.id, startDate, endDate);
+      let template: Awaited<ReturnType<typeof applyTemplateToNewAdministration>> = null;
       if (input.chart !== "EMPTY") {
         await installStandardChart(tx, access.organizationId, admin.id);
         await installOperations(tx, access.organizationId, admin.id);
+        template = await applyTemplateToNewAdministration(tx, access.organizationId, admin.id, input.templateId);
       }
       await audit(tx, {
         organizationId: access.organizationId, userId: access.userId, action: "administration.created", entity: "Administration", entityId: admin.id,
-        details: { code: admin.code, baseCurrency: admin.baseCurrency, firstFiscalYear: fy.code, chart: input.chart ?? "STANDARD" },
+        details: { code: admin.code, baseCurrency: admin.baseCurrency, firstFiscalYear: fy.code, chart: input.chart ?? "STANDARD", template: template ? `${template.template.code} v${template.version}` : null },
       });
       return { administration: admin, fiscalYear: fy };
     });

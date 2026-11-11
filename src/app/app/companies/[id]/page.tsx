@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
+import { templateChoices } from "@/modules/industry/queries";
 import { requireApp } from "@/core/auth/context";
 import { can } from "@/core/auth/access";
 import { withTenant } from "@/core/tenancy/tenant";
@@ -35,6 +36,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
 
   const mayEdit = can(ctx.access, "companies.edit", id);
   const mayCreateAdmin = can(ctx.access, "administrations.create", id) && company.status === "ACTIVE";
+  const templates = mayCreateAdmin ? await templateChoices(ctx.access, await getLocale()) : [];
   const mayAssign = can(ctx.access, "organization.manageUsers") || can(ctx.access, "companies.manageUsers", id);
   const assignable = rolesForKind(ctx.access.organizationKind).filter((r) => !SYSTEM_ROLES[r].orgWide);
 
@@ -75,7 +77,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
             <details className="mt-5 rounded-lg border border-border p-4">
               <summary className="cursor-pointer text-sm font-medium">{t("administration.createTitle")}</summary>
               <ActionForm action={createAdministrationAction} className="mt-4">
-                <AdministrationFields companyId={company.id} />
+                <AdministrationFields companyId={company.id} templates={templates} />
                 <SubmitButton>{t("administration.create")}</SubmitButton>
               </ActionForm>
             </details>

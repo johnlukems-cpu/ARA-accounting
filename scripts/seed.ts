@@ -1,10 +1,12 @@
 /**
  * Idempotent reference-data seed. Runs on every deployment (after `prisma migrate deploy`).
  * Phase 1: system roles and their permissions, synced from src/core/auth/permissions.ts.
+ * Phase 4: platform industry templates (a new version is published only when a definition changed).
  * Contains no demo or financial data.
  */
 import { PrismaClient } from "@prisma/client";
 import { ROLE_CODES, SYSTEM_ROLES } from "../src/core/auth/permissions";
+import { seedPlatformTemplates } from "../src/modules/industry/seed";
 
 export async function seedReferenceData(db: PrismaClient) {
   for (const code of ROLE_CODES) {
@@ -19,6 +21,7 @@ export async function seedReferenceData(db: PrismaClient) {
       db.rolePermission.createMany({ data: def.permissions.map((permission) => ({ roleId: role.id, permission })), skipDuplicates: true }),
     ]);
   }
+  await seedPlatformTemplates(db);
 }
 
 if (process.argv[1]?.endsWith("seed.ts")) {

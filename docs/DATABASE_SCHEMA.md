@@ -200,6 +200,12 @@ Key: **PK** primary key, **U** unique, **IX** index, **FK** foreign key, **CHK**
 
 Applying a template **copies** rows into the administration (with `templateAccountRef` kept). Template upgrades produce a *diff proposal*: new accounts are offered and changed mappings are shown, and nothing is overwritten silently.
 
+> **Implemented in Phase 4** (`20261111110000_phase4_industry_templates`, `20261111110100_phase4_integrity`): `IndustryTemplate`
+> (ownerOrganizationId null = platform; unique code per owner plus a partial unique index for platform codes) and `IndustryTemplateVersion`
+> (version, status DRAFT/PUBLISHED, content JSONB validated by `templateContentSchema`, contentHash; immutable and undeletable once published;
+> owner must equal the template's owner). `Administration.templateVersionId` records the applied version; `Account.templateAccountRef` = `CODE:ref`.
+> Separate account/reporting mapping tables were not needed: mappings live in the version content.
+
 ### 4.7 Currency
 | Model | Key fields |
 | --- | --- |

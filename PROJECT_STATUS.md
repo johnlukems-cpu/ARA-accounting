@@ -2,9 +2,37 @@
 
 | Item | Value |
 | --- | --- |
-| Current phase | **4 — Industry templates (next)** |
-| Completed | 0 — Architecture · 1 — Foundation · 2 — Accounting core · **3 — Financial operations** |
+| Current phase | **5 — Multi-currency (next)** |
+| Completed | 0 — Architecture · 1 — Foundation · 2 — Accounting core · 3 — Financial operations · **4 — Industry templates** |
 | Last update | 2026-11-11 |
+
+## Phase 4 — Industry templates: COMPLETED (2026-11-11)
+
+**Library:** 20 platform templates for the Surinamese economy, each adding to "ARA Standaard Suriname":
+- the general template;
+- 15 required templates — trade, wholesale, retail, construction, installation, hospitality, tourism, transport, real estate, professional services, manufacturing, agriculture, non-profit/churches, accounting firms, healthcare;
+- 4 proposed templates — mining, oil & gas suppliers, forestry, fisheries.
+
+A template can add accounts, journals, asset categories, dimension values and KPI choices.
+
+**Rules:**
+- **Versions** — templates are data with versions. A published version is immutable (database trigger), and the seed publishes a new platform version only when a definition changes (content hash).
+- **Wizard** — creating an administration (onboarding and the company page) asks for a template; the default is the general one. The template is copied in, references are kept, and the administration records the version it used.
+- **Upgrades** — an upgrade compares the installed version with the latest one. New items can be ticked and added; numbers already in use are skipped. Changed and removed accounts are only reported, so nothing is overwritten.
+- **Own templates** — organisations can build their own templates (based on any template) with an account form, a JSON editor with validation, publishing and archiving. Templates can be exported and imported as JSON (`ara-industry-template` v1).
+- **Access** — RLS makes platform templates readable but not writable, and custom templates visible only to their organisation. The `industry.*` permissions are organisation-scoped.
+
+**Migrations:** `phase4_industry_templates`, `phase4_integrity`.
+
+**Tests:** 96 unit, 50 integration and 11 e2e tests, all passing. This includes acceptance workflow 1 end to end.
+
+**Outstanding:**
+- review of all templates by a SUVA-registered accountant;
+- tax-code and report-line mappings per template (Phases 8/9);
+- budget categories (Phase 6);
+- KPIs are stored per template and are calculated from Phase 8.
+
+**Next phase:** 5 — multi-currency (CBvS rate adapter, rate policy, revaluation).
 
 ## Phase 3 — Financial operations: COMPLETED (2026-11-11)
 
@@ -99,3 +127,4 @@
 - 2026-11-10: Gap analysis (docs/GAP_ANALYSIS.md). Phase 1 completed: database, RLS, auth + MFA, organisations, companies, administrations, fiscal years, permissions, audit chain, UI, 63 automated tests passing.
 - 2026-11-10: Phase 2 completed: accounting engine with database-enforced integrity, chart of accounts, journals, entries, trial balance, general ledger, CSV exports; 89 automated tests passing.
 - 2026-11-11: Phase 3 completed: relations, sales/purchase invoices with BTW, open items, bank/cash with CSV import and reconciliation, current accounts, fixed assets with depreciation; 126 automated tests passing.
+- 2026-11-11: Phase 4 completed: 20 Surinamese industry templates, versioning, wizard, upgrade proposals, template builder, JSON import/export; 157 automated tests passing.

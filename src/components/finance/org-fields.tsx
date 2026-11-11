@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { Checkbox, Field, Input, Select } from "@/components/ui/form";
 import { DISTRICTS, LEGAL_FORMS } from "@/modules/organization/schemas";
+import type { TemplateChoice } from "@/modules/industry/queries";
 
 type CompanyDefaults = Partial<{
   name: string; legalName: string | null; legalForm: string; kkfNumber: string | null; taxNumber: string | null;
@@ -64,7 +65,7 @@ export async function CompanyFields({ defaults = {} }: { defaults?: CompanyDefau
   );
 }
 
-export async function AdministrationFields({ companyId }: { companyId: string }) {
+export async function AdministrationFields({ companyId, templates = [] }: { companyId: string; templates?: TemplateChoice[] }) {
   const t = await getTranslations();
   const year = new Date().getUTCFullYear();
   return (
@@ -93,6 +94,20 @@ export async function AdministrationFields({ companyId }: { companyId: string })
           ))}
         </Select>
       </Field>
+      {templates.length > 0 && (
+        <Field label={t("industry.wizardLabel")} name="templateId" hint={t("industry.wizardHint")} className="sm:col-span-2">
+          <Select name="templateId" defaultValue={templates[0]?.id}>
+            <optgroup label={t("industry.platform")}>
+              {templates.filter((tpl) => !tpl.own).map((tpl) => <option key={tpl.id} value={tpl.id}>{tpl.name}</option>)}
+            </optgroup>
+            {templates.some((tpl) => tpl.own) && (
+              <optgroup label={t("industry.own")}>
+                {templates.filter((tpl) => tpl.own).map((tpl) => <option key={tpl.id} value={tpl.id}>{tpl.name}</option>)}
+              </optgroup>
+            )}
+          </Select>
+        </Field>
+      )}
     </div>
   );
 }

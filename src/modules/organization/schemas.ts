@@ -65,6 +65,8 @@ export const administrationSchema = z.object({
   startYear: z.coerce.number().int().min(2000, "validation.year").max(2100, "validation.year"),
   startMonth: z.coerce.number().int().min(1).max(12).default(1),
   chart: z.enum(["STANDARD", "EMPTY"]).default("STANDARD"),
+  /** Industry template (platform or own); default: GENERAL. Ignored for an empty chart. */
+  templateId: z.string().optional().transform((v) => v || undefined),
 });
 
 export const fiscalYearSchema = z.object({ administrationId: z.string().min(1) });

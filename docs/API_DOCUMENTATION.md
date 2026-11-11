@@ -91,3 +91,18 @@ Every action re-checks the permission inside the module service for the company 
 | Route | Permission | Output |
 | --- | --- | --- |
 | `GET /api/invoices/[id]/pdf` | `sales.view` / `purchase.view` | BTW invoice PDF (Dutch/English labels) |
+
+### Server actions — Phase 4 (`src/actions/industry.ts`)
+| Action | Permission | Notes |
+| --- | --- | --- |
+| `createAdministrationAction` (`templateId`) | `administrations.create` | Applies the latest published version of the chosen template (default GENERAL) |
+| `createCustomTemplateAction`, `importTemplateAction` | `industry.create` (org-scoped) | Creates a custom template with draft version 1; import ≤ 512 kB JSON |
+| `addTemplateAccountAction`, `removeTemplateAccountAction`, `saveTemplateJsonAction` | `industry.edit` | Draft only; schema errors rejected, business issues reported |
+| `newDraftAction` | `industry.edit` | One draft at a time, copied from the latest version |
+| `publishTemplateAction`, `templateStatusAction` | `industry.manageSettings` | Publishing requires zero issues; published versions are immutable |
+| `applyUpgradeAction` | `administrations.manageSettings` | Adds selected new items of the latest version; never changes existing rows |
+
+### Route handlers — Phase 4
+| Route | Permission | Output |
+| --- | --- | --- |
+| `GET /api/templates/versions/[id]/export` | `industry.view` | JSON document `{ format: "ara-industry-template", formatVersion: 1, code, name, version, contentHash, content }`; audited |

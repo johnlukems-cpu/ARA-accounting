@@ -8,7 +8,7 @@ export interface NavItem {
   key: string;
   href: string | ((ids: { administrationId?: string }) => string | null);
   permission?: Permission;
-  icon: "dashboard" | "building" | "briefcase" | "book" | "users" | "shield" | "user" | "list" | "scale" | "library" | "notebook" | "receipt" | "cart" | "contact" | "wallet" | "landmark" | "percent" | "transfer" | "factory";
+  icon: "dashboard" | "building" | "briefcase" | "book" | "users" | "shield" | "user" | "list" | "scale" | "library" | "notebook" | "receipt" | "cart" | "contact" | "wallet" | "landmark" | "percent" | "transfer" | "factory" | "template";
   /** Section heading shown above the item in the sidebar. */
   section?: "operations" | "accounting" | "settings";
 }
@@ -30,6 +30,7 @@ export const NAV: NavItem[] = [
   { key: "journals", href: "/app/ledger/journals", permission: "ledger.view", icon: "book", section: "accounting" },
   { key: "taxCodes", href: "/app/ledger/tax-codes", permission: "tax.view", icon: "percent", section: "accounting" },
   { key: "administration", href: ({ administrationId }) => (administrationId ? `/app/administrations/${administrationId}` : null), permission: "administrations.view", icon: "book", section: "settings" },
+  { key: "templates", href: "/app/templates", permission: "industry.view", icon: "template", section: "settings" },
   { key: "companies", href: "/app/companies", permission: "companies.view", icon: "briefcase", section: "settings" },
   { key: "organization", href: "/app/organization", permission: "organization.view", icon: "building", section: "settings" },
   { key: "users", href: "/app/users", permission: "organization.manageUsers", icon: "users", section: "settings" },

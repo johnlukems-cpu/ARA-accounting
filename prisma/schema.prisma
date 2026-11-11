@@ -273,6 +273,7 @@ model Administration {
   baseCurrency      String               @default("SRD")
   reportingCurrency String?
   framework         String? // annual-accounts template code (Phase 9)
+  templateVersionId String? // industry template version the chart was built from (Phase 4)
   status            AdministrationStatus @default(SETUP)
   settings          Json                 @default("{}")
   createdAt         DateTime             @default(now())
@@ -1133,4 +1134,46 @@ model AssetTransaction {
 
   @@index([organizationId])
   @@index([assetId])
+}
+
+// ───────────── Phase 4: industry templates ─────────────
+
+enum TemplateVersionStatus {
+  DRAFT
+  PUBLISHED
+}
+
+/// Industry template. ownerOrganizationId null = platform template (read-only for tenants); otherwise a custom template of that organisation.
+model IndustryTemplate {
+  id                  String                    @id @default(cuid())
+  ownerOrganizationId String?
+  code                String
+  name                String
+  nameEn              String?
+  description         String?
+  descriptionEn       String?
+  basedOnId           String?
+  status              RecordStatus              @default(ACTIVE)
+  createdAt           DateTime                  @default(now())
+  versions            IndustryTemplateVersion[]
+
+  @@unique([ownerOrganizationId, code])
+}
+
+/// Immutable once PUBLISHED (trigger). content = validated JSON (accounts, journals, asset categories, dimensions, KPIs).
+model IndustryTemplateVersion {
+  id                  String                @id @default(cuid())
+  ownerOrganizationId String?
+  templateId          String
+  version             Int
+  status              TemplateVersionStatus @default(DRAFT)
+  content             Json
+  contentHash         String
+  changelog           String?
+  publishedAt         DateTime?
+  createdById         String?
+  createdAt           DateTime              @default(now())
+  template            IndustryTemplate      @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, version])
 }

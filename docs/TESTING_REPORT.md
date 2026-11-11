@@ -2,6 +2,23 @@
 
 Only results from real runs are recorded here. Environment: Node 22, PostgreSQL 16.15 (local), Chromium (Playwright 1.63).
 
+## Phase 4 — Industry templates (2026-11-11)
+
+| Suite | Result |
+| --- | --- |
+| Unit | **96 / 96 passed** (25 new: each of the 20 templates validates against the base chart; validation, hash and diff rules) |
+| Integration (PostgreSQL) | **50 / 50 passed** (5 new) |
+| End-to-end | **11 / 11 passed** (acceptance workflow 1) |
+| Typecheck / lint / build / migration drift / seed idempotency | passed (second seed run creates no new versions) |
+
+| Phase 4 acceptance | Evidence |
+| --- | --- |
+| Applying a template | integration "a construction administration gets the template's accounts…"; e2e workflow 1 |
+| Applying is reproducible | integration "is reproducible: the same template version gives the same chart…" |
+| An upgrade never overwrites | integration "builds, publishes, applies and upgrades without overwriting…" (renamed account kept; conflicting number skipped; stale proposal refused) |
+| Versioning, immutability, tenant rules | integration "platform templates are read-only…", "exports and re-imports…" |
+| Builder, publish, export | e2e workflow 1 (own template, account added, published, JSON downloaded) |
+
 ## Phase 3 — Financial operations (2026-11-11)
 
 | Suite | Result |

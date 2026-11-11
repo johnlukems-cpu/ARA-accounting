@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { createAdministrationAction, createCompanyAction } from "@/actions/organization";
 import { logoutAction } from "@/actions/auth";
 import { requireUser } from "@/core/auth/context";
@@ -8,6 +8,7 @@ import { can } from "@/core/auth/access";
 import { ActionForm, SubmitButton } from "@/components/ui/form";
 import { buttonClass } from "@/components/ui/button-class";
 import { AdministrationFields, CompanyFields } from "@/components/finance/org-fields";
+import { templateChoices } from "@/modules/industry/queries";
 
 export default async function OnboardingPage() {
   const t = await getTranslations();
@@ -17,6 +18,7 @@ export default async function OnboardingPage() {
   const step = !ctx.company ? "company" : "administration";
   const mayCreateCompany = !!ctx.access && can(ctx.access, "companies.create");
   const mayCreateAdmin = !!ctx.access && !!ctx.company && can(ctx.access, "administrations.create", ctx.company.id);
+  const templates = mayCreateAdmin && step === "administration" ? await templateChoices(ctx.access!, await getLocale()) : [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -47,7 +49,7 @@ export default async function OnboardingPage() {
           {step === "administration" && mayCreateAdmin && ctx.company && (
             <ActionForm action={createAdministrationAction}>
               <input type="hidden" name="redirectTo" value="dashboard" />
-              <AdministrationFields companyId={ctx.company.id} />
+              <AdministrationFields companyId={ctx.company.id} templates={templates} />
               <SubmitButton>{t("onboarding.finish")}</SubmitButton>
             </ActionForm>
           )}

@@ -44,7 +44,11 @@ export const ALL_PERMISSIONS: Permission[] = (Object.keys(MODULE_ACTIONS) as Mod
   MODULE_ACTIONS[m].map((a) => `${m}.${a}` as Permission),
 );
 
-const ORG_SCOPED = new Set<string>(["organization.view", "organization.edit", "organization.manageUsers", "organization.manageSettings", "companies.create"]);
+const ORG_SCOPED = new Set<string>([
+  "organization.view", "organization.edit", "organization.manageUsers", "organization.manageSettings", "companies.create",
+  // Industry templates belong to the organisation (Phase 4), not to one company.
+  "industry.view", "industry.create", "industry.edit", "industry.manageSettings",
+]);
 export function isOrgScoped(p: Permission): boolean {
   return ORG_SCOPED.has(p);
 }
