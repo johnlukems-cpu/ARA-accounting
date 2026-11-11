@@ -2,8 +2,8 @@
 
 | Item | Value |
 | --- | --- |
-| Current phase | **10 — Quality & automation (next)** |
-| Completed | 0 — Architecture · 1 — Foundation · 2 — Accounting core · 3 — Financial operations · 4 — Industry templates · 5 — Multi-currency · 6 — Budgets · 7 — ARA Scan & AI · 8 — Financial reporting · **9 — Year-end & tax** |
+| Current phase | **11 — SaaS & practice management (next)** |
+| Completed | 0 — Architecture · 1 — Foundation · 2 — Accounting core · 3 — Financial operations · 4 — Industry templates · 5 — Multi-currency · 6 — Budgets · 7 — ARA Scan & AI · 8 — Financial reporting · 9 — Year-end & tax · **10 — Quality & automation** |
 | Last update | 2026-11-11 |
 
 ## Phase 8 — Financial reporting: COMPLETED (2026-11-11)
@@ -32,6 +32,28 @@
 - P&L at monthly average FX rates (the ledger already holds base amounts).
 
 **Next phase:** 9 — year-end and tax.
+
+## Phase 10 — Quality & automation: COMPLETED (2026-11-11)
+
+**Features:**
+- **12 checks** — suspense not cleared; sub-ledger ≠ control account; bank lines unmatched after 30 days; customers more than 90 days overdue; suppliers more than 30 days overdue; drafts older than 30 days; negative cash; missing depreciation months; sales lines without a BTW code (BTW-registered companies); foreign balances without a recent rate; months without an approved BTW return; periods still open 45 days after their end.
+- **Issues** — each finding becomes an issue with a fingerprint (unique per administration), so rescans never duplicate. Issues never resolve themselves: an issue whose cause is gone shows "not seen in the last check". Closing (resolved / accepted / false positive) needs a note (CHECK). A resolved issue that reappears is reopened. Issues can be assigned, which notifies the assignee.
+- **Score** — 0–100 (error −10, warning −3, info −1) with a scan history.
+- **Alerts and scheduling** — new errors notify everyone with `quality.view`. A daily scheduled scan runs through Vercel Cron (`/api/cron/quality`, protected by `CRON_SECRET`, compared in constant time), next to the manual "Check now".
+- **Automation statistics** — already available from Phase 7.
+
+**Migration:** `phase10_quality`.
+
+**Tests:** 116 unit, 77 integration and 19 e2e tests, all passing.
+- Every check has a positive fixture (a "dirty" administration finds all 12) and a negative one (a clean administration finds none).
+- Lifecycle: no duplicates, no auto-resolve, a note is required, reopening, notification.
+
+**Outstanding:**
+- e-mail alerts (needs SMTP);
+- per-check configuration (thresholds are fixed now: 30/45/90 days);
+- the trial-balance check was replaced, because database triggers already make an unbalanced ledger impossible.
+
+**Next phase:** 11 — SaaS and practice management.
 
 ## Phase 9 — Year-end & tax: COMPLETED (2026-11-11)
 
@@ -278,3 +300,4 @@ A template can add accounts, journals, asset categories, dimension values and KP
 - 2026-11-11: Phase 7 completed: ARA Scan (capture, text-layer and optional Claude recognition, suggestions, duplicate detection, review), automation rules and monitor; 187 automated tests passing.
 - 2026-11-11: Phase 8 completed: balance sheet, P&L, cash flow, equity statement, KPIs, cash-flow forecast, PDF/CSV exports with ledger fingerprint; 195 automated tests passing.
 - 2026-11-11: Phase 9 completed: year-end closing with carry-forward, BTW/IB/dividend tax with versioned rules and four-eyes approval, annual accounts generator; 207 automated tests passing.
+- 2026-11-11: Phase 10 completed: quality monitor with 12 checks, issue lifecycle, score, alerts and daily scheduled scan; 212 automated tests passing.

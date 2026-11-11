@@ -169,3 +169,10 @@ Report pages (`/app/reports?view=…`) are read-only server components; they nee
 | Route | Permission | Output |
 | --- | --- | --- |
 | `GET /api/annual-accounts/[id]/pdf` | `annualAccounts.export` | Annual accounts PDF (statements, asset schedule, notes); audited |
+
+### Phase 10
+| Action / route | Permission | Notes |
+| --- | --- | --- |
+| `scanAction` | `quality.view` | Runs the 12 checks for the active administration |
+| `issueAction` | `quality.edit` | Assign (notifies the assignee) and change status; closing needs a note |
+| `GET /api/cron/quality` | `Authorization: Bearer $CRON_SECRET` | Daily scan of all active administrations (Vercel Cron, `vercel.json`); returns `{ scanned, failed }` |

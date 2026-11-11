@@ -2,6 +2,21 @@
 
 Only results from real runs are recorded here. Environment: Node 22, PostgreSQL 16.15 (local), Chromium (Playwright 1.63).
 
+## Phase 10 — Quality & automation (2026-11-11)
+
+| Suite | Result |
+| --- | --- |
+| Unit | **116 / 116 passed** |
+| Integration (PostgreSQL) | **77 / 77 passed** (2 new) |
+| End-to-end | **19 / 19 passed** (1 new) |
+| Typecheck / lint / build / migration drift | passed |
+
+| Acceptance | Evidence |
+| --- | --- |
+| Each check has a positive and a negative fixture | integration "each of the 12 checks finds its positive fixture; a clean administration has no findings" |
+| Issues never auto-resolve | integration "rescans never duplicate; issues never resolve themselves…" |
+| UI: scan, close with note | e2e quality monitor |
+
 ## Phase 9 — Year-end & tax (2026-11-11)
 
 | Suite | Result |

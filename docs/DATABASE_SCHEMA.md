@@ -259,6 +259,10 @@ Applying a template **copies** rows into the administration (with `templateAccou
 > optional text condition, account, BTW code, mode, minConfidence, maxAmount — required for AUTO_POST) and `AutomationExecution` (outcome,
 > reasons, duration; append-only). `Organization.settings` holds the AI switch and consent. OCRResult was folded into `Document.textContent`.
 
+> **Implemented in Phase 10** (`20261111190000_phase10_quality`): `QualityIssue` (check, severity, subject, params, fingerprint unique per
+> administration, status, assignee, resolution note — required to close (CHECK), first/last seen, times seen; no deletes) and `QualityScan`
+> (trigger, duration, findings, new issues, score, per-check results; append-only).
+
 ### 4.12 Governance and SaaS
 `Approval` (organizationId, subjectType, subjectId, step, requiredPermission, status, decidedById, decidedAt, comment) • `AuditLog` (append-only, hash-chained; see SECURITY.md) • `Notification` • `Plan` (code, name, billing periods, isActive) • `PlanEntitlement` (planId, module, limitKey, limitValue) • `Subscription` (organizationId U, planId, period: MONTHLY, ANNUAL; status: TRIAL, ACTIVE, PAST_DUE, SUSPENDED, CANCELLED; trialEndsAt, currentPeriodEnd) • `SubscriptionInvoice` • `SubscriptionPayment` (method MANUAL_BANK, reference, confirmedById) • `UsageRecord` (organizationId, metric: USERS, ADMINISTRATIONS, DOCUMENTS_PROCESSED, STORAGE_BYTES, month, value) • `PlatformSetting`.
 

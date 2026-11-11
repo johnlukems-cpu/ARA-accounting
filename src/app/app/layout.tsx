@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getFormatter, getTranslations } from "next-intl/server";
-import { ArrowLeftRight, Bell, BookMarked, Bot, CalendarCheck, FileText, ChartColumn, Coins, ScanLine, Target, BookOpen, Briefcase, Building2, Contact, Factory, Landmark, LayoutDashboard, LayoutTemplate, Library, List, LogOut, NotebookText, Percent, Receipt, Scale, Search, ShieldCheck, ShoppingCart, User, Users, Wallet } from "lucide-react";
+import { ArrowLeftRight, Bell, BookMarked, Bot, ShieldAlert, CalendarCheck, FileText, ChartColumn, Coins, ScanLine, Target, BookOpen, Briefcase, Building2, Contact, Factory, Landmark, LayoutDashboard, LayoutTemplate, Library, List, LogOut, NotebookText, Percent, Receipt, Scale, Search, ShieldCheck, ShoppingCart, User, Users, Wallet } from "lucide-react";
 import { requireUser } from "@/core/auth/context";
 import { can } from "@/core/auth/access";
 import { withTenant } from "@/core/tenancy/tenant";
@@ -11,7 +11,7 @@ import { switchContextAction } from "@/actions/organization";
 import { ContextSelect } from "@/components/shell/context-select";
 import { NAV } from "@/components/shell/nav";
 
-const ICONS = { dashboard: LayoutDashboard, building: Building2, briefcase: Briefcase, book: BookOpen, users: Users, shield: ShieldCheck, user: User, list: List, scale: Scale, library: Library, notebook: NotebookText, receipt: Receipt, cart: ShoppingCart, contact: Contact, wallet: Wallet, landmark: Landmark, percent: Percent, transfer: ArrowLeftRight, factory: Factory, template: LayoutTemplate, coins: Coins, target: Target, scan: ScanLine, bot: Bot, chart: ChartColumn, yearEnd: CalendarCheck, tax: FileText, annual: BookMarked };
+const ICONS = { dashboard: LayoutDashboard, building: Building2, briefcase: Briefcase, book: BookOpen, users: Users, shield: ShieldCheck, user: User, list: List, scale: Scale, library: Library, notebook: NotebookText, receipt: Receipt, cart: ShoppingCart, contact: Contact, wallet: Wallet, landmark: Landmark, percent: Percent, transfer: ArrowLeftRight, factory: Factory, template: LayoutTemplate, coins: Coins, target: Target, scan: ScanLine, bot: Bot, chart: ChartColumn, yearEnd: CalendarCheck, tax: FileText, annual: BookMarked, quality: ShieldAlert };
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const t = await getTranslations();

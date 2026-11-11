@@ -321,8 +321,8 @@
     "contextTitle": "Current environment",
     "role": "Your role",
     "nextTitle": "In development",
-    "nextBody": "Phase 9 is complete. Next: the quality monitor with 12 checks (phase 10).",
-    "phaseBadge": "Phase 10 · Quality and automation"
+    "nextBody": "Phase 10 is complete. Next: practice dashboard, subscriptions and platform administration (phase 11).",
+    "phaseBadge": "Phase 11 · SaaS and practice management"
   },
   "shell": {
     "organization": "Organisation",
@@ -370,7 +370,8 @@
     "reports": "Reports",
     "yearEnd": "Year-end",
     "tax": "Taxes",
-    "annual": "Annual accounts"
+    "annual": "Annual accounts",
+    "quality": "Quality monitor"
   },
   "audit": {
     "title": "Audit log",
@@ -390,7 +391,9 @@
     "unread": "Unread",
     "types": {
       "memberAdded": "You have been added to the organisation as {role}.",
-      "companyAssigned": "You have been given access to {company} as {role}."
+      "companyAssigned": "You have been given access to {company} as {role}.",
+      "qualityErrors": "{count} new quality error(s) in {administration}",
+      "qualityAssigned": "A quality issue was assigned to you"
     }
   },
   "search": {
@@ -1948,5 +1951,112 @@
     "notDraft": "Only a draft can be changed.",
     "yearNotClosed": "The fiscal year is not closed.",
     "ledgerChanged": "The ledger changed since generation; send the accounts back and regenerate."
+  },
+  "quality": {
+    "title": "Quality monitor",
+    "intro": "12 checks on the books. Findings never disappear by themselves: someone closes them with a note.",
+    "score": "Quality score",
+    "lastScan": "Last check {date} ({trigger})",
+    "neverScanned": "Not checked yet.",
+    "scan": "Check now",
+    "scanned": "Check done; no new findings.",
+    "scannedNew": "Check done; there are new findings.",
+    "scheduleNote": "The check also runs automatically every day.",
+    "history": "Checks",
+    "trigger": "Trigger",
+    "findings": "Findings",
+    "newIssues": "New",
+    "triggers": {
+      "MANUAL": "manual",
+      "SCHEDULED": "scheduled"
+    },
+    "issues": "Findings",
+    "views": {
+      "open": "Open",
+      "closed": "Closed"
+    },
+    "noOpen": "No open findings.",
+    "noClosed": "No closed findings.",
+    "severity": "Severity",
+    "severities": {
+      "ERROR": "Error",
+      "WARNING": "Warning",
+      "INFO": "Info"
+    },
+    "issue": "Finding",
+    "seen": "Seen",
+    "assignee": "Assigned to",
+    "note": "Note",
+    "notSeenLastScan": "not seen in the last check",
+    "statuses": {
+      "OPEN": "Open",
+      "IN_PROGRESS": "In progress",
+      "RESOLVED": "Resolved",
+      "ACCEPTED": "Accepted",
+      "FALSE_POSITIVE": "False positive"
+    },
+    "noteRequired": "Add a note when closing.",
+    "checks": {
+      "SUSPENSE_BALANCE": {
+        "title": "Suspense not cleared",
+        "message": "{account} has a balance of {amount}.",
+        "action": "Book the suspense items to the right account."
+      },
+      "CONTROL_MISMATCH": {
+        "title": "Sub-ledger does not agree",
+        "message": "{account}: difference with the open items {difference}.",
+        "action": "Look for entries on the control account without an open item (e.g. opening balance)."
+      },
+      "BANK_UNMATCHED": {
+        "title": "Bank lines not processed",
+        "message": "{account}: {count} line(s) older than 30 days not matched.",
+        "action": "Match or book the lines under Bank and cash."
+      },
+      "OVERDUE_RECEIVABLE": {
+        "title": "Customer well overdue",
+        "message": "{party}: {count} item(s), {amount} more than 90 days overdue.",
+        "action": "Send a reminder or consider a doubtful debt provision."
+      },
+      "OVERDUE_PAYABLE": {
+        "title": "Supplier overdue",
+        "message": "{party}: {count} item(s), {amount} more than 30 days overdue.",
+        "action": "Schedule payment or check whether it was already paid."
+      },
+      "OLD_DRAFTS": {
+        "title": "Old draft entries",
+        "message": "{count} entry(ies) older than 30 days are not posted.",
+        "action": "Post or delete the drafts under Journal entries."
+      },
+      "NEGATIVE_CASH": {
+        "title": "Negative cash",
+        "message": "{account} is at {amount}.",
+        "action": "Check for missing receipts or withdrawals in the cash book."
+      },
+      "MISSING_DEPRECIATION": {
+        "title": "Depreciation missing",
+        "message": "{asset}: {months} month(s) not depreciated.",
+        "action": "Create a depreciation proposal under Fixed assets."
+      },
+      "MISSING_TAX_CODE": {
+        "title": "Invoice line without BTW code",
+        "message": "Sales invoice {invoice} has lines without a BTW code.",
+        "action": "Correct with a credit note and a new invoice."
+      },
+      "STALE_FX_RATE": {
+        "title": "No recent rate",
+        "message": "There is a balance in {currency} but no rate from the last 7 days.",
+        "action": "Enter the CBvS rates under Currencies and rates."
+      },
+      "BTW_RETURN_MISSING": {
+        "title": "BTW return missing",
+        "message": "No approved BTW return for {month}.",
+        "action": "Prepare the return under Taxes."
+      },
+      "PERIOD_NOT_CLOSED": {
+        "title": "Period not closed",
+        "message": "Period {period} ended more than 45 days ago and is still open.",
+        "action": "(Soft-)close the period under Administration."
+      }
+    }
   }
 }
