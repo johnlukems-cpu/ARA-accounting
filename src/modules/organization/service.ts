@@ -136,7 +136,7 @@ export async function createBranch(access: Access, input: z.infer<typeof branchS
 
 // ───────────────────────── Administrations, fiscal years, periods ─────────────────────────
 
-async function insertFiscalYear(tx: Tx, organizationId: string, administrationId: string, startDate: Date, endDate: Date) {
+export async function insertFiscalYear(tx: Tx, organizationId: string, administrationId: string, startDate: Date, endDate: Date) {
   const fy = await tx.fiscalYear.create({
     data: { organizationId, administrationId, code: fiscalYearCode(startDate, endDate), startDate, endDate },
   });

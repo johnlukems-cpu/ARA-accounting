@@ -33,6 +33,19 @@
 
 **Next phase:** 9 — year-end and tax.
 
+### Phase 9 step A — Year-end closing (2026-11-11)
+- **Checklist (F4)** — 24 items, 10 of them checked automatically from the ledger: no drafts, periods closed, banks reconciled, sub-ledgers equal control accounts, depreciation complete, FX revaluation, suspense cleared, trial balance. Mandatory items must be completed; optional ones can be marked not applicable with a comment. Submission is followed by approval by another user. The checklist is immutable once approved (trigger).
+- **Adjustments** — correction entries in period 13.
+- **Close (F5)** — one transaction:
+  - P&L to retained earnings in period 13;
+  - creation of the next fiscal year if missing;
+  - an opening entry in period 0 per account and currency, keeping exact base values (base-only lines for revaluation residues);
+  - verification that the opening equals the closing and P&L accounts are zero;
+  - all periods and the year are closed.
+  The year-end entries record the year-end approver as their approver.
+- **Reopen (F6)** — needs a reason; the opening and closing entries are reversed; the closing returns to "in progress" for re-approval.
+- **Tests** — integration "Phase 9A" (3 tests, including a foreign-currency carry-forward after revaluation) and e2e year-end UI.
+
 ## Phase 7 — ARA Scan & AI: COMPLETED (2026-11-11)
 
 **Features:**

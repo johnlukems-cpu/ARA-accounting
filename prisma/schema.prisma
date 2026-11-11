@@ -1459,3 +1459,57 @@ model ReportRun {
   @@index([administrationId, createdAt])
   @@index([organizationId])
 }
+
+// ───────────── Phase 9: year-end ─────────────
+
+enum YearEndStatus {
+  IN_PROGRESS
+  REVIEW
+  APPROVED
+  CLOSED
+}
+
+enum ChecklistStatus {
+  OPEN
+  COMPLETED
+  NOT_APPLICABLE
+}
+
+/// One year-end closing per fiscal year (F4–F6).
+model YearEndClosing {
+  id               String                 @id @default(cuid())
+  organizationId   String
+  administrationId String
+  fiscalYearId     String                 @unique
+  status           YearEndStatus          @default(IN_PROGRESS)
+  submittedById    String?
+  approvedById     String?
+  approvedAt       DateTime?
+  closedById       String?
+  closedAt         DateTime?
+  closingEntryId   String?
+  openingEntryId   String?
+  reopenCount      Int                    @default(0)
+  createdById      String
+  createdAt        DateTime               @default(now())
+  items            YearEndChecklistItem[]
+
+  @@index([organizationId])
+}
+
+model YearEndChecklistItem {
+  id             String          @id @default(cuid())
+  organizationId String
+  closingId      String
+  code           String
+  sortOrder      Int
+  mandatory      Boolean
+  status         ChecklistStatus @default(OPEN)
+  comment        String?
+  completedById  String?
+  completedAt    DateTime?
+  closing        YearEndClosing  @relation(fields: [closingId], references: [id], onDelete: Cascade)
+
+  @@unique([closingId, code])
+  @@index([organizationId])
+}

@@ -31,7 +31,7 @@ These rules are binding for every module. Surinamese defaults and their legal so
 | F3 | Closing a period requires no DRAFT/APPROVED-but-unposted entries dated in it, or an explicit carry-forward. | A |
 | F4 | A fiscal year closes only when every mandatory year-end checklist item is COMPLETED and approved. | A, T |
 | F5 | Year close: P&L accounts are closed to retained earnings in period 13 (closing journal). Balance-sheet balances (including open items per party and currency) are carried to the new year's period 0. Opening equals the prior closing, and this is verified. | A, T |
-| F6 | Reopening a closed year needs `periods.reopenYear`, a reason, and is audited. Next-year opening balances are then recalculated through a reversal and repost, never by editing. | A |
+| F6 | Reopening a closed year needs `yearEnd.close` (implemented in place of a separate `periods.reopenYear` action), a reason, and is audited. The next year's opening entry and this year's closing entry are reversed (never edited); the closing must then be approved and closed again, which posts new entries. | A |
 
 ## 4. Sub-ledgers
 | # | Rule |

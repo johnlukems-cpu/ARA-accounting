@@ -123,7 +123,8 @@ async function prepare(tx: Tx, access: Access, input: EntryInput) {
   });
 
   // Revaluation lines (base-only adjustments) belong to the currency module (C5).
-  if (input.lines.some((l) => l.fxAdjustment) && sourceType !== "FX_REVALUATION") throw new UserError("ledger.fxAdjustmentSource");
+  // Base-only lines: revaluation (C5) and carrying forward exact base balances at year-end (F5).
+  if (input.lines.some((l) => l.fxAdjustment) && sourceType !== "FX_REVALUATION" && sourceType !== "YEAR_END") throw new UserError("ledger.fxAdjustmentSource");
 
   const dimIds = [...new Set(input.lines.flatMap((l) => [l.costCenterId, l.projectId, l.departmentId]).filter(Boolean))] as string[];
   if (dimIds.length) {
@@ -299,6 +300,17 @@ export async function postEntry(tx: Tx, access: Access, entryId: string): Promis
 }
 
 /** Creates and posts in one step (used by sub-ledgers). Idempotent on `idempotencyKey`. */
+/**
+ * Year-end entries (closing in period 13, opening in the next year's period 0): their approval is the approval of the
+ * year-end closing by another user (F4), recorded here as the entry's approver. Only for source YEAR_END.
+ */
+export async function createAndPostYearEnd(tx: Tx, access: Access, input: EntryInput, approvedById: string): Promise<JournalEntry> {
+  if (input.sourceType !== "YEAR_END") throw new UserError("ledger.invalidJournal");
+  const entry = await createEntry(tx, access, input);
+  await tx.journalEntry.update({ where: { id: entry.id }, data: { status: "APPROVED", approvedById, approvedAt: new Date() } });
+  return postEntry(tx, access, entry.id);
+}
+
 export async function createAndPost(tx: Tx, access: Access, input: EntryInput): Promise<JournalEntry> {
   if (input.idempotencyKey) {
     const existing = await tx.journalEntry.findUnique({ where: { administrationId_idempotencyKey: { administrationId: input.administrationId, idempotencyKey: input.idempotencyKey } } });
