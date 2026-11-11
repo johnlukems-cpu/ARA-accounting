@@ -8,7 +8,7 @@ export interface NavItem {
   key: string;
   href: string | ((ids: { administrationId?: string }) => string | null);
   permission?: Permission;
-  icon: "dashboard" | "building" | "briefcase" | "book" | "users" | "shield" | "user" | "list" | "scale" | "library" | "notebook" | "receipt" | "cart" | "contact" | "wallet" | "landmark" | "percent";
+  icon: "dashboard" | "building" | "briefcase" | "book" | "users" | "shield" | "user" | "list" | "scale" | "library" | "notebook" | "receipt" | "cart" | "contact" | "wallet" | "landmark" | "percent" | "transfer" | "factory";
   /** Section heading shown above the item in the sidebar. */
   section?: "operations" | "accounting" | "settings";
 }
@@ -21,6 +21,8 @@ export const NAV: NavItem[] = [
   { key: "receivables", href: "/app/receivables", permission: "sales.view", icon: "wallet", section: "operations" },
   { key: "payables", href: "/app/payables", permission: "purchase.view", icon: "wallet", section: "operations" },
   { key: "banking", href: "/app/banking", permission: "banking.view", icon: "landmark", section: "operations" },
+  { key: "currentAccounts", href: "/app/current-accounts", permission: "currentAccounts.view", icon: "transfer", section: "operations" },
+  { key: "assets", href: "/app/assets", permission: "assets.view", icon: "factory", section: "operations" },
   { key: "entries", href: "/app/ledger/entries", permission: "ledger.view", icon: "list", section: "accounting" },
   { key: "trialBalance", href: "/app/ledger/trial-balance", permission: "ledger.view", icon: "scale", section: "accounting" },
   { key: "generalLedger", href: "/app/ledger/general-ledger", permission: "ledger.view", icon: "notebook", section: "accounting" },

@@ -23,6 +23,7 @@ test("bank statement: profile, CSV import, duplicate refused, match suggestion, 
   await page.getByLabel("Standaard BTW-code").selectOption({ label: "BTW10 · BTW algemeen tarief 10%" });
   await page.getByLabel("Standaard omzetrekening").selectOption({ label: "8010 · Omzet BTW 10%" });
   await page.getByRole("button", { name: "Relatie opslaan" }).click();
+  await expect(page.getByRole("heading", { name: "Klant Commewijne NV" })).toBeVisible();
   await page.goto("/app/sales/new");
   await page.getByLabel("Klant").selectOption({ index: 1 });
   await page.getByLabel("Factuurdatum").fill("2026-03-02");

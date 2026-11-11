@@ -223,6 +223,15 @@ export async function deleteDraft(tx: Tx, access: Access, entryId: string) {
   await audit(tx, { organizationId: access.organizationId, userId: access.userId, action: "entry.deleted", entity: "JournalEntry", entityId: entryId, details: { description: entry.description, status: entry.status } });
 }
 
+/** Removes an unposted entry created by a module (e.g. a depreciation proposal). Requires that module's permission. */
+export async function deleteSourceDraft(tx: Tx, access: Access, entryId: string) {
+  const { entry, admin } = await loadEntry(tx, entryId);
+  assertCan(access, permissionsFor(entry.sourceType).create, admin.companyId);
+  if (entry.status === "POSTED") throw new UserError("ledger.postedImmutable");
+  await tx.journalEntry.delete({ where: { id: entryId } });
+  await audit(tx, { organizationId: access.organizationId, userId: access.userId, action: "entry.deleted", entity: "JournalEntry", entityId: entryId, details: { source: entry.sourceType } });
+}
+
 export async function submitEntry(tx: Tx, access: Access, entryId: string) {
   const { entry, admin } = await loadEntry(tx, entryId);
   assertCan(access, "ledger.create", admin.companyId);

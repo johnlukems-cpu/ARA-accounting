@@ -2,9 +2,32 @@
 
 | Item | Value |
 | --- | --- |
-| Current phase | **3 — Financial operations (next)** |
-| Completed | 0 — Architecture · 1 — Foundation · **2 — Accounting core** |
-| Last update | 2026-11-10 |
+| Current phase | **4 — Industry templates (next)** |
+| Completed | 0 — Architecture · 1 — Foundation · 2 — Accounting core · **3 — Financial operations** |
+| Last update | 2026-11-11 |
+
+## Phase 3 — Financial operations: COMPLETED (2026-11-11)
+
+**Features:**
+- **Relations** — customers and suppliers with KKF number, district and default BTW code/account.
+- **Invoices** — sales and purchase invoices with BTW per line. BTW codes are data with a legal status: BTW10/BTW25/BTW0 = SOURCE_FOUND; exempt and import = PENDING_VERIFICATION. Draft → approval (purchase threshold) → posting through the engine. Credit notes; BTW invoice PDF; e-mail through SMTP, or an explicit "not configured" message.
+- **Open items** — open items and append-only allocations; payments on account; offsetting; realised exchange differences; aging with configurable buckets; check of the sub-ledger against the control account.
+- **Bank and cash** — accounts per Surinamese bank; CSV import with a column profile per account; duplicate detection by file and line hash; match suggestions; partial matching; booking to an account; ignore; cash book with BTW split; transfers/cambio with exchange difference; reconciliation with approval by a second user.
+- **Current accounts** — current accounts with directors, shareholders, related parties and group companies, each with its own control account; movements through the engine; statement; balance confirmations with the difference.
+- **Fixed assets** — 5 standard categories; registration with an acquisition entry (clearing account 0090); straight-line and declining-balance schedules (decimal, no lost cents); monthly depreciation proposals that need approval (journal AFS) and never twice per asset/month; withdrawing a proposal; disposal or sale with gain (8095) or loss (4810), only once depreciation is up to date; transfer; asset register with cost, accumulated depreciation and book value per date.
+
+**Migrations:** `phase3_operations`, `phase3_integrity`, `phase3b_banking`, `phase3b_integrity`, `phase3c_assets_current_accounts`, `phase3c_integrity`. They add RLS on all new tables, CHECK constraints, append-only triggers, and a guard that blocks changing depreciation lines of posted entries. Schema and migrations were verified identical.
+
+**Tests:** 71 unit, 45 integration and 10 e2e tests, all passing. Typecheck, lint and build pass.
+
+**Outstanding:**
+- interest calculation on current accounts (the agreement is recorded, but there is no automatic interest entry);
+- impairment and revaluation of assets;
+- linking an asset directly to a purchase invoice line (the invoice is booked on 0090 for now);
+- bank-specific CSV profiles once sample files from DSB, Hakrinbank, Finabank and others are available;
+- fiscal depreciation (Phase 9).
+
+**Next phase:** 4 — industry templates.
 
 ## Phase 2 — Accounting core: COMPLETED (2026-11-10)
 
@@ -75,3 +98,4 @@
 - 2026-11-10: Phase 1 started. Deployable foundation built (status page, i18n, design tokens, health endpoint, money module, Vercel config). ARA Accounting is implemented independently of ARA Payroll at the product owner's request.
 - 2026-11-10: Gap analysis (docs/GAP_ANALYSIS.md). Phase 1 completed: database, RLS, auth + MFA, organisations, companies, administrations, fiscal years, permissions, audit chain, UI, 63 automated tests passing.
 - 2026-11-10: Phase 2 completed: accounting engine with database-enforced integrity, chart of accounts, journals, entries, trial balance, general ledger, CSV exports; 89 automated tests passing.
+- 2026-11-11: Phase 3 completed: relations, sales/purchase invoices with BTW, open items, bank/cash with CSV import and reconciliation, current accounts, fixed assets with depreciation; 126 automated tests passing.

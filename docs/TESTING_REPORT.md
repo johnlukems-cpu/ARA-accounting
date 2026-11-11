@@ -2,6 +2,30 @@
 
 Only results from real runs are recorded here. Environment: Node 22, PostgreSQL 16.15 (local), Chromium (Playwright 1.63).
 
+## Phase 3 — Financial operations (2026-11-11)
+
+| Suite | Result |
+| --- | --- |
+| Unit | **71 / 71 passed** (adds invoicing/BTW calculation, CSV bank import parsing, depreciation schedules) |
+| Integration (PostgreSQL) | **45 / 45 passed** (16 new: 3A invoices/open items, 3B banking, 3C assets/current accounts) |
+| End-to-end | **10 / 10 passed** (4 new) |
+| Typecheck / lint / build / migration drift | passed |
+
+| Phase 3 acceptance | Evidence |
+| --- | --- |
+| Sales/purchase invoices with BTW, posting through the engine | integration phase3a; e2e phase3a (invoice → post → PDF) |
+| Open items, allocations, FX result, aging, sub-ledger = control account | integration phase3a |
+| Bank import without duplicates, matching, reconciliation with approval | integration phase3b; e2e phase3b |
+| Depreciation: monthly proposal, approval required, never twice, withdrawal, posted lines immutable (DB trigger) | integration "registers an asset … never twice" |
+| Disposal only after depreciation is up to date; gain/loss; history append-only | integration "disposes with a loss…", "sells with a gain…" |
+| Current accounts: own control account, closed to manual entries, confirmations with difference | integration "books movements through its own control account…"; e2e phase3c |
+| Tenant isolation of the new tables | integration "asset data of another organisation is invisible" |
+
+Defects found and fixed:
+- withdrawing a posted proposal surfaced a raw database error instead of a message (a service check was added; the database guard remains);
+- an e2e race in phase3b continued before the relation was saved (the test now waits for it);
+- the `-0` sign bug in settlement (always `lt(0)`).
+
 ## Phase 2 — Accounting core (2026-11-10)
 
 | Suite | Result |

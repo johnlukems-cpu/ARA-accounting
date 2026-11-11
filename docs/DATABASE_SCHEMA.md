@@ -181,6 +181,15 @@ Key: **PK** primary key, **U** unique, **IX** index, **FK** foreign key, **CHK**
 | `DepreciationScheduleLine` | assetId, periodId, plannedAmount, postedAmount, entryId, status (PLANNED, PROPOSED, POSTED) — U(assetId, periodId) |
 | `AssetTransaction` | assetId, type (ACQUISITION, IMPROVEMENT, DEPRECIATION, IMPAIRMENT, TRANSFER, DISPOSAL, SALE), date, amount, entryId, details |
 
+> **Implemented in Phase 3C** (`20261111003635_phase3c_assets_current_accounts`, `20261111100000_phase3c_integrity`):
+> `CurrentAccount` (kind, counterpartyName, ledgerAccountId — own `CURRENT_ACCOUNT` control account, currency, interestRatePct, agreement) and
+> `CurrentAccountConfirmation` (date, confirmedBalance, ledgerBalance, difference — append-only);
+> `AssetCategory` (asset/accumulated/expense/gain/loss accounts, defaultUsefulLifeMonths), `Asset` (cost and residual in base currency,
+> STRAIGHT_LINE or DECLINING_BALANCE, depreciationStart on the 1st of a month, status ACTIVE/FULLY_DEPRECIATED/DISPOSED, acquisitionEntryId),
+> `DepreciationLine` (unique asset + year + month, entryId; cannot change once its entry is posted) and `AssetTransaction`
+> (ACQUISITION, DEPRECIATION, TRANSFER, DISPOSAL — append-only). All with RLS. Improvement, impairment, revaluation and the link to a
+> purchase-invoice line are deferred.
+
 ### 4.6 Industry templates
 | Model | Key fields |
 | --- | --- |

@@ -66,3 +66,28 @@ All mutations validate input with the Zod schemas in `src/modules/organization/s
 | `GET /api/ledger/trial-balance?fiscalYearId&fromPeriod&toPeriod&accountFrom&accountTo&journalId&hideZero` | `ledger.export` or `reports.export` | CSV (semicolon, UTF-8 BOM, formula-injection safe); audited |
 | `GET /api/ledger/general-ledger?account&fiscalYearId&fromPeriod&toPeriod` | `ledger.export` or `reports.export` | CSV with running balance; audited |
 
+
+### Server actions — Phase 3 (`src/actions/invoicing.ts`, `banking.ts`, `assets.ts`)
+Every action re-checks the permission inside the module service for the company of the record (never the client's claim).
+
+| Action | Permission | Notes |
+| --- | --- | --- |
+| `savePartyAction` | `sales.create` / `purchase.create` | Customer and/or supplier; KKF number, district, default BTW code and account |
+| `saveInvoiceAction` | `sales.create` / `purchase.create` | Draft with per-line BTW; "save and post" also needs `.post` |
+| `invoiceTransitionAction` (`submit`, `approve`, `post`, `delete`, `credit`) | `.create` / `.approve` / `.post` | Purchase approval threshold per administration; credit note = linked draft |
+| `sendInvoiceAction` | `sales.edit` | SMTP when configured, otherwise an explicit "not configured" message; PDF via `GET /api/invoices/[id]/pdf` |
+| `registerPaymentAction`, `offsetItemsAction` | `banking.post` / `sales.post` / `purchase.post` | Allocations are append-only; realised FX difference on foreign-currency items |
+| `createFinancialAccountAction` | `administrations.edit` | Creates bank/cash account + ledger account + journal |
+| `saveProfileAction`, `importStatementAction` | `banking.edit` / `banking.create` | CSV ≤ 2 MB; file hash and line hash prevent double import |
+| `matchAction`, `bookAction`, `ignoreAction`, `transferAction`, `cashEntryAction` | `banking.post` | Matching may be partial; cash entries split BTW |
+| `reconcileAction`, `approveReconciliationAction` | `banking.edit` / `banking.approve` | Approval by another user; only a reconciliation with zero difference |
+| `registerAssetAction` | `assets.create` | Books the acquisition (Dr category asset account / Cr chosen counter account, default 0090) unless "already booked" |
+| `proposeDepreciationAction`, `cancelDepreciationAction` | `assets.create` | Proposal = DRAFT entry in journal AFS (approval required) + one `DepreciationLine` per asset; posting via the entry (`ledger.approve`, `assets.post`) |
+| `disposeAssetAction`, `transferAssetAction` | `assets.post` / `assets.edit` | Disposal requires depreciation posted up to the previous month; gain → 8095, loss → 4810 |
+| `createCurrentAccountAction` | `currentAccounts.create` | Own control account (1351+ under 1300, shareholders 1651+ under 1600) |
+| `currentAccountMovementAction`, `confirmCurrentAccountAction` | `currentAccounts.post` / `currentAccounts.edit` | Movements through the engine (source `CURRENT_ACCOUNT`); confirmations append-only with difference |
+
+### Route handlers — Phase 3
+| Route | Permission | Output |
+| --- | --- | --- |
+| `GET /api/invoices/[id]/pdf` | `sales.view` / `purchase.view` | BTW invoice PDF (Dutch/English labels) |

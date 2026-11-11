@@ -32,6 +32,7 @@ const A = (number: string, name: string, nameEn: string, category: AccountCatego
 
 export const STANDARD_CHART: ChartAccount[] = [
   A("0000", "Vaste activa", "Fixed assets", "ASSET", { header: true }),
+  A("0090", "Investeringen tussenrekening", "Capital expenditure clearing", "ASSET", { parent: "0000" }),
   A("0100", "Terreinen en gebouwen", "Land and buildings", "ASSET", { parent: "0000", control: "FIXED_ASSET" }),
   A("0105", "Cumulatieve afschrijving gebouwen", "Accumulated depreciation buildings", "ASSET", { parent: "0000", normal: "CREDIT", control: "FIXED_ASSET" }),
   A("0200", "Machines en installaties", "Machinery and installations", "ASSET", { parent: "0000", control: "FIXED_ASSET" }),
@@ -107,6 +108,7 @@ export const STANDARD_CHART: ChartAccount[] = [
   A("4600", "Verzekeringen", "Insurance", "OPERATING_EXPENSE", { parent: "4000" }),
   A("4700", "Accountants- en advieskosten", "Accounting and advisory fees", "OPERATING_EXPENSE", { parent: "4000" }),
   A("4800", "Afschrijvingen", "Depreciation", "OPERATING_EXPENSE", { parent: "4000" }),
+  A("4810", "Boekverlies vaste activa", "Loss on disposal of fixed assets", "OPERATING_EXPENSE", { parent: "4000" }),
   A("4900", "Overige bedrijfskosten", "Other operating expenses", "OPERATING_EXPENSE", { parent: "4000" }),
   A("4950", "Belastingen naar de winst", "Income tax expense", "OPERATING_EXPENSE", { parent: "4000" }),
 
@@ -120,6 +122,7 @@ export const STANDARD_CHART: ChartAccount[] = [
   A("8030", "Omzet 0% en export", "Revenue 0% and export", "REVENUE", { parent: "8000" }),
   A("8040", "Omzet vrijgesteld", "Exempt revenue", "REVENUE", { parent: "8000" }),
   A("8090", "Overige opbrengsten", "Other income", "REVENUE", { parent: "8000" }),
+  A("8095", "Boekwinst vaste activa", "Gain on disposal of fixed assets", "REVENUE", { parent: "8000" }),
 
   A("9000", "Financiële baten en lasten", "Financial income and expenses", "FINANCIAL_EXPENSE", { header: true }),
   A("9010", "Rentebaten", "Interest income", "FINANCIAL_INCOME", { parent: "9000" }),

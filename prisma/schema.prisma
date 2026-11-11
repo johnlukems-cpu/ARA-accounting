@@ -985,3 +985,152 @@ model BankReconciliation {
   @@unique([financialAccountId, periodEnd])
   @@index([organizationId])
 }
+
+// ───────────────────────── Current accounts and fixed assets (Phase 3C) ─────────────────────────
+
+enum CurrentAccountKind {
+  DIRECTOR
+  SHAREHOLDER
+  RELATED_PARTY
+  INTERCOMPANY
+}
+
+/// Rekening-courant with a director, shareholder, related party or group company. Has its own control account.
+model CurrentAccount {
+  id                    String                       @id @default(cuid())
+  organizationId        String
+  administrationId      String
+  kind                  CurrentAccountKind
+  counterpartyName      String
+  counterpartyCompanyId String?
+  ledgerAccountId       String
+  currency              String
+  interestRatePct       Decimal?                     @db.Decimal(9, 4)
+  agreement             String?
+  status                RecordStatus                 @default(ACTIVE)
+  createdAt             DateTime                     @default(now())
+  confirmations         CurrentAccountConfirmation[]
+
+  @@unique([administrationId, ledgerAccountId])
+  @@index([organizationId])
+}
+
+/// Balance confirmed by the counterparty at a date (current account reconciliation).
+model CurrentAccountConfirmation {
+  id               String         @id @default(cuid())
+  organizationId   String
+  currentAccountId String
+  date             DateTime       @db.Date
+  confirmedBalance Decimal        @db.Decimal(20, 4)
+  ledgerBalance    Decimal        @db.Decimal(20, 4)
+  difference       Decimal        @db.Decimal(20, 4)
+  notes            String?
+  createdById      String
+  createdAt        DateTime       @default(now())
+  currentAccount   CurrentAccount @relation(fields: [currentAccountId], references: [id])
+
+  @@index([organizationId])
+}
+
+enum DepreciationMethod {
+  STRAIGHT_LINE
+  DECLINING_BALANCE
+}
+
+model AssetCategory {
+  id                      String             @id @default(cuid())
+  organizationId          String
+  administrationId        String
+  code                    String
+  name                    String
+  assetAccountId          String
+  accumulatedAccountId    String
+  expenseAccountId        String
+  gainAccountId           String
+  lossAccountId           String
+  defaultMethod           DepreciationMethod @default(STRAIGHT_LINE)
+  defaultUsefulLifeMonths Int                @default(60)
+  defaultResidualPct      Decimal            @default(0) @db.Decimal(9, 4)
+  status                  RecordStatus       @default(ACTIVE)
+  assets                  Asset[]
+
+  @@unique([administrationId, code])
+  @@index([organizationId])
+}
+
+enum AssetStatus {
+  ACTIVE
+  FULLY_DEPRECIATED
+  DISPOSED
+}
+
+model Asset {
+  id                 String             @id @default(cuid())
+  organizationId     String
+  administrationId   String
+  categoryId         String
+  number             String
+  name               String
+  acquisitionDate    DateTime           @db.Date
+  acquisitionCost    Decimal            @db.Decimal(20, 4) // base currency
+  residualValue      Decimal            @default(0) @db.Decimal(20, 4)
+  usefulLifeMonths   Int
+  method             DepreciationMethod @default(STRAIGHT_LINE)
+  decliningRatePct   Decimal?           @db.Decimal(9, 4)
+  depreciationStart  DateTime           @db.Date // first day of the first depreciation month
+  location           String?
+  costCenterId       String?
+  status             AssetStatus        @default(ACTIVE)
+  disposedAt         DateTime?          @db.Date
+  disposalProceeds   Decimal?           @db.Decimal(20, 4)
+  acquisitionEntryId String?
+  createdById        String
+  createdAt          DateTime           @default(now())
+  category           AssetCategory      @relation(fields: [categoryId], references: [id])
+  depreciation       DepreciationLine[]
+  history            AssetTransaction[]
+
+  @@unique([administrationId, number])
+  @@index([organizationId])
+}
+
+/// One month of depreciation for one asset. Unique per asset and month: a month can never be depreciated twice.
+model DepreciationLine {
+  id             String   @id @default(cuid())
+  organizationId String
+  assetId        String
+  year           Int
+  month          Int
+  amount         Decimal  @db.Decimal(20, 4)
+  entryId        String
+  createdAt      DateTime @default(now())
+  asset          Asset    @relation(fields: [assetId], references: [id])
+
+  @@unique([assetId, year, month])
+  @@index([organizationId])
+  @@index([entryId])
+}
+
+enum AssetTransactionType {
+  ACQUISITION
+  DEPRECIATION
+  TRANSFER
+  DISPOSAL
+}
+
+model AssetTransaction {
+  id             String               @id @default(cuid())
+  organizationId String
+  assetId        String
+  type           AssetTransactionType
+  date           DateTime             @db.Date
+  amount         Decimal?             @db.Decimal(20, 4)
+  entryId        String?
+  details        Json?
+  createdById    String
+  createdAt      DateTime             @default(now())
+  asset          Asset                @relation(fields: [assetId], references: [id])
+
+  @@index([organizationId])
+  @@index([assetId])
+}

@@ -25,6 +25,24 @@ export async function installOperations(tx: Tx, organizationId: string, administ
       outputAccountId: c.direction === "PURCHASE" ? null : output, inputAccountId: input, legalStatus: c.legalStatus, legalSource: c.legalSource, reportBox: c.reportBox,
     })),
   });
+  // Asset categories (default useful lives are commercial estimates; fiscal depreciation is configured in phase 9).
+  const cats = [
+    { code: "GEB", name: "Gebouwen", asset: "0100", acc: "0105", life: 360 },
+    { code: "MACH", name: "Machines en installaties", asset: "0200", acc: "0205", life: 120 },
+    { code: "INV", name: "Inventaris", asset: "0300", acc: "0305", life: 60 },
+    { code: "VERV", name: "Vervoermiddelen", asset: "0400", acc: "0405", life: 60 },
+    { code: "COMP", name: "Computers en software", asset: "0500", acc: "0505", life: 36 },
+  ];
+  const expense = await acc("4800");
+  const gain = await acc("8095");
+  const loss = await acc("4810");
+  for (const c of cats) {
+    const assetAccountId = await acc(c.asset);
+    const accumulatedAccountId = await acc(c.acc);
+    if (assetAccountId && accumulatedAccountId && expense && gain && loss) {
+      await tx.assetCategory.create({ data: { organizationId, administrationId, code: c.code, name: c.name, assetAccountId, accumulatedAccountId, expenseAccountId: expense, gainAccountId: gain, lossAccountId: loss, defaultUsefulLifeMonths: c.life } });
+    }
+  }
   const cash = await acc("1010");
   const kas = await tx.journal.findFirst({ where: { administrationId, code: "KAS" } });
   if (cash && kas) {
