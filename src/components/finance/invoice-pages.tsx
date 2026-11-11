@@ -8,7 +8,7 @@ import { can } from "@/core/auth/access";
 import { withTenant } from "@/core/tenancy/tenant";
 import { invoiceTransitionAction, registerPaymentAction, saveInvoiceAction, sendInvoiceAction } from "@/actions/invoicing";
 import { purchaseApprovalRequired } from "@/modules/invoicing/service";
-import { formatAmount } from "@/lib/format";
+import { formatRate, formatAmount } from "@/lib/format";
 import { ActionForm, Field, Input, Select, SubmitButton } from "@/components/ui/form";
 import { buttonClass } from "@/components/ui/button-class";
 import { Badge, Card, Dl, EmptyState, PageHeader, Table, Td, TextLink } from "@/components/ui/misc";
@@ -228,7 +228,7 @@ export async function InvoiceDetail({ type, id }: { type: T; id: string }) {
             <div className="flex justify-between"><dt>{t("invoicing.totalNet")}</dt><dd>{money(inv.netAmount)}</dd></div>
             <div className="flex justify-between"><dt>{t("invoicing.totalTax")}</dt><dd>{money(inv.taxAmount)}</dd></div>
             <div className="flex justify-between border-t border-border pt-1 text-base font-semibold"><dt>{t("invoicing.totalGross")}</dt><dd>{money(inv.grossAmount)}</dd></div>
-            {inv.currency !== admin.baseCurrency && <div className="flex justify-between text-xs text-muted-foreground"><dt>{t("invoicing.inBase", { rate: inv.exchangeRate.toString() })}</dt><dd>{formatAmount(inv.grossBase, admin.baseCurrency, locale)}</dd></div>}
+            {inv.currency !== admin.baseCurrency && <div className="flex justify-between text-xs text-muted-foreground"><dt>{t("invoicing.inBase", { rate: formatRate(inv.exchangeRate, locale) })}</dt><dd>{formatAmount(inv.grossBase, admin.baseCurrency, locale)}</dd></div>}
           </dl>
         </Card>
 

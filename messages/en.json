@@ -321,8 +321,8 @@
     "contextTitle": "Current environment",
     "role": "Your role",
     "nextTitle": "In development",
-    "nextBody": "Phase 4 is complete. Next: CBvS rates, rate policy and revaluation (phase 5).",
-    "phaseBadge": "Phase 5 · Multi-currency"
+    "nextBody": "Phase 5 is complete. Next: budgets, versions and budget versus actual (phase 6).",
+    "phaseBadge": "Phase 6 · Budgets"
   },
   "shell": {
     "organization": "Organisation",
@@ -362,7 +362,8 @@
     "taxCodes": "BTW codes",
     "currentAccounts": "Current accounts",
     "assets": "Fixed assets",
-    "templates": "Industry templates"
+    "templates": "Industry templates",
+    "currency": "Currencies and rates"
   },
   "audit": {
     "title": "Audit log",
@@ -690,7 +691,8 @@
       "closingDebit": "Closing debit",
       "closingCredit": "Closing credit"
     },
-    "reverseViaSource": "This entry comes from a module (invoice, payment …); correct it there, e.g. with a credit note."
+    "reverseViaSource": "This entry comes from a module (invoice, payment …); correct it there, e.g. with a credit note.",
+    "fxAdjustmentSource": "Revaluation lines can only be posted by the currency module."
   },
   "banks": {
     "DSB": "De Surinaamsche Bank (DSB)",
@@ -1008,7 +1010,8 @@
     "invalidOffset": "These items cannot be offset against each other.",
     "offsetRateMismatch": "Offsetting items with different rates requires the currency module.",
     "offsetDone": "Offset done.",
-    "financialAccountCreated": "Account created."
+    "financialAccountCreated": "Account created.",
+    "rateHint": "Leave empty: rate per the rate policy on the invoice date."
   },
   "assets": {
     "title": "Fixed assets",
@@ -1231,5 +1234,110 @@
     "upgradeApply": "Apply upgrade",
     "upgraded": "Upgrade applied.",
     "upgradeOutdated": "The proposal is outdated; reload the page."
+  },
+  "currency": {
+    "title": "Currencies and rates",
+    "intro": "Rates in {base} per unit of foreign currency, the rate policy and the period-end revaluation.",
+    "rates": "Rates",
+    "allCurrencies": "All currencies",
+    "allTypes": "All types",
+    "noRates": "No rates yet.",
+    "noRatesHint": "Enter rates or import the CBvS rates.",
+    "pair": "Currency",
+    "rateType": "Rate type",
+    "rate": "Rate",
+    "source": "Source",
+    "types": {
+      "CBVS_BUY": "CBvS buying rate",
+      "CBVS_SELL": "CBvS selling rate",
+      "CBVS_MONTH_AVG": "CBvS monthly average",
+      "CLOSING": "Closing rate (period end)",
+      "BANK": "Bank rate",
+      "CAMBIO": "Cambio rate",
+      "MANUAL": "Manual"
+    },
+    "sources": {
+      "MANUAL": "Manual",
+      "CBVS_IMPORT": "CBvS import"
+    },
+    "statuses": {
+      "PENDING": "Entered",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected"
+    },
+    "approve": "Approve",
+    "reject": "Reject",
+    "rateApproved": "Rate approved.",
+    "rateRejected": "Rate rejected.",
+    "addTitle": "Enter rate",
+    "rateIn": "Rate in {base}",
+    "reference": "Source or reference",
+    "referencePlaceholder": "e.g. CBvS publication, bank statement, cambio receipt",
+    "add": "Save rate",
+    "rateCreated": "Rate saved.",
+    "importTitle": "Import CBvS rates",
+    "importIntro": "The CBvS publishes buying and selling rates; there is no confirmed automated feed. Copy the rates into this CSV layout (one row per date and currency). They are stored as 'entered'.",
+    "importSummary": "Created / skipped",
+    "imported": "Rates imported.",
+    "csvDate": "invalid date",
+    "csvCurrency": "invalid currency code",
+    "csvRate": "invalid rate",
+    "csvBuyAboveSell": "buying rate above selling rate",
+    "csvErrors": "The file has errors on line {lines}.",
+    "csvEmpty": "The file contains no rates.",
+    "sameCurrency": "Currency and base currency are the same.",
+    "rateExists": "A rate for this currency, type and date already exists.",
+    "rateDecided": "This rate has already been decided.",
+    "noPolicyRate": "No {type} rate for {currency} on or shortly before {date}. Enter the rate or type it on the invoice.",
+    "overrideNotAllowed": "The policy rate is {rate}. Deviating requires the right to change rates.",
+    "policyTitle": "Rate policy of this administration",
+    "policyIntro": "Which rate applies to which transaction (agree with your accountant). Bank and cambio transactions always use the actual rate on the statement or receipt.",
+    "policy": {
+      "sales": "Sales invoices",
+      "purchase": "Purchase invoices",
+      "revaluation": "Revaluation",
+      "maxAgeDays": "Maximum rate age (days)",
+      "revaluationMode": "Revaluation mode",
+      "monetaryAccounts": "Extra monetary accounts",
+      "monetaryAccountsHint": "E.g. 0710 for a USD loan. Bank, cash, receivables, payables and current accounts are always included.",
+      "requireApproved": "Use approved rates only"
+    },
+    "modes": {
+      "AUTO_REVERSE": "Reverse on day 1 of the next period",
+      "CUMULATIVE": "Cumulative (no reversal)"
+    },
+    "revaluationTitle": "Foreign-currency revaluation",
+    "revaluationIntro": "Revalues foreign-currency bank, cash, receivables, payables and current accounts at the rate on the last day of the period. Fixed assets, prepayments and equity are not revalued. The proposal is posted after approval by a colleague.",
+    "preview": "Calculate",
+    "balanceTx": "Balance (currency)",
+    "carrying": "Carrying value",
+    "revalued": "Revalued",
+    "missingRates": "No {type} on {date} for: {currencies}.",
+    "nothingToRevalue": "There is nothing to revalue.",
+    "propose": "Create proposal",
+    "revaluationProposed": "Revaluation proposal created; have the entry approved, then post it here.",
+    "revaluationExists": "A proposal or posted revaluation already exists for this period.",
+    "previousNotReversed": "An earlier revaluation has not been reversed yet.",
+    "revaluationPeriod": "Only periods 1 to 12 can be revalued.",
+    "nextPeriodMissing": "The next period does not exist yet; create the next fiscal year first.",
+    "alreadyAutoReversed": "This revaluation has already been reversed; correct it with a memorial entry.",
+    "revStatuses": {
+      "PROPOSED": "Proposed",
+      "POSTED": "Posted",
+      "REVERSED": "Reversed",
+      "CANCELLED": "Withdrawn"
+    },
+    "entries": "Entries",
+    "entry": "Entry",
+    "reversal": "Reversal",
+    "post": "Post",
+    "completeReversal": "Book reversal",
+    "recalculate": "Reverse",
+    "step": {
+      "cancel": "Proposal withdrawn.",
+      "post": "Revaluation posted.",
+      "completeReversal": "Reversal booked.",
+      "reverse": "Revaluation reversed; you can recalculate."
+    }
   }
 }

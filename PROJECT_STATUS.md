@@ -2,9 +2,31 @@
 
 | Item | Value |
 | --- | --- |
-| Current phase | **5 — Multi-currency (next)** |
-| Completed | 0 — Architecture · 1 — Foundation · 2 — Accounting core · 3 — Financial operations · **4 — Industry templates** |
+| Current phase | **6 — Budgets (next)** |
+| Completed | 0 — Architecture · 1 — Foundation · 2 — Accounting core · 3 — Financial operations · 4 — Industry templates · **5 — Multi-currency** |
 | Last update | 2026-11-11 |
+
+## Phase 5 — Multi-currency: COMPLETED (2026-11-11)
+
+**Features:**
+- **Exchange rates** — rates per organisation (1 foreign = r base, 10 decimals) for 7 types: CBvS buying, CBvS selling, CBvS monthly average, closing rate, bank, cambio and manual. A rate is entered, then approved or rejected by another user, and is immutable once decided.
+- **CBvS rates** — imported from an ARA CSV layout. There is no confirmed machine-readable CBvS feed; an automated adapter waits for a verified source.
+- **Rate policy per administration** — defaults: sales = CBvS buying, purchases = CBvS selling, revaluation = closing rate, a maximum rate age of 7 days, optionally approved rates only, auto-reverse or cumulative.
+- **Invoices** — sales and purchase invoices take the policy rate when no rate is typed. A deviating rate needs `currency.edit` and is audited. Bank and cambio transactions keep the actual rate.
+- **Realised differences** — booked on payment (from Phase 3), as in workflow 4.
+- **Period-end revaluation** — of monetary items (bank, cash, debtors, creditors, current accounts and configured loans), with a preview per account and currency. The proposal is a journal entry in the FX journal that needs approval. Revaluation lines change only the base value. Reversal is automatic on day 1 of the next period, or deferred until the next fiscal year exists. Only one active revaluation per period, and recalculation goes through a reversal. Non-monetary items are excluded. The sub-ledger check stays clean.
+
+**Migrations:** `phase5_multicurrency`, `phase5_integrity`. They add RLS, CHECK constraints, a trigger that makes decided rates immutable, partial unique indexes, and append-only revaluations.
+
+**Tests:** 100 unit, 55 integration and 12 e2e tests, all passing.
+
+**Outstanding:**
+- an automated CBvS feed (needs a verified data source);
+- the policy defaults must be agreed with the accountant;
+- revaluation of foreign-currency open items per individual item (the current calculation is per account and currency, which equals the sum of the items);
+- monthly-average conversion for P&L reporting (Phase 8).
+
+**Next phase:** 6 — budgets.
 
 ## Phase 4 — Industry templates: COMPLETED (2026-11-11)
 
@@ -128,3 +150,4 @@ A template can add accounts, journals, asset categories, dimension values and KP
 - 2026-11-10: Phase 2 completed: accounting engine with database-enforced integrity, chart of accounts, journals, entries, trial balance, general ledger, CSV exports; 89 automated tests passing.
 - 2026-11-11: Phase 3 completed: relations, sales/purchase invoices with BTW, open items, bank/cash with CSV import and reconciliation, current accounts, fixed assets with depreciation; 126 automated tests passing.
 - 2026-11-11: Phase 4 completed: 20 Surinamese industry templates, versioning, wizard, upgrade proposals, template builder, JSON import/export; 157 automated tests passing.
+- 2026-11-11: Phase 5 completed: exchange rates with approval, CBvS import, rate policy, policy rates on invoices, period-end revaluation with automatic reversal; 167 automated tests passing.

@@ -7,6 +7,7 @@ import { audit } from "@/core/audit/audit";
 import { assertCan, type Access } from "@/core/auth/access";
 import { UserError } from "@/core/errors";
 import { nextSequence } from "@/core/numbering";
+import { resolveDocumentRate } from "@/modules/currency/service";
 import * as engine from "@/core/ledger/engine";
 import type { LineInput } from "@/core/ledger/domain";
 import { calculateLines, invoiceLedgerLines, type TaxCodeInfo } from "./domain";
@@ -115,8 +116,11 @@ export async function saveInvoice(access: Access, input: InvoiceInput) {
     if (input.dueDate < input.invoiceDate) throw new UserError("invoicing.dueBeforeDate");
     if (input.type === "PURCHASE" && !input.externalNumber) throw new UserError("invoicing.externalNumberRequired");
 
-    const rate = input.currency === admin.baseCurrency ? "1" : input.exchangeRate;
-    if (!rate || !(Number(rate) > 0)) throw new UserError("invoicing.rateRequired", { currency: input.currency });
+    // Rate per the administration's policy (C2); a typed rate that differs is an audited override.
+    const fx = input.currency === admin.baseCurrency
+      ? { rate: "1", source: "IDENTITY" }
+      : await resolveDocumentRate(tx, access, admin, { purpose: area, currency: input.currency, date: input.invoiceDate, given: input.exchangeRate, documentId: input.id });
+    const rate = fx.rate;
 
     const codes = await taxCodeMap(tx, admin.id);
     const accountIds = [...new Set(input.lines.map((l) => l.accountId))];
@@ -140,7 +144,7 @@ export async function saveInvoice(access: Access, input: InvoiceInput) {
     }
     const data = {
       partyId: party.id, kind: input.kind, externalNumber: input.externalNumber ?? null, invoiceDate: toDate(input.invoiceDate), dueDate: toDate(input.dueDate),
-      currency: input.currency, exchangeRate: rate, rateSource: input.currency === admin.baseCurrency ? "IDENTITY" : "MANUAL",
+      currency: input.currency, exchangeRate: rate, rateSource: fx.source,
       description: input.description ?? null, notes: input.notes ?? null, creditsInvoiceId: credits,
       netAmount: calc.net, taxAmount: calc.tax, grossAmount: calc.gross, grossBase: new Decimal(calc.gross).times(rate).toDecimalPlaces(2, Decimal.ROUND_HALF_UP).toFixed(2),
     };

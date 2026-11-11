@@ -129,6 +129,7 @@ export function InvoiceEditor({
           <label className="space-y-1.5 text-sm font-medium">
             <span>{t("invoicing.exchangeRate", { currency: h.currency, base: baseCurrency })}</span>
             <input className={input} inputMode="decimal" value={h.exchangeRate} aria-label={t("ledger.rate")} onChange={(e) => setH({ ...h, exchangeRate: e.target.value })} />
+            <span className="block text-xs font-normal text-muted-foreground">{t("invoicing.rateHint")}</span>
           </label>
         )}
         <label className="space-y-1.5 text-sm font-medium sm:col-span-2">

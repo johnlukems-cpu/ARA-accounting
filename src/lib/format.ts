@@ -17,3 +17,8 @@ export function formatCell(value: Decimal.Value | { toString(): string } | null 
   if (d.isZero()) return "";
   return formatAmount(d, "", locale).trim();
 }
+
+/** Exchange rate for display: at least 4 decimals, locale separators (display only; calculations use the stored decimal). */
+export function formatRate(value: { toString(): string } | string, locale: string): string {
+  return new Intl.NumberFormat(locale === "en" ? "en-US" : "nl-NL", { minimumFractionDigits: 4, maximumFractionDigits: 10, useGrouping: false }).format(Number(value.toString()));
+}

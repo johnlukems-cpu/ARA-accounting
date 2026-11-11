@@ -1177,3 +1177,74 @@ model IndustryTemplateVersion {
 
   @@unique([templateId, version])
 }
+
+// ───────────── Phase 5: multi-currency ─────────────
+
+enum RateType {
+  CBVS_BUY
+  CBVS_SELL
+  CBVS_MONTH_AVG
+  CLOSING
+  BANK
+  CAMBIO
+  MANUAL
+}
+
+enum RateSource {
+  MANUAL
+  CBVS_IMPORT
+}
+
+enum RateStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// Exchange rate of the organisation: 1 unit of `currency` = `rate` units of `baseCurrency` (e.g. 1 USD = 38.50 SRD).
+/// Approved and rejected rates are immutable (trigger); one active rate per currency pair, type and date.
+model ExchangeRate {
+  id             String     @id @default(cuid())
+  organizationId String
+  baseCurrency   String
+  currency       String
+  rateType       RateType
+  rate           Decimal    @db.Decimal(20, 10)
+  effectiveDate  DateTime   @db.Date
+  source         RateSource @default(MANUAL)
+  reference      String?
+  status         RateStatus @default(PENDING)
+  createdById    String
+  approvedById   String?
+  approvedAt     DateTime?
+  createdAt      DateTime   @default(now())
+
+  @@index([organizationId, baseCurrency, currency, rateType, effectiveDate])
+}
+
+enum RevaluationStatus {
+  PROPOSED
+  POSTED
+  REVERSED
+  CANCELLED
+}
+
+/// Period-end revaluation of monetary foreign-currency balances (ACCOUNTING_RULES C5–C7).
+model CurrencyRevaluation {
+  id                String            @id @default(cuid())
+  organizationId    String
+  administrationId  String
+  periodId          String
+  revaluationDate   DateTime          @db.Date
+  scope             String            @default("ALL")
+  status            RevaluationStatus @default(PROPOSED)
+  rates             Json
+  lines             Json
+  entryId           String?
+  reversalEntryId   String?
+  createdById       String
+  createdAt         DateTime          @default(now())
+
+  @@index([organizationId])
+  @@index([administrationId, periodId])
+}

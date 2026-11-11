@@ -61,13 +61,14 @@ export async function partyStatement(tx: Tx, args: { partyId: string; from: Date
 
 /**
  * Sub-ledger reconciliation (ACCOUNTING_RULES S2): Σ open items at their original rate = control account balance (base).
- * Returns the difference per control account; a non-zero difference is a quality issue.
+ * Returns the difference per control account; a non-zero difference is a quality issue. Period-end revaluations
+ * (C5, source FX_REVALUATION) are valuation adjustments outside the sub-ledger and are excluded from the comparison.
  */
 export async function controlAccountCheck(tx: Tx, administrationId: string) {
   const rows = await tx.$queryRaw<{ accountId: string; number: string; name: string; ledger: string; subledger: string }[]>`
     SELECT a.id AS "accountId", a.number, a.name,
            COALESCE((SELECT SUM(l."debitBase" - l."creditBase") FROM "JournalLine" l JOIN "JournalEntry" e ON e.id = l."entryId"
-                     WHERE l."accountId" = a.id AND e.status = 'POSTED'), 0)::text AS ledger,
+                     WHERE l."accountId" = a.id AND e.status = 'POSTED' AND e."sourceType" <> 'FX_REVALUATION'), 0)::text AS ledger,
            COALESCE((SELECT SUM(ROUND(o."remainingAmount" * o."originalRate", 2) * CASE WHEN o.side = 'PAYABLE' THEN -1 ELSE 1 END)
                      FROM "OpenItem" o WHERE o."ledgerAccountId" = a.id AND o.status = 'OPEN'), 0)::text AS subledger
       FROM "Account" a

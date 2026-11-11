@@ -23,6 +23,11 @@ export interface LineInput {
   departmentId?: string | null;
   partyId?: string | null;
   taxCodeId?: string | null;
+  /**
+   * Revaluation line (ACCOUNTING_RULES C5): debit/credit are BASE-currency amounts that only adjust the base value of a
+   * foreign-currency balance; the transaction amount stays 0 and `currency`/`rate` record the closing rate used.
+   */
+  fxAdjustment?: boolean;
 }
 
 export interface BuiltLine {
@@ -79,6 +84,22 @@ export function buildLines(inputs: LineInput[], baseCurrency: string, roundingAc
   inputs.forEach((input, i) => {
     const currency = (input.currency || baseCurrency).toUpperCase();
     if (!/^[A-Z]{3}$/.test(currency)) throw new LedgerError("ledger.invalidCurrency", { line: i + 1 });
+    if (input.fxAdjustment) {
+      if (currency === baseCurrency || !input.rate || !(new Decimal(input.rate).gt(0))) throw new LedgerError("ledger.invalidRate", { line: i + 1 });
+      const bd = positive(input.debit, baseCurrency);
+      const bc = positive(input.credit, baseCurrency);
+      if ((bd && bc) || (!bd && !bc)) throw new LedgerError("ledger.oneSidePerLine", { line: i + 1 });
+      if (bd) debit = debit.add(bd);
+      else credit = credit.add(bc!);
+      lines.push({
+        lineNo: i + 1, accountId: input.accountId, description: input.description?.trim() || null,
+        debitBase: bd ? bd.toString() : "0", creditBase: bc ? bc.toString() : "0", txCurrency: currency, txAmount: "0",
+        exchangeRate: new Decimal(input.rate).toString(), rateDate: input.rateDate ?? null, rateSource: input.rateSource || "REVALUATION",
+        costCenterId: input.costCenterId || null, projectId: input.projectId || null, departmentId: input.departmentId || null,
+        partyId: input.partyId || null, taxCodeId: input.taxCodeId || null, isRounding: false,
+      });
+      return;
+    }
     const d = positive(input.debit, currency);
     const c = positive(input.credit, currency);
     if ((d && c) || (!d && !c)) throw new LedgerError("ledger.oneSidePerLine", { line: i + 1 });

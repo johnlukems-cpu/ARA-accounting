@@ -106,3 +106,14 @@ Every action re-checks the permission inside the module service for the company 
 | Route | Permission | Output |
 | --- | --- | --- |
 | `GET /api/templates/versions/[id]/export` | `industry.view` | JSON document `{ format: "ara-industry-template", formatVersion: 1, code, name, version, contentHash, content }`; audited |
+
+### Server actions — Phase 5 (`src/actions/currency.ts`)
+| Action | Permission | Notes |
+| --- | --- | --- |
+| `createRateAction` | `currency.create` | 1 foreign = r base; one pending/approved rate per pair, type and date |
+| `decideRateAction` (`APPROVED`/`REJECTED`) | `currency.approve` | Not by the person who entered the rate; decided rates are immutable |
+| `importCbvsAction` | `currency.create` | CSV `datum;valuta;aankoop;verkoop` ≤ 1 MB → CBVS_BUY + CBVS_SELL (pending); duplicates skipped |
+| `savePolicyAction` | `administrations.manageSettings` | `fxPolicySchema` (sales, purchase, revaluation, maxAgeDays, requireApproved, revaluationMode, monetaryAccounts) |
+| `proposeRevaluationAction` | `currency.create` | Draft entry in the FX journal (approval required), source FX_REVALUATION |
+| `revaluationStepAction` (`post`, `cancel`, `completeReversal`, `reverse`) | `currency.post` / `currency.create` | Post = engine post + automatic reversal per policy; reverse requires a reason |
+| `saveInvoiceAction` (changed) | as before + `currency.edit` for a rate that differs from the policy rate | Empty rate = policy rate |

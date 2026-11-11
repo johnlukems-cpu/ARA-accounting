@@ -1,4 +1,4 @@
-import type { ControlType, EntryKind, JournalEntry, SourceType } from "@prisma/client";
+import type { ControlType, EntryKind, JournalEntry, JournalLine, SourceType } from "@prisma/client";
 import type { Tx } from "@/core/db/client";
 import { audit } from "@/core/audit/audit";
 import { nextSequence } from "@/core/numbering";
@@ -121,6 +121,9 @@ async function prepare(tx: Tx, access: Access, input: EntryInput) {
     const cur = (l.currency || admin.baseCurrency).toUpperCase();
     if (a.currency && a.currency !== cur) throw new UserError("ledger.accountCurrency", { line: i + 1, account: a.number, currency: a.currency });
   });
+
+  // Revaluation lines (base-only adjustments) belong to the currency module (C5).
+  if (input.lines.some((l) => l.fxAdjustment) && sourceType !== "FX_REVALUATION") throw new UserError("ledger.fxAdjustmentSource");
 
   const dimIds = [...new Set(input.lines.flatMap((l) => [l.costCenterId, l.projectId, l.departmentId]).filter(Boolean))] as string[];
   if (dimIds.length) {
@@ -255,6 +258,21 @@ export async function approveEntry(tx: Tx, access: Access, entryId: string) {
 const nextNumber = (tx: Tx, organizationId: string, journalId: string, fiscalYearId: string) =>
   nextSequence(tx, organizationId, "JOURNAL", journalId, fiscalYearId);
 
+
+/** Rebuilds engine input from a stored line. A foreign-currency line with tx amount 0 is a revaluation (base-only) line. */
+function storedLineInput(l: JournalLine, baseCurrency: string): LineInput {
+  const fxAdjustment = l.txCurrency !== baseCurrency && l.txAmount.isZero();
+  const amount = (side: "debit" | "credit") => {
+    const base = side === "debit" ? l.debitBase : l.creditBase;
+    if (!base.gt(0)) return null;
+    return fxAdjustment ? base.toString() : l.txAmount.abs().toString();
+  };
+  return {
+    accountId: l.accountId, debit: amount("debit"), credit: amount("credit"), currency: l.txCurrency, rate: l.exchangeRate.toString(), rateSource: l.rateSource,
+    costCenterId: l.costCenterId, projectId: l.projectId, departmentId: l.departmentId, ...(fxAdjustment ? { fxAdjustment: true, rateDate: l.rateDate?.toISOString().slice(0, 10) ?? null } : {}),
+  };
+}
+
 /** Posts an entry: re-validates against current accounts/periods, assigns the gapless number, locks it. */
 export async function postEntry(tx: Tx, access: Access, entryId: string): Promise<JournalEntry> {
   const { entry, admin } = await loadEntry(tx, entryId);
@@ -266,13 +284,7 @@ export async function postEntry(tx: Tx, access: Access, entryId: string): Promis
   await prepare(tx, access, {
     administrationId: entry.administrationId, journalId: entry.journalId, entryDate: entry.entryDate.toISOString().slice(0, 10),
     description: entry.description, kind: entry.kind, sourceType: entry.sourceType,
-    lines: lines.map((l) => ({
-      accountId: l.accountId,
-      debit: l.debitBase.gt(0) ? (l.txAmount.abs().toString()) : null,
-      credit: l.creditBase.gt(0) ? (l.txAmount.abs().toString()) : null,
-      currency: l.txCurrency, rate: l.exchangeRate.toString(), rateSource: l.rateSource,
-      costCenterId: l.costCenterId, projectId: l.projectId, departmentId: l.departmentId,
-    })).filter((_, i) => !lines[i]!.isRounding),
+    lines: lines.filter((l) => !l.isRounding).map((l) => storedLineInput(l, admin.baseCurrency)),
   });
   const entryNumber = await nextNumber(tx, access.organizationId, entry.journalId, entry.fiscalYearId);
   const posted = await tx.journalEntry.update({
@@ -338,12 +350,7 @@ export async function correctEntry(tx: Tx, access: Access, entryId: string, opts
   const draft = await createEntry(tx, access, {
     administrationId: entry.administrationId, journalId: entry.journalId, entryDate: opts.entryDate,
     description: entry.description, reference: entry.reference, kind: "CORRECTION",
-    lines: lines.map((l) => ({
-      accountId: l.accountId, description: l.description,
-      debit: l.debitBase.gt(0) ? l.txAmount.abs().toString() : null, credit: l.creditBase.gt(0) ? l.txAmount.abs().toString() : null,
-      currency: l.txCurrency, rate: l.exchangeRate.toString(), rateSource: l.rateSource,
-      costCenterId: l.costCenterId, projectId: l.projectId, departmentId: l.departmentId,
-    })),
+    lines: lines.map((l) => ({ ...storedLineInput(l, entry.currency), description: l.description })),
   });
   return { reversal, draft };
 }

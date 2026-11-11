@@ -321,8 +321,8 @@
     "contextTitle": "Huidige omgeving",
     "role": "Uw rol",
     "nextTitle": "In ontwikkeling",
-    "nextBody": "Fase 4 is afgerond. Volgende stap: CBvS-koersen, koersbeleid en herwaardering (fase 5).",
-    "phaseBadge": "Fase 5 · Meerdere valuta"
+    "nextBody": "Fase 5 is afgerond. Volgende stap: budgetten, versies en budget versus werkelijk (fase 6).",
+    "phaseBadge": "Fase 6 · Budgetten"
   },
   "shell": {
     "organization": "Organisatie",
@@ -362,7 +362,8 @@
     "taxCodes": "BTW-codes",
     "currentAccounts": "Rekening-courant",
     "assets": "Vaste activa",
-    "templates": "Branchesjablonen"
+    "templates": "Branchesjablonen",
+    "currency": "Valuta en koersen"
   },
   "audit": {
     "title": "Auditlog",
@@ -690,7 +691,8 @@
       "closingDebit": "Eind debet",
       "closingCredit": "Eind credit"
     },
-    "reverseViaSource": "Deze post komt uit een module (factuur, betaling …); corrigeer via die module, bijvoorbeeld met een creditnota."
+    "reverseViaSource": "Deze post komt uit een module (factuur, betaling …); corrigeer via die module, bijvoorbeeld met een creditnota.",
+    "fxAdjustmentSource": "Herwaarderingsregels kunnen alleen door de valutamodule worden geboekt."
   },
   "banks": {
     "DSB": "De Surinaamsche Bank (DSB)",
@@ -1008,7 +1010,8 @@
     "invalidOffset": "Deze posten kunnen niet met elkaar worden verrekend.",
     "offsetRateMismatch": "Verrekenen van posten met verschillende koersen kan pas met de valutamodule.",
     "offsetDone": "Verrekend.",
-    "financialAccountCreated": "Rekening aangemaakt."
+    "financialAccountCreated": "Rekening aangemaakt.",
+    "rateHint": "Leeg laten: koers volgens het koersbeleid op de factuurdatum."
   },
   "assets": {
     "title": "Vaste activa",
@@ -1231,5 +1234,110 @@
     "upgradeApply": "Upgrade uitvoeren",
     "upgraded": "Upgrade uitgevoerd.",
     "upgradeOutdated": "Het voorstel is verouderd; laad de pagina opnieuw."
+  },
+  "currency": {
+    "title": "Valuta en koersen",
+    "intro": "Koersen in {base} per eenheid vreemde valuta, het koersbeleid en de herwaardering aan het einde van de periode.",
+    "rates": "Koersen",
+    "allCurrencies": "Alle valuta",
+    "allTypes": "Alle soorten",
+    "noRates": "Nog geen koersen.",
+    "noRatesHint": "Voer koersen in of importeer de CBvS-koersen.",
+    "pair": "Valuta",
+    "rateType": "Soort koers",
+    "rate": "Koers",
+    "source": "Bron",
+    "types": {
+      "CBVS_BUY": "CBvS aankoopkoers",
+      "CBVS_SELL": "CBvS verkoopkoers",
+      "CBVS_MONTH_AVG": "CBvS maandgemiddelde",
+      "CLOSING": "Slotkoers (periode-einde)",
+      "BANK": "Bankkoers",
+      "CAMBIO": "Cambiokoers",
+      "MANUAL": "Handmatig"
+    },
+    "sources": {
+      "MANUAL": "Handmatig",
+      "CBVS_IMPORT": "CBvS-import"
+    },
+    "statuses": {
+      "PENDING": "Ingevoerd",
+      "APPROVED": "Goedgekeurd",
+      "REJECTED": "Afgewezen"
+    },
+    "approve": "Goedkeuren",
+    "reject": "Afwijzen",
+    "rateApproved": "Koers goedgekeurd.",
+    "rateRejected": "Koers afgewezen.",
+    "addTitle": "Koers invoeren",
+    "rateIn": "Koers in {base}",
+    "reference": "Bron of referentie",
+    "referencePlaceholder": "bijv. CBvS-publicatie, bankafschrift, cambiobon",
+    "add": "Koers opslaan",
+    "rateCreated": "Koers opgeslagen.",
+    "importTitle": "CBvS-koersen importeren",
+    "importIntro": "De CBvS publiceert aankoop- en verkoopkoersen; er is geen bevestigde automatische koppeling. Neem de koersen over in dit CSV-formaat (één regel per datum en valuta). Ze worden als 'ingevoerd' opgeslagen.",
+    "importSummary": "Aangemaakt / overgeslagen",
+    "imported": "Koersen geïmporteerd.",
+    "csvDate": "ongeldige datum",
+    "csvCurrency": "ongeldige valutacode",
+    "csvRate": "ongeldige koers",
+    "csvBuyAboveSell": "aankoopkoers hoger dan verkoopkoers",
+    "csvErrors": "Het bestand bevat fouten op regel {lines}.",
+    "csvEmpty": "Het bestand bevat geen koersen.",
+    "sameCurrency": "Valuta en basisvaluta zijn gelijk.",
+    "rateExists": "Voor deze valuta, soort en datum bestaat al een koers.",
+    "rateDecided": "Over deze koers is al besloten.",
+    "noPolicyRate": "Geen {type}-koers voor {currency} op of kort vóór {date}. Voer de koers in of vul hem op de factuur in.",
+    "overrideNotAllowed": "De koers volgens het beleid is {rate}. Afwijken mag alleen met het recht om koersen te wijzigen.",
+    "policyTitle": "Koersbeleid van deze administratie",
+    "policyIntro": "Welke koers geldt voor welke transactie (af te stemmen met uw accountant). Bank- en cambiotransacties gebruiken altijd de werkelijke koers van het afschrift of de bon.",
+    "policy": {
+      "sales": "Verkoopfacturen",
+      "purchase": "Inkoopfacturen",
+      "revaluation": "Herwaardering",
+      "maxAgeDays": "Maximale ouderdom koers (dagen)",
+      "revaluationMode": "Herwaardering",
+      "monetaryAccounts": "Extra monetaire rekeningen",
+      "monetaryAccountsHint": "Bijv. 0710 voor een USD-lening. Bank, kas, debiteuren, crediteuren en rekening-courant gaan altijd mee.",
+      "requireApproved": "Alleen goedgekeurde koersen gebruiken"
+    },
+    "modes": {
+      "AUTO_REVERSE": "Terugboeken op dag 1 van de volgende periode",
+      "CUMULATIVE": "Cumulatief (niet terugboeken)"
+    },
+    "revaluationTitle": "Herwaardering vreemde valuta",
+    "revaluationIntro": "Herwaardeert bank, kas, debiteuren, crediteuren en rekening-courant in vreemde valuta tegen de koers op de laatste dag van de periode. Vaste activa, vooruitbetalingen en eigen vermogen worden niet herwaardeerd. Het voorstel wordt na goedkeuring door een collega geboekt.",
+    "preview": "Berekenen",
+    "balanceTx": "Saldo valuta",
+    "carrying": "Boekwaarde",
+    "revalued": "Nieuwe waarde",
+    "missingRates": "Geen {type} op {date} voor: {currencies}.",
+    "nothingToRevalue": "Er is niets te herwaarderen.",
+    "propose": "Voorstel maken",
+    "revaluationProposed": "Herwaarderingsvoorstel gemaakt; laat de boeking goedkeuren en boek het daarna hier.",
+    "revaluationExists": "Voor deze periode bestaat al een voorstel of geboekte herwaardering.",
+    "previousNotReversed": "Een eerdere herwaardering is nog niet teruggeboekt.",
+    "revaluationPeriod": "Alleen de periodes 1 tot en met 12 kunnen worden geherwaardeerd.",
+    "nextPeriodMissing": "De volgende periode bestaat nog niet; maak eerst het volgende boekjaar aan.",
+    "alreadyAutoReversed": "Deze herwaardering is al teruggeboekt; corrigeer via een memoriaalboeking.",
+    "revStatuses": {
+      "PROPOSED": "Voorstel",
+      "POSTED": "Geboekt",
+      "REVERSED": "Teruggedraaid",
+      "CANCELLED": "Ingetrokken"
+    },
+    "entries": "Boekingen",
+    "entry": "Boeking",
+    "reversal": "Terugboeking",
+    "post": "Boeken",
+    "completeReversal": "Terugboeking maken",
+    "recalculate": "Terugdraaien",
+    "step": {
+      "cancel": "Voorstel ingetrokken.",
+      "post": "Herwaardering geboekt.",
+      "completeReversal": "Terugboeking gemaakt.",
+      "reverse": "Herwaardering teruggedraaid; u kunt opnieuw berekenen."
+    }
   }
 }

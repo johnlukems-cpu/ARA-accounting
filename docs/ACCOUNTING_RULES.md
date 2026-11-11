@@ -46,11 +46,11 @@ These rules are binding for every module. Surinamese defaults and their legal so
 | # | Rule |
 | --- | --- |
 | C1 | Each line stores the transaction currency amount, the rate, rate date, rate id, rate type and source, plus the base amount. The original amount is never recalculated. |
-| C2 | The rate comes from the administration's `ExchangeRatePolicy` for that transaction type (for example purchases at document date spot, revaluation at period-end closing rate). The user can override with permission, and it is audited. |
-| C3 | Rates are quoted as 1 base = *r* quote (stored once). Inverse rates are derived with 10-decimal precision. |
+| C2 | The rate comes from the administration's rate policy (`Administration.settings.fxPolicy`: sales, purchases, revaluation, maximum rate age, approved-only, revaluation mode) for that transaction type. A typed rate that differs from the policy rate needs `currency.edit` and is audited (`fx.rateOverride`). Bank and cambio movements always use the actual rate of the statement or receipt. |
+| C3 | Rates are stored as **1 unit of foreign currency = *r* units of base currency** (1 USD = 38.50 SRD, as the CBvS quotes them), with 10 decimals. Approved and rejected rates are immutable. |
 | C4 | **Realised difference** on allocation = amount settled × (payment rate − item rate), sign by side. It is posted to FX gain or loss in the same transaction as the payment. |
-| C5 | **Unrealised difference** (revaluation) at period end for monetary items (bank, cash, open AR/AP, current accounts, foreign-currency loans) = closing-rate base value − carrying base value. It is posted as a proposal. Default policy is auto-reversal on day 1 of the next period (configurable: auto-reverse or cumulative). |
-| C6 | Only one POSTED revaluation per (administration, period, scope). A recalculation first reverses the previous one. |
+| C5 | **Unrealised difference** (revaluation) at period end for monetary items (bank, cash, open AR/AP, current accounts, plus accounts listed in the policy such as foreign-currency loans) = closing-rate base value − carrying base value, per account and currency. It is a proposal in the FX journal (approval by another user). Revaluation lines change only the base value (transaction amount 0) and only the currency module may post them. Default policy is auto-reversal on day 1 of the next period (configurable: auto-reverse or cumulative). The sub-ledger check (S2) compares at original rates and leaves revaluations out. |
+| C6 | Only one proposed or posted revaluation per (administration, period, scope) (partial unique index). A recalculation first reverses the previous one (possible until the automatic reversal has been booked; after that a correction is a memorial entry). |
 | C7 | Non-monetary items (fixed assets, prepaid expenses, equity) are not revalued. |
 
 **Reference example (acceptance workflow 4).** Administration in SRD. Rates are CBvS rates (illustrative).

@@ -2,6 +2,30 @@
 
 Only results from real runs are recorded here. Environment: Node 22, PostgreSQL 16.15 (local), Chromium (Playwright 1.63).
 
+## Phase 5 — Multi-currency (2026-11-11)
+
+| Suite | Result |
+| --- | --- |
+| Unit | **100 / 100 passed** (CBvS CSV parsing, revaluation calculation, base-only lines, policy defaults) |
+| Integration (PostgreSQL) | **55 / 55 passed** (5 new) |
+| End-to-end | **12 / 12 passed** (1 new) |
+| Typecheck / lint / build / migration drift | passed |
+
+| Phase 5 acceptance | Evidence |
+| --- | --- |
+| Workflow 4: USD invoice paid at another rate | integration "takes the CBvS selling rate from the policy … books the realised difference on payment" (Dr 4500 SRD 38,000; FX loss SRD 500) |
+| C1 original amounts never recalculated | revaluation lines keep tx amount 0; the invoice line keeps USD 1,000 at 38 |
+| C2 policy rate, audited override with permission | same test (override refused without `currency.edit`; audit `fx.rateOverride`) |
+| C3 rate storage and immutability | integration "rates are entered, approved by someone else, immutable once decided…" |
+| C5 revaluation, approval, auto-reversal | integration "revalues the USD receivable at the closing rate…"; e2e proposal SRD 1,050 |
+| C6 one active revaluation, recalculation via reversal | integration "cumulative mode … a recalculation first reverses…" |
+| C7 non-monetary items untouched | USD prepayment on 1320 not revalued |
+
+Defects found and fixed:
+- posting re-validated stored lines without recognising revaluation lines (`storedLineInput`);
+- the rate column was not localised;
+- an ambiguous "Opslaan" button now reads "Koers opslaan".
+
 ## Phase 4 — Industry templates (2026-11-11)
 
 | Suite | Result |

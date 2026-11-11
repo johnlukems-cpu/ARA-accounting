@@ -216,6 +216,13 @@ Applying a template **copies** rows into the administration (with `templateAccou
 | `CurrencyRevaluation` | administrationId, periodId, revaluationDate, rateSetHash, scope, status (PROPOSED, POSTED, REVERSED), entryId, autoReverseEntryId — U(administrationId, periodId, scope) where status = POSTED |
 | `ExchangeDifference` | administrationId, kind (REALISED, UNREALISED), sourceType, sourceId, currency, txAmount, rateFrom, rateTo, amountBase, entryId |
 
+> **Implemented in Phase 5** (`20261111120000_phase5_multicurrency`, `20261111120100_phase5_integrity`): `ExchangeRate`
+> (organisation-level; baseCurrency, currency, rateType, rate DECIMAL(20,10), effectiveDate, source MANUAL/CBVS_IMPORT, status PENDING/APPROVED/REJECTED;
+> partial unique index on the active rate per pair/type/date; trigger: decided rates immutable and undeletable) and `CurrencyRevaluation`
+> (period, date, scope, status PROPOSED/POSTED/REVERSED/CANCELLED, rates and lines as JSON evidence, entryId, reversalEntryId; one active per
+> administration/period/scope; no deletes). The rate policy lives in `Administration.settings.fxPolicy` instead of a separate table.
+> `Currency` and `ExchangeRateSource` reference tables were not needed (ISO codes are validated; the source is an enum).
+
 ### 4.8 Budgets
 `Budget` (administrationId, fiscalYearId, name, type, dimensionScope, currency, status: DRAFT, SUBMITTED, REVIEW, APPROVED, ACTIVE, CLOSED) → `BudgetVersion` (version, basis: MANUAL, IMPORT, PRIOR_ACTUALS, PRIOR_BUDGET, AVERAGE; adjustmentPct; approved versions immutable) → `BudgetEntry` (accountId, periodNumber, dimension ids, amount) • `BudgetScenario` (BEST, BASE, WORST, assumptions JSONB) • `BudgetApproval` (via generic `Approval`) • `BudgetForecast` (versionId, asOfPeriod, method, assumptions, lines) • `BudgetAlertThreshold` (administrationId, pct, level).
 
