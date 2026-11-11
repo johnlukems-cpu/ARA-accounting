@@ -319,7 +319,12 @@ async function settle(tx: Tx, itemId: string, amount: Decimal) {
  * An unallocated remainder stays open as a payment on account, so the control account always matches the sub-ledger.
  */
 export async function registerPayment(access: Access, input: z.infer<typeof paymentSchema>) {
-  return withTenant(scope(access), async (tx) => {
+  return withTenant(scope(access), (tx) => registerPaymentInTx(tx, access, input), { timeout: 30_000 });
+}
+
+/** Same as registerPayment, inside an existing tenant transaction (used by bank matching). */
+export async function registerPaymentInTx(tx: Tx, access: Access, input: z.infer<typeof paymentSchema>) {
+  {
     const admin = await adminFor(tx, input.administrationId);
     assertCan(access, "banking.post", admin.companyId);
     if (input.idempotencyKey) {
@@ -409,7 +414,7 @@ export async function registerPayment(access: Access, input: z.infer<typeof paym
     }
     await audit(tx, { organizationId: access.organizationId, userId: access.userId, action: "payment.registered", entity: "Payment", entityId: payment.id, details: { direction: input.direction, amount: amount.toFixed(2), currency: fa.currency, allocations: input.allocations.length } });
     return payment;
-  }, { timeout: 30_000 });
+  }
 }
 
 /** Offsets two open items of the same party, side and currency (e.g. a credit note against an invoice). No journal entry needed. */

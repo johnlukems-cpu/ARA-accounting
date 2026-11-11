@@ -58,7 +58,7 @@ export function useFieldErrors(name: string) {
   return useContext(ErrorsContext)?.[name];
 }
 
-export function SubmitButton({ children, variant = "primary", className }: { children: ReactNode; variant?: "primary" | "secondary" | "danger"; className?: string }) {
+export function SubmitButton({ children, variant = "primary", className }: { children: ReactNode; variant?: "primary" | "secondary" | "danger" | "ghost"; className?: string }) {
   const { pending } = useFormStatus();
   return (
     <button type="submit" disabled={pending} className={cn(buttonClass(variant), className)} aria-busy={pending}>

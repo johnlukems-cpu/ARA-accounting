@@ -34,7 +34,7 @@ export default async function BankingPage() {
           <Table head={[t("company.name"), t("banking.bank"), t("banking.accountNumber"), t("ledger.currency"), t("banking.balance"), t("banking.balanceBase", { base: admin.baseCurrency })]}>
             {accounts.map((a) => (
               <tr key={a.id}>
-                <Td><TextLink href={`/app/ledger/general-ledger?account=${a.ledgerAccountId}`}>{a.name}</TextLink><span className="block text-xs text-muted-foreground">{t(`banking.kinds.${a.kind}`)}</span></Td>
+                <Td><TextLink href={`/app/banking/${a.id}`}>{a.name}</TextLink><span className="block text-xs text-muted-foreground">{t(`banking.kinds.${a.kind}`)}</span></Td>
                 <Td>{a.bankCode ? t(`banks.${a.bankCode}`) : "—"}</Td>
                 <Td>{a.accountNumber ?? "—"}</Td>
                 <Td>{a.currency}</Td>

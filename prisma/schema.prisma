@@ -887,3 +887,101 @@ model Allocation {
   @@index([organizationId])
   @@index([openItemId])
 }
+
+// ───────────────────────── Banking (Phase 3B) ─────────────────────────
+
+model BankStatement {
+  id                 String            @id @default(cuid())
+  organizationId     String
+  administrationId   String
+  financialAccountId String
+  fileName           String
+  fileHash           String
+  fromDate           DateTime          @db.Date
+  toDate             DateTime          @db.Date
+  closingBalance     Decimal?          @db.Decimal(20, 4)
+  lineCount          Int
+  duplicateLines     Int               @default(0)
+  importedById       String
+  importedAt         DateTime          @default(now())
+  transactions       BankTransaction[]
+
+  @@unique([financialAccountId, fileHash])
+  @@index([organizationId])
+}
+
+enum BankTransactionStatus {
+  UNMATCHED
+  PARTIAL
+  MATCHED
+  IGNORED
+}
+
+/// One statement line, traceable to its file (statement) and line hash. Duplicate imports are refused.
+model BankTransaction {
+  id                  String                @id @default(cuid())
+  organizationId      String
+  administrationId    String
+  financialAccountId  String
+  statementId         String
+  bookingDate         DateTime              @db.Date
+  amount              Decimal               @db.Decimal(20, 4) // signed: + in, − out (account currency)
+  currency            String
+  description         String
+  counterpartyName    String?
+  counterpartyAccount String?
+  bankReference       String?
+  lineHash            String
+  status              BankTransactionStatus @default(UNMATCHED)
+  matchedAmount       Decimal               @default(0) @db.Decimal(20, 4)
+  ignoreReason        String?
+  createdAt           DateTime              @default(now())
+  statement           BankStatement         @relation(fields: [statementId], references: [id])
+  matches             BankMatch[]
+
+  @@unique([financialAccountId, lineHash])
+  @@index([organizationId])
+  @@index([financialAccountId, status, bookingDate])
+}
+
+/// How (part of) a bank transaction was processed: a payment allocation or a direct ledger entry.
+model BankMatch {
+  id                String          @id @default(cuid())
+  organizationId    String
+  bankTransactionId String
+  paymentId         String?
+  entryId           String?
+  amount            Decimal         @db.Decimal(20, 4)
+  createdById       String
+  createdAt         DateTime        @default(now())
+  transaction       BankTransaction @relation(fields: [bankTransactionId], references: [id])
+
+  @@index([organizationId])
+  @@index([bankTransactionId])
+}
+
+enum ReconciliationStatus {
+  DRAFT
+  APPROVED
+}
+
+model BankReconciliation {
+  id                 String               @id @default(cuid())
+  organizationId     String
+  administrationId   String
+  financialAccountId String
+  periodEnd          DateTime             @db.Date
+  statementBalance   Decimal              @db.Decimal(20, 4)
+  ledgerBalance      Decimal              @db.Decimal(20, 4)
+  difference         Decimal              @db.Decimal(20, 4)
+  unmatchedCount     Int
+  notes              String?
+  status             ReconciliationStatus @default(DRAFT)
+  createdById        String
+  approvedById       String?
+  approvedAt         DateTime?
+  createdAt          DateTime             @default(now())
+
+  @@unique([financialAccountId, periodEnd])
+  @@index([organizationId])
+}
