@@ -2,9 +2,30 @@
 
 | Item | Value |
 | --- | --- |
-| Current phase | **6 — Budgets (next)** |
-| Completed | 0 — Architecture · 1 — Foundation · 2 — Accounting core · 3 — Financial operations · 4 — Industry templates · **5 — Multi-currency** |
+| Current phase | **7 — ARA Scan & AI (next)** |
+| Completed | 0 — Architecture · 1 — Foundation · 2 — Accounting core · 3 — Financial operations · 4 — Industry templates · 5 — Multi-currency · **6 — Budgets** |
 | Last update | 2026-11-11 |
+
+## Phase 6 — Budgets: COMPLETED (2026-11-11)
+
+**Features:**
+- **Budgets** — per fiscal year and scenario (base, best, worst), with an alert threshold.
+- **Starting point** — empty, last year's actuals or last year's approved budget, each optionally adjusted by a percentage.
+- **Versions** — draft → submitted → approved by another user. Earlier approved versions become superseded, and a new version is a copy. Submitted and approved versions are immutable (B3, database triggers).
+- **Amounts** — a monthly grid for P&L accounts in the user's own number notation. A yearly amount can be spread evenly or along last year's pattern without losing a cent. Import is CSV, wide (12 months) or long (period/amount).
+- **Budget versus actual** — any month range; posted entries only (B1); variance, %, utilisation, favourable/unfavourable (B2); totals per category and result; alerts above the threshold; drill-down to the general ledger; CSV export.
+- **Rolling forecast** — actuals up to the chosen month plus the remaining budget.
+
+**Migrations:** `phase6_budgets`, `phase6_integrity`.
+
+**Tests:** 106 unit, 59 integration and 13 e2e tests, all passing. This includes acceptance workflow 5.
+
+**Outstanding:**
+- budgets per cost centre/project — the data model has `dimensionId`, but the UI is per account;
+- Excel import — CSV is supported; Excel files can be saved as CSV;
+- budget alerts as notifications or e-mail (Phase 10, automation).
+
+**Next phase:** 7 — ARA Scan and AI.
 
 ## Phase 5 — Multi-currency: COMPLETED (2026-11-11)
 
@@ -151,3 +172,4 @@ A template can add accounts, journals, asset categories, dimension values and KP
 - 2026-11-11: Phase 3 completed: relations, sales/purchase invoices with BTW, open items, bank/cash with CSV import and reconciliation, current accounts, fixed assets with depreciation; 126 automated tests passing.
 - 2026-11-11: Phase 4 completed: 20 Surinamese industry templates, versioning, wizard, upgrade proposals, template builder, JSON import/export; 157 automated tests passing.
 - 2026-11-11: Phase 5 completed: exchange rates with approval, CBvS import, rate policy, policy rates on invoices, period-end revaluation with automatic reversal; 167 automated tests passing.
+- 2026-11-11: Phase 6 completed: budgets with versions and approval, prior-year basis, distribution, CSV import, budget versus actual with alerts, rolling forecast; 178 automated tests passing.

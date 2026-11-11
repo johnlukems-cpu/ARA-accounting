@@ -117,3 +117,17 @@ Every action re-checks the permission inside the module service for the company 
 | `proposeRevaluationAction` | `currency.create` | Draft entry in the FX journal (approval required), source FX_REVALUATION |
 | `revaluationStepAction` (`post`, `cancel`, `completeReversal`, `reverse`) | `currency.post` / `currency.create` | Post = engine post + automatic reversal per policy; reverse requires a reason |
 | `saveInvoiceAction` (changed) | as before + `currency.edit` for a rate that differs from the policy rate | Empty rate = policy rate |
+
+### Server actions — Phase 6 (`src/actions/budgets.ts`)
+| Action | Permission | Notes |
+| --- | --- | --- |
+| `createBudgetAction` | `budgets.create` | Basis MANUAL / PRIOR_ACTUALS / PRIOR_BUDGET with adjustment %; version 1 as draft |
+| `saveCellsAction` | `budgets.edit` | Inputs `c:<accountId>:<period>`, amounts in the user's locale; draft only |
+| `distributeAction` | `budgets.edit` | EVEN or PRIOR_YEAR pattern, no lost cents |
+| `importBudgetAction` | `budgets.edit` | CSV ≤ 1 MB, wide or long layout |
+| `budgetWorkflowAction` (`submit`, `approve`, `return`, `newVersion`) | `budgets.edit` / `budgets.approve` | Approval by someone other than the submitter |
+
+### Route handlers — Phase 6
+| Route | Permission | Output |
+| --- | --- | --- |
+| `GET /api/budgets/[id]/report?from&to&v` | `budgets.export` or `reports.export` | CSV budget vs actual; audited |

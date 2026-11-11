@@ -321,8 +321,8 @@
     "contextTitle": "Huidige omgeving",
     "role": "Uw rol",
     "nextTitle": "In ontwikkeling",
-    "nextBody": "Fase 5 is afgerond. Volgende stap: budgetten, versies en budget versus werkelijk (fase 6).",
-    "phaseBadge": "Fase 6 · Budgetten"
+    "nextBody": "Fase 6 is afgerond. Volgende stap: ARA Scan, documentverwerking en AI-suggesties (fase 7).",
+    "phaseBadge": "Fase 7 · ARA Scan en AI"
   },
   "shell": {
     "organization": "Organisatie",
@@ -363,7 +363,8 @@
     "currentAccounts": "Rekening-courant",
     "assets": "Vaste activa",
     "templates": "Branchesjablonen",
-    "currency": "Valuta en koersen"
+    "currency": "Valuta en koersen",
+    "budgets": "Budgetten"
   },
   "audit": {
     "title": "Auditlog",
@@ -1339,5 +1340,111 @@
       "completeReversal": "Terugboeking gemaakt.",
       "reverse": "Herwaardering teruggedraaid; u kunt opnieuw berekenen."
     }
+  },
+  "budgets": {
+    "title": "Budgetten",
+    "intro": "Budgetten per boekjaar en scenario, met versies en goedkeuring, budget versus werkelijk en een rollende prognose.",
+    "none": "Nog geen budgetten.",
+    "defaultName": "Budget",
+    "scenario": "Scenario",
+    "scenarios": {
+      "BASE": "Basis",
+      "BEST": "Optimistisch",
+      "WORST": "Pessimistisch"
+    },
+    "version": "Versie",
+    "versions": "Versies",
+    "statuses": {
+      "DRAFT": "Concept",
+      "SUBMITTED": "Ingediend",
+      "APPROVED": "Goedgekeurd",
+      "SUPERSEDED": "Vervangen"
+    },
+    "statusHelp": {
+      "DRAFT": "Concept: bedragen aanpassen en daarna indienen.",
+      "SUBMITTED": "Ingediend: wacht op goedkeuring door een collega.",
+      "APPROVED": "Goedgekeurd: deze versie ligt vast. Wijzigen kan in een nieuwe versie.",
+      "SUPERSEDED": "Vervangen door een nieuwere goedgekeurde versie."
+    },
+    "createTitle": "Budget maken",
+    "createIntro": "Kies een basis: leeg, de werkelijke cijfers van vorig jaar of het goedgekeurde budget van vorig jaar, eventueel met een aanpassing in procenten.",
+    "basis": "Basis",
+    "bases": {
+      "MANUAL": "Leeg (handmatig)",
+      "PRIOR_ACTUALS": "Werkelijk vorig jaar",
+      "PRIOR_BUDGET": "Budget vorig jaar",
+      "IMPORT": "Import"
+    },
+    "adjustment": "Aanpassing (%)",
+    "adjustmentHint": "Bijv. 5 voor +5%, -10 voor −10%.",
+    "threshold": "Waarschuwingsdrempel (%)",
+    "thresholdHint": "Ongunstige afwijking vanaf dit percentage wordt gemarkeerd.",
+    "create": "Budget maken",
+    "views": {
+      "edit": "Bedragen",
+      "report": "Budget vs. werkelijk",
+      "forecast": "Prognose"
+    },
+    "submit": "Indienen ter goedkeuring",
+    "approve": "Goedkeuren",
+    "return": "Terugsturen",
+    "newVersion": "Nieuwe versie",
+    "newVersionNotes": "Reden nieuwe versie",
+    "step": {
+      "submit": "Ingediend.",
+      "approve": "Versie goedgekeurd.",
+      "return": "Teruggestuurd naar concept.",
+      "newVersion": "Nieuwe conceptversie gemaakt."
+    },
+    "gridTitle": "Bedragen per maand",
+    "gridIntro": "Opbrengsten en kosten als positieve bedragen. Leeg is nul.",
+    "gridReadOnly": "Deze versie kan niet meer worden gewijzigd.",
+    "distributeTitle": "Jaarbedrag verdelen",
+    "distributeIntro": "Verdeelt een jaarbedrag over 12 maanden zonder centen te verliezen.",
+    "yearAmount": "Jaarbedrag",
+    "method": "Verdeling",
+    "methods": {
+      "EVEN": "Gelijk over 12 maanden",
+      "PRIOR_YEAR": "Volgens het patroon van vorig jaar"
+    },
+    "distribute": "Verdelen",
+    "distributed": "Verdeeld.",
+    "importTitle": "Budget importeren (CSV)",
+    "importIntro": "Rekeningnummer met 12 maandbedragen, of één regel per rekening en periode. Bestaande bedragen voor dezelfde maanden worden vervangen.",
+    "importOr": "of",
+    "importSummary": "Regels",
+    "imported": "Budget geïmporteerd.",
+    "csvAccount": "ongeldig rekeningnummer",
+    "csvAmount": "ongeldig bedrag",
+    "csvPeriod": "periode moet 1 t/m 12 zijn",
+    "csvColumns": "verwacht 3 of 13 kolommen",
+    "csvErrors": "Het bestand bevat fouten op regel {lines}.",
+    "csvEmpty": "Het bestand bevat geen bedragen.",
+    "csvUnknownAccounts": "Onbekende of niet te budgetteren rekeningen: {accounts}.",
+    "invalidAccount": "Alleen resultatenrekeningen kunnen worden gebudgetteerd.",
+    "invalidAmountIn": "Ongeldig bedrag: {value}",
+    "notDraft": "Alleen een conceptversie kan worden gewijzigd.",
+    "openVersionExists": "Er is al een concept- of ingediende versie.",
+    "noPriorYear": "Er is geen vorig boekjaar.",
+    "noPriorBudget": "Er is geen goedgekeurd budget voor vorig jaar in dit scenario.",
+    "reportTitle": "Budget versus werkelijk",
+    "reportVersion": "Versie {version} ({status})",
+    "budget": "Budget",
+    "actual": "Werkelijk",
+    "utilisation": "Benutting",
+    "na": "n.v.t.",
+    "favourable": "gunstig",
+    "unfavourable": "ongunstig",
+    "result": "Resultaat",
+    "alert": "Waarschuwing",
+    "alertsTitle": "{count} rekening(en) wijken ongunstig {pct}% of meer af:",
+    "reportNote": "Werkelijk = alleen geboekte journaalposten in de periodes 1–12. Afwijking = werkelijk − budget. Klik op een rekening voor de grootboekkaart.",
+    "forecastTitle": "Rollende prognose",
+    "forecastIntro": "Werkelijke cijfers tot en met de gekozen maand, daarna het budget.",
+    "actualsThrough": "Werkelijk t/m",
+    "actualToDate": "Werkelijk tot nu",
+    "remainingBudget": "Resterend budget",
+    "forecast": "Prognose",
+    "yearBudget": "Jaarbudget"
   }
 }

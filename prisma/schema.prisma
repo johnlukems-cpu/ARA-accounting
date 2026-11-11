@@ -1248,3 +1248,80 @@ model CurrencyRevaluation {
   @@index([organizationId])
   @@index([administrationId, periodId])
 }
+
+// ───────────── Phase 6: budgets ─────────────
+
+enum BudgetScenario {
+  BASE
+  BEST
+  WORST
+}
+
+enum BudgetVersionStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  SUPERSEDED
+}
+
+enum BudgetBasis {
+  MANUAL
+  IMPORT
+  PRIOR_ACTUALS
+  PRIOR_BUDGET
+}
+
+/// Budget for one fiscal year and scenario. Amounts are natural amounts per account (revenue and costs both positive).
+model Budget {
+  id                String          @id @default(cuid())
+  organizationId    String
+  administrationId  String
+  fiscalYearId      String
+  name              String
+  scenario          BudgetScenario  @default(BASE)
+  alertThresholdPct Decimal         @default(10) @db.Decimal(9, 2)
+  status            RecordStatus    @default(ACTIVE)
+  createdById       String
+  createdAt         DateTime        @default(now())
+  versions          BudgetVersion[]
+
+  @@unique([administrationId, fiscalYearId, name, scenario])
+  @@index([organizationId])
+}
+
+/// B3: an approved version is immutable (trigger); changes go into a new version.
+model BudgetVersion {
+  id             String              @id @default(cuid())
+  organizationId String
+  budgetId       String
+  version        Int
+  status         BudgetVersionStatus @default(DRAFT)
+  basis          BudgetBasis         @default(MANUAL)
+  adjustmentPct  Decimal             @default(0) @db.Decimal(9, 2)
+  notes          String?
+  createdById    String
+  submittedById  String?
+  approvedById   String?
+  approvedAt     DateTime?
+  createdAt      DateTime            @default(now())
+  budget         Budget              @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  lines          BudgetLine[]
+
+  @@unique([budgetId, version])
+  @@index([organizationId])
+}
+
+model BudgetLine {
+  id             String        @id @default(cuid())
+  organizationId String
+  versionId      String
+  accountId      String
+  /// Cost centre or project dimension value; "" when the line is for the whole account.
+  dimensionId    String        @default("")
+  period         Int
+  amount         Decimal       @db.Decimal(20, 2)
+  version        BudgetVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  @@unique([versionId, accountId, dimensionId, period])
+  @@index([organizationId])
+}

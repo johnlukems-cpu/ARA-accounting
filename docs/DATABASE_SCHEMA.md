@@ -226,6 +226,12 @@ Applying a template **copies** rows into the administration (with `templateAccou
 ### 4.8 Budgets
 `Budget` (administrationId, fiscalYearId, name, type, dimensionScope, currency, status: DRAFT, SUBMITTED, REVIEW, APPROVED, ACTIVE, CLOSED) → `BudgetVersion` (version, basis: MANUAL, IMPORT, PRIOR_ACTUALS, PRIOR_BUDGET, AVERAGE; adjustmentPct; approved versions immutable) → `BudgetEntry` (accountId, periodNumber, dimension ids, amount) • `BudgetScenario` (BEST, BASE, WORST, assumptions JSONB) • `BudgetApproval` (via generic `Approval`) • `BudgetForecast` (versionId, asOfPeriod, method, assumptions, lines) • `BudgetAlertThreshold` (administrationId, pct, level).
 
+> **Implemented in Phase 6** (`20261111130000_phase6_budgets`, `20261111130100_phase6_integrity`): `Budget` (fiscal year, name, scenario,
+> alertThresholdPct; unique per administration/year/name/scenario), `BudgetVersion` (version, status DRAFT/SUBMITTED/APPROVED/SUPERSEDED, basis,
+> adjustmentPct, submitter, approver; trigger: approved versions immutable except APPROVED→SUPERSEDED) and `BudgetLine` (account, dimensionId,
+> period 1–12, amount; unique per version/account/dimension/period; trigger: immutable once the version is submitted). The forecast is computed,
+> not stored; scenarios are a budget attribute; alerts use the budget's threshold.
+
 ### 4.9 Reporting, year-end, annual accounts
 `ReportTemplate` / `ReportTemplateVersion` / `ReportingLine` (code, parent, sign, kind: BALANCE_SHEET, PROFIT_LOSS, CASHFLOW_DIRECT/INDIRECT, EQUITY) / `AccountReportMapping` (administration override of template mapping) • `ReportPeriod` • `GeneratedReport` (parameters, data snapshot JSONB, documentId, generatedById, ledgerHash, so a report records exactly which data it was built on) • `YearEndClosing` (fiscalYearId U, status: DRAFT, REVIEW, ADJUSTMENTS, FINAL_REVIEW, APPROVAL, CLOSED) • `YearEndChecklistItem` (code, mandatory, status, assigneeId, dueDate, evidenceDocumentIds, comments, completedAt, approvedById) • `YearEndAdjustment` (type, entryId) • `AnnualAccount` (fiscalYearId, frameworkTemplateVersionId, status: DRAFT, REVIEW, APPROVED, FINAL, content JSONB, comparativeFiscalYearId, pdfDocumentId) • `FinancialDisclosure` (annualAccountId, code, title, body rich text, order, auto/manual).
 

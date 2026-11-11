@@ -2,6 +2,23 @@
 
 Only results from real runs are recorded here. Environment: Node 22, PostgreSQL 16.15 (local), Chromium (Playwright 1.63).
 
+## Phase 6 — Budgets (2026-11-11)
+
+| Suite | Result |
+| --- | --- |
+| Unit | **106 / 106 passed** (variance and favourability rules, alerts, distribution without lost cents, CSV import) |
+| Integration (PostgreSQL) | **59 / 59 passed** (4 new) |
+| End-to-end | **13 / 13 passed** (acceptance workflow 5) |
+| Typecheck / lint / build / migration drift | passed |
+
+| Phase 6 acceptance | Evidence |
+| --- | --- |
+| B1 actuals = posted only | integration "budget versus actual uses posted entries only…" (a draft of SRD 99,999 is ignored) |
+| B2 variance, %, utilisation, favourable for revenue vs costs | same test + unit "variance, percentage and utilisation…" |
+| B3 approved versions immutable; new version supersedes | integration "submitted and approved versions are immutable…" (database triggers, segregation of duties) |
+| Prior-year basis, seasonal distribution, forecast | integration "builds next year's budget from last year's actuals (+5%)…" |
+| Workflow 5 in the browser | e2e budget → grid → distribution → report with alert → forecast |
+
 ## Phase 5 — Multi-currency (2026-11-11)
 
 | Suite | Result |

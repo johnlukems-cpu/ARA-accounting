@@ -321,8 +321,8 @@
     "contextTitle": "Current environment",
     "role": "Your role",
     "nextTitle": "In development",
-    "nextBody": "Phase 5 is complete. Next: budgets, versions and budget versus actual (phase 6).",
-    "phaseBadge": "Phase 6 · Budgets"
+    "nextBody": "Phase 6 is complete. Next: ARA Scan, document processing and AI suggestions (phase 7).",
+    "phaseBadge": "Phase 7 · ARA Scan and AI"
   },
   "shell": {
     "organization": "Organisation",
@@ -363,7 +363,8 @@
     "currentAccounts": "Current accounts",
     "assets": "Fixed assets",
     "templates": "Industry templates",
-    "currency": "Currencies and rates"
+    "currency": "Currencies and rates",
+    "budgets": "Budgets"
   },
   "audit": {
     "title": "Audit log",
@@ -1339,5 +1340,111 @@
       "completeReversal": "Reversal booked.",
       "reverse": "Revaluation reversed; you can recalculate."
     }
+  },
+  "budgets": {
+    "title": "Budgets",
+    "intro": "Budgets per fiscal year and scenario, with versions and approval, budget versus actual and a rolling forecast.",
+    "none": "No budgets yet.",
+    "defaultName": "Budget",
+    "scenario": "Scenario",
+    "scenarios": {
+      "BASE": "Base",
+      "BEST": "Best case",
+      "WORST": "Worst case"
+    },
+    "version": "Version",
+    "versions": "Versions",
+    "statuses": {
+      "DRAFT": "Draft",
+      "SUBMITTED": "Submitted",
+      "APPROVED": "Approved",
+      "SUPERSEDED": "Superseded"
+    },
+    "statusHelp": {
+      "DRAFT": "Draft: adjust amounts, then submit.",
+      "SUBMITTED": "Submitted: awaiting approval by a colleague.",
+      "APPROVED": "Approved: this version is fixed. Changes go into a new version.",
+      "SUPERSEDED": "Replaced by a newer approved version."
+    },
+    "createTitle": "Create budget",
+    "createIntro": "Choose a basis: empty, last year's actuals or last year's approved budget, optionally adjusted by a percentage.",
+    "basis": "Basis",
+    "bases": {
+      "MANUAL": "Empty (manual)",
+      "PRIOR_ACTUALS": "Last year's actuals",
+      "PRIOR_BUDGET": "Last year's budget",
+      "IMPORT": "Import"
+    },
+    "adjustment": "Adjustment (%)",
+    "adjustmentHint": "E.g. 5 for +5%, -10 for −10%.",
+    "threshold": "Alert threshold (%)",
+    "thresholdHint": "Unfavourable variances from this percentage are flagged.",
+    "create": "Create budget",
+    "views": {
+      "edit": "Amounts",
+      "report": "Budget vs. actual",
+      "forecast": "Forecast"
+    },
+    "submit": "Submit for approval",
+    "approve": "Approve",
+    "return": "Send back",
+    "newVersion": "New version",
+    "newVersionNotes": "Reason for new version",
+    "step": {
+      "submit": "Submitted.",
+      "approve": "Version approved.",
+      "return": "Sent back to draft.",
+      "newVersion": "New draft version created."
+    },
+    "gridTitle": "Amounts per month",
+    "gridIntro": "Revenue and costs as positive amounts. Empty is zero.",
+    "gridReadOnly": "This version can no longer be changed.",
+    "distributeTitle": "Distribute a yearly amount",
+    "distributeIntro": "Spreads a yearly amount over 12 months without losing a cent.",
+    "yearAmount": "Yearly amount",
+    "method": "Distribution",
+    "methods": {
+      "EVEN": "Evenly over 12 months",
+      "PRIOR_YEAR": "Following last year's pattern"
+    },
+    "distribute": "Distribute",
+    "distributed": "Distributed.",
+    "importTitle": "Import budget (CSV)",
+    "importIntro": "Account number with 12 monthly amounts, or one row per account and period. Existing amounts for the same months are replaced.",
+    "importOr": "or",
+    "importSummary": "Lines",
+    "imported": "Budget imported.",
+    "csvAccount": "invalid account number",
+    "csvAmount": "invalid amount",
+    "csvPeriod": "period must be 1 to 12",
+    "csvColumns": "expected 3 or 13 columns",
+    "csvErrors": "The file has errors on line {lines}.",
+    "csvEmpty": "The file contains no amounts.",
+    "csvUnknownAccounts": "Unknown or non-budgetable accounts: {accounts}.",
+    "invalidAccount": "Only profit and loss accounts can be budgeted.",
+    "invalidAmountIn": "Invalid amount: {value}",
+    "notDraft": "Only a draft version can be changed.",
+    "openVersionExists": "A draft or submitted version already exists.",
+    "noPriorYear": "There is no previous fiscal year.",
+    "noPriorBudget": "There is no approved budget for last year in this scenario.",
+    "reportTitle": "Budget versus actual",
+    "reportVersion": "Version {version} ({status})",
+    "budget": "Budget",
+    "actual": "Actual",
+    "utilisation": "Utilisation",
+    "na": "n/a",
+    "favourable": "favourable",
+    "unfavourable": "unfavourable",
+    "result": "Result",
+    "alert": "Alert",
+    "alertsTitle": "{count} account(s) deviate unfavourably by {pct}% or more:",
+    "reportNote": "Actual = posted entries only in periods 1–12. Variance = actual − budget. Click an account for the general ledger card.",
+    "forecastTitle": "Rolling forecast",
+    "forecastIntro": "Actuals up to the chosen month, then the budget.",
+    "actualsThrough": "Actuals through",
+    "actualToDate": "Actual to date",
+    "remainingBudget": "Remaining budget",
+    "forecast": "Forecast",
+    "yearBudget": "Year budget"
   }
 }
