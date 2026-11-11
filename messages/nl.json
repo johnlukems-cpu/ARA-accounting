@@ -321,8 +321,8 @@
     "contextTitle": "Huidige omgeving",
     "role": "Uw rol",
     "nextTitle": "In ontwikkeling",
-    "nextBody": "Fase 7 is afgerond. Volgende stap: balans, winst-en-verliesrekening, kasstroom en kengetallen (fase 8).",
-    "phaseBadge": "Fase 8 · Financiële rapportage"
+    "nextBody": "Fase 8 is afgerond. Volgende stap: jaarafsluiting, jaarrekening en belastingaangiften (fase 9).",
+    "phaseBadge": "Fase 9 · Jaarafsluiting en belastingen"
   },
   "shell": {
     "organization": "Organisatie",
@@ -366,7 +366,8 @@
     "currency": "Valuta en koersen",
     "budgets": "Budgetten",
     "scan": "ARA Scan",
-    "automation": "Automatisering en AI"
+    "automation": "Automatisering en AI",
+    "reports": "Rapportage"
   },
   "audit": {
     "title": "Auditlog",
@@ -1587,5 +1588,92 @@
     "noRuns": "Nog geen beslissingen.",
     "outcome": "Uitkomst",
     "reasonsTitle": "Redenen"
+  },
+  "reports": {
+    "title": "Financiële rapportage",
+    "kinds": {
+      "pl": "Winst-en-verliesrekening",
+      "balance": "Balans",
+      "cashflow": "Kasstroomoverzicht",
+      "equity": "Vermogensverloop",
+      "kpis": "Kengetallen",
+      "forecast": "Liquiditeitsprognose",
+      "pack": "Maandrapport"
+    },
+    "item": "Post",
+    "periodN": "Periode {n}",
+    "pack": "Maandrapport (PDF)",
+    "periodRange": "Boekjaar {year}, periode {from} t/m {to}",
+    "asOfPeriod": "Stand per einde periode {n}",
+    "basis": "Alleen geboekte journaalposten; bedragen in de basisvaluta.",
+    "fingerprint": "Vingerafdruk grootboek",
+    "entries": "boekingen",
+    "days": "dagen",
+    "lines": {
+      "FIXED_ASSETS": "Vaste activa",
+      "INVENTORY": "Voorraden",
+      "RECEIVABLES": "Vorderingen",
+      "TAX_ASSETS": "Te vorderen belastingen",
+      "OTHER_CURRENT_ASSETS": "Overige vlottende activa",
+      "CASH": "Liquide middelen",
+      "EQUITY": "Eigen vermogen",
+      "LONG_TERM_LIABILITIES": "Langlopende schulden en voorzieningen",
+      "CURRENT_LIABILITIES": "Kortlopende schulden",
+      "TAX_LIABILITIES": "Te betalen belastingen",
+      "REVENUE": "Netto-omzet",
+      "OTHER_INCOME": "Overige opbrengsten",
+      "COST_OF_SALES": "Kostprijs van de omzet",
+      "PERSONNEL": "Personeelskosten",
+      "DEPRECIATION": "Afschrijvingen",
+      "OTHER_OPEX": "Overige bedrijfskosten",
+      "FINANCIAL": "Financiële baten en lasten",
+      "INCOME_TAX": "Belastingen naar de winst"
+    },
+    "totals": {
+      "grossMargin": "Brutomarge",
+      "operatingResult": "Bedrijfsresultaat",
+      "resultBeforeTax": "Resultaat vóór belastingen",
+      "netResult": "Netto resultaat",
+      "assets": "Totaal activa",
+      "liabilitiesAndEquity": "Totaal passiva",
+      "equity": "Eigen vermogen ultimo"
+    },
+    "assets": "Activa",
+    "liabilities": "Passiva",
+    "resultYear": "Resultaat lopend boekjaar",
+    "balanced": "Balans sluit",
+    "notBalanced": "Balans sluit niet — controleer de boekingen",
+    "cf": {
+      "netResult": "Netto resultaat",
+      "depreciation": "Afschrijvingen",
+      "workingCapital": "Mutatie werkkapitaal",
+      "operating": "Kasstroom uit operationele activiteiten",
+      "investing": "Kasstroom uit investeringsactiviteiten",
+      "financing": "Kasstroom uit financieringsactiviteiten",
+      "total": "Mutatie liquide middelen",
+      "openingCash": "Liquide middelen begin",
+      "closingCash": "Liquide middelen eind"
+    },
+    "cfReconciles": "Sluit aan op de mutatie liquide middelen",
+    "cfNotReconciled": "Sluit niet aan",
+    "cfNote": "Indirecte methode.",
+    "opening": "Begin",
+    "movement": "Mutatie",
+    "closing": "Eind",
+    "kpi": "Kengetal",
+    "value": "Waarde",
+    "formula": "Formule en periode",
+    "forecastIntro": "Verwachte kasstroom op basis van openstaande posten (vervaldatum) en het goedgekeurde budget voor de komende maanden. Prognose, geen werkelijke cijfers.",
+    "forecastLabel": "Prognose",
+    "openingCashToday": "Kas en bank vandaag (werkelijk)",
+    "horizon": "Horizon",
+    "horizonDays": "{n} dagen",
+    "bucket": "Periode",
+    "receipts": "Ontvangsten debiteuren",
+    "payments": "Betalingen crediteuren",
+    "budgetNet": "Budget (excl. afschrijving)",
+    "net": "Netto",
+    "expectedCash": "Verwacht saldo",
+    "assumptions": "Aannames scenario: debiteuren betalen {delay} dagen na vervaldatum, {pct}% wordt ontvangen; crediteuren worden {payDelay} dagen na vervaldatum betaald."
   }
 }

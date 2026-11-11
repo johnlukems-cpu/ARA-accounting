@@ -8,7 +8,7 @@ export interface NavItem {
   key: string;
   href: string | ((ids: { administrationId?: string }) => string | null);
   permission?: Permission;
-  icon: "dashboard" | "building" | "briefcase" | "book" | "users" | "shield" | "user" | "list" | "scale" | "library" | "notebook" | "receipt" | "cart" | "contact" | "wallet" | "landmark" | "percent" | "transfer" | "factory" | "template" | "coins" | "target" | "scan" | "bot";
+  icon: "dashboard" | "building" | "briefcase" | "book" | "users" | "shield" | "user" | "list" | "scale" | "library" | "notebook" | "receipt" | "cart" | "contact" | "wallet" | "landmark" | "percent" | "transfer" | "factory" | "template" | "coins" | "target" | "scan" | "bot" | "chart";
   /** Section heading shown above the item in the sidebar. */
   section?: "operations" | "accounting" | "settings";
 }
@@ -24,6 +24,7 @@ export const NAV: NavItem[] = [
   { key: "banking", href: "/app/banking", permission: "banking.view", icon: "landmark", section: "operations" },
   { key: "currentAccounts", href: "/app/current-accounts", permission: "currentAccounts.view", icon: "transfer", section: "operations" },
   { key: "assets", href: "/app/assets", permission: "assets.view", icon: "factory", section: "operations" },
+  { key: "reports", href: "/app/reports", permission: "reports.view", icon: "chart", section: "accounting" },
   { key: "budgets", href: "/app/budgets", permission: "budgets.view", icon: "target", section: "accounting" },
   { key: "currency", href: "/app/currency", permission: "currency.view", icon: "coins", section: "accounting" },
   { key: "entries", href: "/app/ledger/entries", permission: "ledger.view", icon: "list", section: "accounting" },

@@ -321,8 +321,8 @@
     "contextTitle": "Current environment",
     "role": "Your role",
     "nextTitle": "In development",
-    "nextBody": "Phase 7 is complete. Next: balance sheet, profit and loss, cash flow and KPIs (phase 8).",
-    "phaseBadge": "Phase 8 · Financial reporting"
+    "nextBody": "Phase 8 is complete. Next: year-end closing, annual accounts and tax returns (phase 9).",
+    "phaseBadge": "Phase 9 · Year-end and tax"
   },
   "shell": {
     "organization": "Organisation",
@@ -366,7 +366,8 @@
     "currency": "Currencies and rates",
     "budgets": "Budgets",
     "scan": "ARA Scan",
-    "automation": "Automation and AI"
+    "automation": "Automation and AI",
+    "reports": "Reports"
   },
   "audit": {
     "title": "Audit log",
@@ -1587,5 +1588,92 @@
     "noRuns": "No decisions yet.",
     "outcome": "Outcome",
     "reasonsTitle": "Reasons"
+  },
+  "reports": {
+    "title": "Financial reporting",
+    "kinds": {
+      "pl": "Profit and loss",
+      "balance": "Balance sheet",
+      "cashflow": "Cash flow statement",
+      "equity": "Changes in equity",
+      "kpis": "KPIs",
+      "forecast": "Cash-flow forecast",
+      "pack": "Monthly report"
+    },
+    "item": "Item",
+    "periodN": "Period {n}",
+    "pack": "Monthly report (PDF)",
+    "periodRange": "Fiscal year {year}, periods {from} to {to}",
+    "asOfPeriod": "Position at the end of period {n}",
+    "basis": "Posted entries only; amounts in the base currency.",
+    "fingerprint": "Ledger fingerprint",
+    "entries": "entries",
+    "days": "days",
+    "lines": {
+      "FIXED_ASSETS": "Fixed assets",
+      "INVENTORY": "Inventories",
+      "RECEIVABLES": "Receivables",
+      "TAX_ASSETS": "Tax receivable",
+      "OTHER_CURRENT_ASSETS": "Other current assets",
+      "CASH": "Cash and cash equivalents",
+      "EQUITY": "Equity",
+      "LONG_TERM_LIABILITIES": "Long-term liabilities and provisions",
+      "CURRENT_LIABILITIES": "Current liabilities",
+      "TAX_LIABILITIES": "Taxes payable",
+      "REVENUE": "Revenue",
+      "OTHER_INCOME": "Other income",
+      "COST_OF_SALES": "Cost of sales",
+      "PERSONNEL": "Personnel costs",
+      "DEPRECIATION": "Depreciation",
+      "OTHER_OPEX": "Other operating expenses",
+      "FINANCIAL": "Financial income and expenses",
+      "INCOME_TAX": "Income tax"
+    },
+    "totals": {
+      "grossMargin": "Gross margin",
+      "operatingResult": "Operating result",
+      "resultBeforeTax": "Result before tax",
+      "netResult": "Net result",
+      "assets": "Total assets",
+      "liabilitiesAndEquity": "Total liabilities and equity",
+      "equity": "Closing equity"
+    },
+    "assets": "Assets",
+    "liabilities": "Liabilities and equity",
+    "resultYear": "Result for the year",
+    "balanced": "Balance sheet balances",
+    "notBalanced": "Balance sheet does not balance — check the entries",
+    "cf": {
+      "netResult": "Net result",
+      "depreciation": "Depreciation",
+      "workingCapital": "Change in working capital",
+      "operating": "Cash flow from operating activities",
+      "investing": "Cash flow from investing activities",
+      "financing": "Cash flow from financing activities",
+      "total": "Change in cash",
+      "openingCash": "Opening cash",
+      "closingCash": "Closing cash"
+    },
+    "cfReconciles": "Reconciles to the change in cash",
+    "cfNotReconciled": "Does not reconcile",
+    "cfNote": "Indirect method.",
+    "opening": "Opening",
+    "movement": "Movement",
+    "closing": "Closing",
+    "kpi": "KPI",
+    "value": "Value",
+    "formula": "Formula and period",
+    "forecastIntro": "Expected cash flow based on open items (due date) and the approved budget for the coming months. Forecast, not actual figures.",
+    "forecastLabel": "Forecast",
+    "openingCashToday": "Cash and bank today (actual)",
+    "horizon": "Horizon",
+    "horizonDays": "{n} days",
+    "bucket": "Period",
+    "receipts": "Receipts from customers",
+    "payments": "Payments to suppliers",
+    "budgetNet": "Budget (excl. depreciation)",
+    "net": "Net",
+    "expectedCash": "Expected balance",
+    "assumptions": "Scenario assumptions: customers pay {delay} days after the due date, {pct}% is collected; suppliers are paid {payDelay} days after the due date."
   }
 }

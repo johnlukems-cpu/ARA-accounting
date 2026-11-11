@@ -2,6 +2,22 @@
 
 Only results from real runs are recorded here. Environment: Node 22, PostgreSQL 16.15 (local), Chromium (Playwright 1.63).
 
+## Phase 8 — Financial reporting (2026-11-11)
+
+| Suite | Result |
+| --- | --- |
+| Unit | **114 / 114 passed** (mapping rules, KPI null handling, forecast buckets and scenarios) |
+| Integration (PostgreSQL) | **66 / 66 passed** (2 new) |
+| End-to-end | **15 / 15 passed** (acceptance workflow 6) |
+| Typecheck / lint / build / migration drift | passed |
+
+| Phase 8 acceptance | Evidence |
+| --- | --- |
+| Statements consistent with each other and the ledger | integration "balance sheet, P&L, cash flow, equity and KPIs…" — a fully worked example: P&L net 1,650; balance 18,950 = 18,950; cash flow −950 / −3,600 / +5,000 = cash change 450 |
+| KPI formulas (R2) | same test (gross margin 60.0%, net margin 33.0%, current ratio 6.72, solvency 61.5%, n.v.t. where undefined) + unit test |
+| Report fingerprint reproducibility (R1) | integration "fingerprint: identical for the same ledger…" (drafts do not change it; a posting does; archived runs append-only) |
+| Workflow 6 in the browser | e2e P&L → balance → cash flow → KPIs → PDF/CSV download → forecast |
+
 ## Phase 7 — ARA Scan & AI (2026-11-11)
 
 | Suite | Result |

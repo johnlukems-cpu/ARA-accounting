@@ -145,3 +145,10 @@ Every action re-checks the permission inside the module service for the company 
 | Route | Permission | Output |
 | --- | --- | --- |
 | `GET /api/documents/[id]/file` | `scan.view` | The stored file inline, with `Content-Security-Policy: sandbox`, `nosniff`, `no-store` |
+
+### Route handlers — Phase 8
+| Route | Permission | Output |
+| --- | --- | --- |
+| `GET /api/reports/[kind]?format=pdf\|csv&from&to&fiscalYearId` — kind `pl`, `balance`, `cashflow`, `equity`, `kpis`, `pack` | `reports.export` | PDF (A4, fingerprint in the footer) or CSV (plain decimals); every export is archived in `ReportRun` with parameters and fingerprint |
+
+Report pages (`/app/reports?view=…`) are read-only server components; they need `reports.view`.

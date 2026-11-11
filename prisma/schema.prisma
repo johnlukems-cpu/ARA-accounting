@@ -1440,3 +1440,22 @@ model AutomationExecution {
   @@index([administrationId, createdAt])
   @@index([organizationId])
 }
+
+// ───────────── Phase 8: reporting ─────────────
+
+/// R1: every exported report stores its parameters and the ledger fingerprint (count + hash of the included entries). Append-only.
+model ReportRun {
+  id               String   @id @default(cuid())
+  organizationId   String
+  administrationId String
+  kind             String
+  format           String
+  params           Json
+  fingerprint      String
+  entryCount       Int
+  createdById      String
+  createdAt        DateTime @default(now())
+
+  @@index([administrationId, createdAt])
+  @@index([organizationId])
+}

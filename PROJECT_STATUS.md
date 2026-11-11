@@ -2,9 +2,36 @@
 
 | Item | Value |
 | --- | --- |
-| Current phase | **8 — Financial reporting (next)** |
-| Completed | 0 — Architecture · 1 — Foundation · 2 — Accounting core · 3 — Financial operations · 4 — Industry templates · 5 — Multi-currency · 6 — Budgets · **7 — ARA Scan & AI** |
+| Current phase | **9 — Year-end & tax (next)** |
+| Completed | 0 — Architecture · 1 — Foundation · 2 — Accounting core · 3 — Financial operations · 4 — Industry templates · 5 — Multi-currency · 6 — Budgets · 7 — ARA Scan & AI · **8 — Financial reporting** |
 | Last update | 2026-11-11 |
+
+## Phase 8 — Financial reporting: COMPLETED (2026-11-11)
+
+**Features:**
+- **Report template** — a data-driven template ("ARA Standaard Suriname"). Mapping rules link accounts to report lines by category, parent header, control type and number range, so industry templates map automatically.
+- **Statements**, built from posted entries only and with comparatives for the same periods of the prior year:
+  - balance sheet: assets and liabilities, the result of the year inside equity, and a check that it balances;
+  - profit and loss: revenue, cost of sales, gross margin, personnel, depreciation, other, operating result, financial items, income tax, net result;
+  - cash flow, indirect method (net result + depreciation ± working capital, investing, financing), reconciled to the change in cash;
+  - statement of changes in equity.
+- **Drill-down** — from every account to the general ledger.
+- **KPI library (R2)** — 11 KPIs, each showing its formula and period; division by zero shows "n.v.t.".
+- **Cash-flow forecast** — 30 to 365 days in 30-day buckets and 3 scenarios with explicit assumptions. It uses open items by due date plus the approved budget for future months (excluding depreciation), labelled as a forecast (R3).
+- **Exports** — PDF (A4) and CSV (Excel-compatible, plain decimals) per report, plus a monthly report pack. Every export is archived with its parameters and ledger fingerprint (R1: count and SHA-256 of the included posted entries).
+
+**Migration:** `phase8_reporting` (`ReportRun`, append-only, RLS).
+
+**Tests:** 114 unit, 66 integration and 15 e2e tests, all passing. This includes acceptance workflow 6, an integration test that checks every statement against a fully worked example, and fingerprint reproducibility.
+
+**Outstanding:**
+- the direct cash-flow method;
+- an .xlsx writer — CSV is used now;
+- custom report templates per organisation;
+- quarter and year comparatives beyond the prior year;
+- P&L at monthly average FX rates (the ledger already holds base amounts).
+
+**Next phase:** 9 — year-end and tax.
 
 ## Phase 7 — ARA Scan & AI: COMPLETED (2026-11-11)
 
@@ -202,3 +229,4 @@ A template can add accounts, journals, asset categories, dimension values and KP
 - 2026-11-11: Phase 5 completed: exchange rates with approval, CBvS import, rate policy, policy rates on invoices, period-end revaluation with automatic reversal; 167 automated tests passing.
 - 2026-11-11: Phase 6 completed: budgets with versions and approval, prior-year basis, distribution, CSV import, budget versus actual with alerts, rolling forecast; 178 automated tests passing.
 - 2026-11-11: Phase 7 completed: ARA Scan (capture, text-layer and optional Claude recognition, suggestions, duplicate detection, review), automation rules and monitor; 187 automated tests passing.
+- 2026-11-11: Phase 8 completed: balance sheet, P&L, cash flow, equity statement, KPIs, cash-flow forecast, PDF/CSV exports with ledger fingerprint; 195 automated tests passing.
