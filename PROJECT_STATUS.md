@@ -2,9 +2,37 @@
 
 | Item | Value |
 | --- | --- |
-| Current phase | **7 — ARA Scan & AI (next)** |
-| Completed | 0 — Architecture · 1 — Foundation · 2 — Accounting core · 3 — Financial operations · 4 — Industry templates · 5 — Multi-currency · **6 — Budgets** |
+| Current phase | **8 — Financial reporting (next)** |
+| Completed | 0 — Architecture · 1 — Foundation · 2 — Accounting core · 3 — Financial operations · 4 — Industry templates · 5 — Multi-currency · 6 — Budgets · **7 — ARA Scan & AI** |
 | Last update | 2026-11-11 |
+
+## Phase 7 — ARA Scan & AI: COMPLETED (2026-11-11)
+
+**Features:**
+- **Capture** — camera capture on mobile (photos are downsized in the browser; several photos become one PDF) and PDF/JPG/PNG uploads. The type is checked by magic bytes and the SHA-256 is stored. Files are kept in the database, append-only.
+- **Recognition** — field suggestions with confidence from:
+  - the PDF text layer (label heuristics, always on), and
+  - Claude (`claude-opus-5-5`, structured output, server-side fallback on a refusal), only when `ANTHROPIC_API_KEY` is set **and** the organisation switched AI on with recorded consent.
+- **Suggestions** — the supplier (tax/BTW/KKF number, otherwise name similarity), then the account and BTW code (from a rule, the supplier's default or earlier invoices), each with its confidence.
+- **Duplicate detection (AI3)** — the same file, the same supplier and invoice number, or the same supplier, date and total.
+- **Review screen** — the user's corrections create a draft purchase invoice. Confirmed values are stored apart from the suggestions (AI1). A suspected duplicate must be explicitly accepted. Documents can be rejected with a reason.
+- **Automation rules per supplier (AI2)** — modes suggest / draft for approval / post automatically, with a minimum confidence and a maximum amount. Every decision is logged with its reasons.
+- **Automation monitor** — automation rate, outcomes and recent decisions.
+- **Security** — nodemailer upgraded because of security advisories.
+
+**Migrations:** `phase7_scan`, `phase7_integrity`. They add `Organization.settings`, documents, files, extractions, rules and executions, with RLS, CHECKs and append-only triggers.
+
+**Tests:** 109 unit, 64 integration and 14 e2e tests, all passing. This includes acceptance workflow 2 (scan variant). The AI provider is tested with a recorded-fixture extractor (AI1–AI3), because no API key is configured here.
+
+**Outstanding:**
+- an OCR fallback for photos when AI is off;
+- e-mail intake (needs an inbound mail service);
+- an offline queue (the PWA service worker);
+- a virus-scan hook;
+- Vercel Blob storage for files larger than the database adapter comfortably holds;
+- a live test of the Claude extractor once a key is configured.
+
+**Next phase:** 8 — financial reporting.
 
 ## Phase 6 — Budgets: COMPLETED (2026-11-11)
 
@@ -173,3 +201,4 @@ A template can add accounts, journals, asset categories, dimension values and KP
 - 2026-11-11: Phase 4 completed: 20 Surinamese industry templates, versioning, wizard, upgrade proposals, template builder, JSON import/export; 157 automated tests passing.
 - 2026-11-11: Phase 5 completed: exchange rates with approval, CBvS import, rate policy, policy rates on invoices, period-end revaluation with automatic reversal; 167 automated tests passing.
 - 2026-11-11: Phase 6 completed: budgets with versions and approval, prior-year basis, distribution, CSV import, budget versus actual with alerts, rolling forecast; 178 automated tests passing.
+- 2026-11-11: Phase 7 completed: ARA Scan (capture, text-layer and optional Claude recognition, suggestions, duplicate detection, review), automation rules and monitor; 187 automated tests passing.

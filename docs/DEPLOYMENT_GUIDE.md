@@ -3,7 +3,7 @@
 ## Vercel (production)
 1. In Vercel: **Add New → Project → Import** `johnlukems-cpu/ARA-accounting`. `vercel.json` sets the framework and region `iad1`.
 2. **Database:** Vercel → Storage → **Neon** (Postgres) → region US-East → connect to the project. This sets `DATABASE_URL` and `DATABASE_URL_UNPOOLED`.
-3. **Environment variables** (Production and Preview): `ENCRYPTION_KEY` (run `openssl rand -base64 32`), `CRON_SECRET`, optionally `APP_URL` and the `SMTP_*` variables. See `.env.example`.
+3. **Environment variables** (Production and Preview): `ENCRYPTION_KEY` (run `openssl rand -base64 32`), `CRON_SECRET`, optionally `APP_URL`, the `SMTP_*` variables and `ANTHROPIC_API_KEY` (ARA Scan AI recognition; it is used only when an organisation also switches AI on). See `.env.example`.
 4. Deploy. The build command (`npm run vercel-build` → `scripts/vercel-build.mjs`) runs `prisma generate`, then — only when `DATABASE_URL` is set — `prisma migrate deploy` and the idempotent reference seed (`scripts/seed.ts`), then `next build`.
 5. Open the site → **Inloggen → Registreren** to create the first organisation.
 

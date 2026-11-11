@@ -37,6 +37,11 @@
 - Rate limiting on auth, uploads, exports and AI calls.
 - Dependency audit in CI. Lockfile committed.
 
+### Implemented in Phase 7 (ARA Scan)
+- **Uploads.** The type is recognised from the file's magic bytes only: PDF, JPEG and PNG are allowed, and the database has a CHECK constraint on it. The size limit is 20 MB in the database; transport is ≤ 4.4 MB per request because of the Vercel body limit, and photos are downsized in the browser. The SHA-256 is stored. Files live in `DocumentFile` (RLS, append-only) and are served only through an authenticated route with `Content-Security-Policy: sandbox`, `nosniff` and `no-store`. A virus-scan hook is not built: there is no scanner available on Vercel functions (open item).
+- **AI.** AI is off per organisation by default. Switching it on needs `organization.manageSettings` and an explicit consent checkbox; the consent (who, when) is stored and audited. The provider is used only when `ANTHROPIC_API_KEY` is set. Only the document is sent (no ledger data), and every run is recorded with its provider, model, duration and errors (`DocumentExtraction`, append-only). AI output is a suggestion (AI1). Automatic posting needs a rule in AUTO_POST mode with a maximum amount, sufficient confidence, a known supplier, no duplicate suspicion and purchase approval switched off (AI2). Every automated decision is logged with its reasons (`AutomationExecution`, append-only).
+- **Dependencies.** nodemailer was upgraded to 10.2.1 because of advisories. `npm audit` still reports `deepmerge-ts < 8` through Prisma 6's config loader; it runs only at build and migration time on trusted configuration, and fixing it requires Prisma 7 (planned for Phase 12).
+
 ## 6. Audit trail
 - `AuditLog` is append-only (a DB trigger blocks update and delete). Rows hold organisation, actor, impersonation/support grant, action, entity, entity id, before/after JSON diff, IP, user agent, request id, timestamp, `prevHash` and `hash` (SHA-256 chain per organisation). A verification job checks the chain.
 - Mandatory events: login, failed login, MFA changes, permission and role changes, every posting/reversal/approval, period and year open/close, rate approval, settings changes, exports, document downloads, and support access.

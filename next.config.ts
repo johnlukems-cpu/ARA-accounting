@@ -15,8 +15,8 @@ const securityHeaders = [
 
 const config: NextConfig = {
   poweredByHeader: false,
-  // Bank statements (≤ 2 MB) are uploaded through a server action.
-  experimental: { serverActions: { bodySizeLimit: "3mb" } },
+  // Bank statements (≤ 2 MB) and scanned documents (≤ 4.4 MB per request; Vercel's body limit is 4.5 MB) go through server actions.
+  experimental: { serverActions: { bodySizeLimit: "4.5mb" } },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

@@ -131,3 +131,17 @@ Every action re-checks the permission inside the module service for the company 
 | Route | Permission | Output |
 | --- | --- | --- |
 | `GET /api/budgets/[id]/report?from&to&v` | `budgets.export` or `reports.export` | CSV budget vs actual; audited |
+
+### Server actions — Phase 7 (`src/actions/scan.ts`)
+| Action | Permission | Notes |
+| --- | --- | --- |
+| `uploadDocumentAction` | `scan.create` | Files (PDF/JPG/PNG by magic bytes, ≤ 4.4 MB per request); several images → one PDF; runs extraction and automation |
+| `confirmDocumentAction` | `scan.edit` (+ `purchase.create`) | Creates a draft purchase invoice; `acceptDuplicate` required when a duplicate is suspected |
+| `rejectDocumentAction` | `scan.edit` | Reason required |
+| `saveRuleAction`, `toggleRuleAction` | `automation.edit` | Modes SUGGEST / DRAFT / AUTO_POST (AUTO_POST needs `maxAmount`) |
+| `setAiAction` | `organization.manageSettings` | Switching on needs the consent checkbox; stored in `Organization.settings.ai` |
+
+### Route handlers — Phase 7
+| Route | Permission | Output |
+| --- | --- | --- |
+| `GET /api/documents/[id]/file` | `scan.view` | The stored file inline, with `Content-Security-Policy: sandbox`, `nosniff`, `no-store` |

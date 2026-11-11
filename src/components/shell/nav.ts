@@ -8,13 +8,14 @@ export interface NavItem {
   key: string;
   href: string | ((ids: { administrationId?: string }) => string | null);
   permission?: Permission;
-  icon: "dashboard" | "building" | "briefcase" | "book" | "users" | "shield" | "user" | "list" | "scale" | "library" | "notebook" | "receipt" | "cart" | "contact" | "wallet" | "landmark" | "percent" | "transfer" | "factory" | "template" | "coins" | "target";
+  icon: "dashboard" | "building" | "briefcase" | "book" | "users" | "shield" | "user" | "list" | "scale" | "library" | "notebook" | "receipt" | "cart" | "contact" | "wallet" | "landmark" | "percent" | "transfer" | "factory" | "template" | "coins" | "target" | "scan" | "bot";
   /** Section heading shown above the item in the sidebar. */
   section?: "operations" | "accounting" | "settings";
 }
 
 export const NAV: NavItem[] = [
   { key: "dashboard", href: "/app", icon: "dashboard" },
+  { key: "scan", href: "/app/scan", permission: "scan.view", icon: "scan", section: "operations" },
   { key: "sales", href: "/app/sales", permission: "sales.view", icon: "receipt", section: "operations" },
   { key: "purchase", href: "/app/purchase", permission: "purchase.view", icon: "cart", section: "operations" },
   { key: "relations", href: "/app/relations", permission: "sales.view", icon: "contact", section: "operations" },
@@ -32,6 +33,7 @@ export const NAV: NavItem[] = [
   { key: "journals", href: "/app/ledger/journals", permission: "ledger.view", icon: "book", section: "accounting" },
   { key: "taxCodes", href: "/app/ledger/tax-codes", permission: "tax.view", icon: "percent", section: "accounting" },
   { key: "administration", href: ({ administrationId }) => (administrationId ? `/app/administrations/${administrationId}` : null), permission: "administrations.view", icon: "book", section: "settings" },
+  { key: "automation", href: "/app/automation", permission: "automation.view", icon: "bot", section: "settings" },
   { key: "templates", href: "/app/templates", permission: "industry.view", icon: "template", section: "settings" },
   { key: "companies", href: "/app/companies", permission: "companies.view", icon: "briefcase", section: "settings" },
   { key: "organization", href: "/app/organization", permission: "organization.view", icon: "building", section: "settings" },

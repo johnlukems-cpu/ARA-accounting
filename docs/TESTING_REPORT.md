@@ -2,6 +2,25 @@
 
 Only results from real runs are recorded here. Environment: Node 22, PostgreSQL 16.15 (local), Chromium (Playwright 1.63).
 
+## Phase 7 — ARA Scan & AI (2026-11-11)
+
+| Suite | Result |
+| --- | --- |
+| Unit | **109 / 109 passed** (magic-byte sniffing, text-layer extraction, supplier matching) |
+| Integration (PostgreSQL) | **64 / 64 passed** (5 new; real PDFs generated with pdf-lib, read through unpdf) |
+| End-to-end | **14 / 14 passed** (acceptance workflow 2, scan variant) |
+| Typecheck / lint / build / migration drift | passed |
+
+| Phase 7 acceptance | Evidence |
+| --- | --- |
+| AI1 suggestions apart from confirmed values | integration "manual review creates a draft purchase invoice…" (`confirmed` JSON vs append-only `DocumentExtraction`) |
+| AI2 automation conditions | integration "rules: DRAFT submits…; AUTO_POST posts only within its limits and confidence" (limit, confidence, amount mismatch; monitor counts) |
+| AI3 duplicates | integration "rejects non-document files and flags the same file…", "manual review … blocks a suspected duplicate unless accepted" |
+| AI off by default, consent recorded, isolation | integration "AI is an organisation decision with recorded consent…"; first test shows only the text-layer provider ran |
+| Workflow 2 (scan) in the browser | e2e upload → suggestions → purchase invoice → rule |
+
+The Claude extractor itself was not called (no API key in this environment). It is covered by typechecking against the SDK and by the fixture extractor that plays its role.
+
 ## Phase 6 — Budgets (2026-11-11)
 
 | Suite | Result |

@@ -104,6 +104,7 @@ enum OrganizationStatus {
 model Organization {
   id                  String             @id @default(cuid())
   name                String
+  settings  Json     @default("{}") // e.g. ai: { enabled, consentAt, consentById } (Phase 7)
   kind                OrganizationKind
   status              OrganizationStatus @default(TRIAL)
   email               String?
@@ -1323,5 +1324,119 @@ model BudgetLine {
   version        BudgetVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
 
   @@unique([versionId, accountId, dimensionId, period])
+  @@index([organizationId])
+}
+
+// ───────────── Phase 7: ARA Scan, AI and automation ─────────────
+
+enum DocumentStatus {
+  UPLOADED
+  REVIEW_REQUIRED
+  PROCESSED
+  REJECTED
+}
+
+enum DocumentSource {
+  WEB
+  MOBILE
+}
+
+/// A scanned or uploaded purchase document. The file itself is in DocumentFile (database storage adapter).
+model Document {
+  id               String         @id @default(cuid())
+  organizationId   String
+  administrationId String
+  fileName         String
+  mimeType         String
+  sizeBytes        Int
+  sha256           String
+  pageCount        Int?
+  source           DocumentSource @default(WEB)
+  status           DocumentStatus @default(UPLOADED)
+  textContent      String?
+  /// AI1: values confirmed by the user are kept apart from suggestions (DocumentExtraction).
+  confirmed        Json?
+  invoiceId        String?
+  duplicateOfId    String?
+  duplicateReason  String?
+  rejectReason     String?
+  uploadedById     String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([administrationId, sha256])
+  @@index([organizationId])
+}
+
+model DocumentFile {
+  documentId     String @id
+  organizationId String
+  data           Bytes
+}
+
+/// Suggestions from one extraction run (text layer or AI provider). Append-only.
+model DocumentExtraction {
+  id             String   @id @default(cuid())
+  organizationId String
+  documentId     String
+  provider       String
+  model          String?
+  fields         Json
+  durationMs     Int
+  error          String?
+  createdAt      DateTime @default(now())
+
+  @@index([documentId])
+  @@index([organizationId])
+}
+
+enum AutomationMode {
+  SUGGEST
+  DRAFT
+  AUTO_POST
+}
+
+/// Supplier rule: documents of this supplier get this account and BTW code; the mode decides how far automation goes (AI2).
+model AutomationRule {
+  id                  String         @id @default(cuid())
+  organizationId      String
+  administrationId    String
+  name                String
+  partyId             String
+  descriptionContains String?
+  accountId           String
+  taxCodeId           String?
+  mode                AutomationMode @default(SUGGEST)
+  minConfidence       Decimal        @default(0.9) @db.Decimal(4, 3)
+  maxAmount           Decimal?       @db.Decimal(20, 2)
+  enabled             Boolean        @default(true)
+  createdById         String
+  createdAt           DateTime       @default(now())
+
+  @@index([administrationId, partyId])
+  @@index([organizationId])
+}
+
+enum AutomationOutcome {
+  SUGGESTED
+  DRAFTED
+  POSTED
+  REVIEW
+  FAILED
+}
+
+/// Automation monitor: every automated decision with its reasons. Append-only.
+model AutomationExecution {
+  id               String            @id @default(cuid())
+  organizationId   String
+  administrationId String
+  ruleId           String?
+  documentId       String?
+  outcome          AutomationOutcome
+  reasons          Json
+  durationMs       Int
+  createdAt        DateTime          @default(now())
+
+  @@index([administrationId, createdAt])
   @@index([organizationId])
 }

@@ -90,5 +90,5 @@ These rules are binding for every module. Surinamese defaults and their legal so
 | # | Rule |
 | --- | --- |
 | AI1 | AI output is a **suggestion** with field confidence. It is stored separately from user-confirmed values. |
-| AI2 | Automatic posting is allowed only when an enabled rule in mode AUTO matches, every required field meets the rule's minimum confidence, the supplier is known, there is no duplicate suspicion and the amount is under the threshold. Otherwise the item goes to REVIEW_REQUIRED. |
+| AI2 | Automation modes per supplier rule: SUGGEST (pre-fill only), DRAFT (purchase invoice submitted for approval) and AUTO_POST (posted directly). DRAFT and AUTO_POST act only when the supplier is known, invoice number, date and total each meet the rule's minimum confidence, there is no duplicate suspicion, the currency matches the supplier and the amounts agree (net + BTW = total). AUTO_POST additionally needs a maximum amount (database CHECK) and purchase approval switched off; otherwise it becomes a draft. In every other case the document stays REVIEW_REQUIRED, and the reasons are logged. |
 | AI3 | Duplicate suspicion: same file SHA-256, or the same supplier + invoice number, or the same supplier + date + gross amount. |
