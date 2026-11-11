@@ -16,16 +16,6 @@ async function platformUser() {
 }
 const doneP = () => revalidatePath("/app/platform");
 
-export async function savePlanAction(_p: ActionState, fd: FormData): Promise<ActionState> {
-  try {
-    await saas.savePlan(await platformUser(), formObject(fd) as z.input<typeof saas.planSchema>);
-    doneP();
-    return okState("common.saved");
-  } catch (err) {
-    return toActionState(err);
-  }
-}
-
 export async function setSubscriptionAction(_p: ActionState, fd: FormData): Promise<ActionState> {
   try {
     await saas.setSubscription(await platformUser(), formObject(fd) as z.input<typeof saas.subscriptionSchema>);

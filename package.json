@@ -16,7 +16,13 @@
     "vercel-build": "node scripts/vercel-build.mjs",
     "test:e2e": "playwright test",
     "test:load": "vitest run --config vitest.load.mts",
-    "manual:screenshots": "MANUAL_SCREENSHOTS=1 playwright test tests/e2e/manual.spec.ts --project desktop --trace off"
+    "manual:screenshots": "MANUAL_SCREENSHOTS=1 playwright test tests/e2e/manual.spec.ts --project desktop --trace off",
+    "check:env": "tsx scripts/check-env.ts",
+    "db:status": "prisma migrate status",
+    "smtp:test": "tsx scripts/smtp-test.ts",
+    "bank:validate": "tsx scripts/bank-validate.ts",
+    "check:bundle": "node scripts/check-bundle.mjs",
+    "readiness:report": "tsx scripts/readiness-report.ts"
   },
   "engines": {
     "node": ">=22"

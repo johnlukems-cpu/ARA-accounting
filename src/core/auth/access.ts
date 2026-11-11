@@ -1,6 +1,7 @@
 import { systemDb } from "@/core/db/client";
 import { ForbiddenError } from "@/core/errors";
 import { isOrgScoped, type Permission, type RoleCode } from "./permissions";
+import { filterPermissionsByPlan } from "@/modules/saas/service";
 
 /**
  * Everything the server needs to authorise one user inside one organisation.
@@ -20,12 +21,16 @@ export interface Access {
 export async function resolveAccess(userId: string, organizationId: string): Promise<Access | null> {
   const membership = await systemDb.organizationMembership.findUnique({
     where: { organizationId_userId: { organizationId, userId } },
-    include: { role: { include: { permissions: true } }, organization: { select: { kind: true, status: true } }, user: { select: { isActive: true } } },
+    include: { role: { include: { permissions: true } }, organization: { select: { kind: true, status: true, planId: true } }, user: { select: { isActive: true } } },
   });
   if (!membership || membership.status !== "ACTIVE" || !membership.user.isActive) return null;
   if (membership.organization.status === "CANCELLED") return null;
 
-  const rolePerms = new Set(membership.role.permissions.map((p) => p.permission));
+  // Plan entitlements: optional modules not in the organisation's plan are removed from every role (effective
+  // permissions = role grants ∩ plan modules). No plan (trial) or modules = null means every module.
+  const plan = membership.organization.planId ? await systemDb.plan.findUnique({ where: { id: membership.organization.planId }, select: { modules: true } }) : null;
+  const planModules = Array.isArray(plan?.modules) ? (plan.modules as string[]) : null;
+  const rolePerms = filterPermissionsByPlan(new Set(membership.role.permissions.map((p) => p.permission)), planModules);
   const companyPermissions = new Map<string, Set<string>>();
   if (membership.role.orgWide) {
     const companies = await systemDb.company.findMany({ where: { organizationId }, select: { id: true } });
@@ -35,7 +40,7 @@ export async function resolveAccess(userId: string, organizationId: string): Pro
       where: { organizationId, userId },
       include: { role: { include: { permissions: true } } },
     });
-    for (const a of assignments) companyPermissions.set(a.companyId, new Set(a.role.permissions.map((p) => p.permission)));
+    for (const a of assignments) companyPermissions.set(a.companyId, filterPermissionsByPlan(new Set(a.role.permissions.map((p) => p.permission)), planModules));
   }
 
   return {

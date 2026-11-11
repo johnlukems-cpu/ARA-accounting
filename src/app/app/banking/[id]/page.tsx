@@ -9,6 +9,7 @@ import {
   approveReconciliationAction, bookAction, cashEntryAction, ignoreAction, importStatementAction, matchAction, reconcileAction, saveProfileAction, transferAction,
 } from "@/actions/banking";
 import { formatAmount } from "@/lib/format";
+import { applyBankFormatAction } from "@/actions/platform";
 import { ActionForm, Checkbox, Field, Input, Select, SubmitButton } from "@/components/ui/form";
 import { buttonClass } from "@/components/ui/button-class";
 import { Badge, Card, EmptyState, PageHeader, Table, Td } from "@/components/ui/misc";
@@ -25,6 +26,7 @@ export default async function FinancialAccountPage({ params, searchParams }: { p
   const showAll = sp.status === "all";
   const page = Math.max(1, Number(sp.page) || 1);
 
+  const bankFormats = await withTenant(ctx.access, (tx) => tx.bankFormat.findMany({ where: { status: "VALIDATED" }, orderBy: [{ bankName: "asc" }, { formatName: "asc" }] }));
   const data = await withTenant(ctx.access, async (tx) => {
     const fa = await tx.financialAccount.findUnique({ where: { id } });
     if (!fa) return null;
@@ -180,6 +182,13 @@ export default async function FinancialAccountPage({ params, searchParams }: { p
               <details className="mt-4 border-t border-border pt-3" open={!profile}>
                 <summary className="cursor-pointer text-sm font-medium">{t("banking.profileTitle")}</summary>
                 <p className="my-2 text-xs text-muted-foreground">{t("banking.profileIntro")}</p>
+                {bankFormats.length > 0 ? (
+                  <ActionForm action={applyBankFormatAction} className="mb-4 flex flex-wrap items-end gap-2 space-y-0">
+                    <input type="hidden" name="financialAccountId" value={fa.id} />
+                    <Field label={t("bankFormats.applyLabel")} name="formatId"><Select name="formatId" required defaultValue="">{[<option key="" value="">—</option>, ...bankFormats.map((f) => <option key={f.id} value={f.id}>{f.bankName} · {f.formatName}</option>)]}</Select></Field>
+                    <SubmitButton variant="secondary">{t("bankFormats.apply")}</SubmitButton>
+                  </ActionForm>
+                ) : <p className="mb-3 text-xs text-muted-foreground">{t("bankFormats.noneValidated")}</p>}
                 <ActionForm action={saveProfileAction} className="grid grid-cols-2 gap-3">
                   <input type="hidden" name="financialAccountId" value={fa.id} />
                   <Field label={t("banking.delimiter")} name="delimiter"><Select name="delimiter" defaultValue={profile?.delimiter === "\t" ? "tab" : profile?.delimiter ?? ";"}><option value=";">;</option><option value=",">,</option><option value="tab">Tab</option></Select></Field>

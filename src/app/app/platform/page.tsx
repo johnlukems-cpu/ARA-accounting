@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { requireApp } from "@/core/auth/context";
-import { LIMIT_KEYS, platformOverview, type Limits } from "@/modules/saas/service";
-import { createSubscriptionInvoiceAction, invoiceStepAction, savePlanAction, setSubscriptionAction } from "@/actions/saas";
+import { LIMIT_KEYS, platformOverview } from "@/modules/saas/service";
+import { createSubscriptionInvoiceAction, invoiceStepAction, setSubscriptionAction } from "@/actions/saas";
+import { PlatformTabs } from "@/components/platform/tabs";
 import { formatAmount } from "@/lib/format";
 import { ActionForm, Checkbox, Field, Input, Select, SubmitButton } from "@/components/ui/form";
 import { Badge, Card, PageHeader, Table, Td } from "@/components/ui/misc";
@@ -21,6 +22,7 @@ export default async function PlatformPage() {
   return (
     <>
       <PageHeader title={t("platform.title")} description={t("platform.intro")} />
+      <PlatformTabs active="organisations" />
       <Card title={t("platform.organisations")}>
         <Table head={[t("organization.name"), t("common.status"), t("saas.plan"), t("saas.usage"), ""]}>
           {rows.map(({ org, usage, openInvoices, state }) => (
@@ -44,24 +46,7 @@ export default async function PlatformPage() {
         </Table>
       </Card>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <Card title={t("platform.plans")} description={t("platform.plansIntro")}>
-          {plans.length > 0 && (
-            <Table head={[t("industry.code"), t("company.name"), t("saas.limit"), t("platform.price")]}>
-              {plans.map((p) => <tr key={p.id}><Td>{p.code}</Td><Td>{p.name}</Td><Td className="text-xs">{Object.entries(p.limits as Limits).map(([k, v]) => `${t(`saas.limits.${k}` as never)}: ${v}`).join(" · ") || t("saas.unlimited")}</Td><Td className="text-xs">{p.priceMonthlySrd ? formatAmount(p.priceMonthlySrd.toString(), "SRD", locale) : "—"} / {p.priceMonthlyUsd ? formatAmount(p.priceMonthlyUsd.toString(), "USD", locale) : "—"}</Td></tr>)}
-            </Table>
-          )}
-          <ActionForm action={savePlanAction} resetOnSuccess className="mt-4">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Field label={t("industry.code")} name="code"><Input name="code" required /></Field>
-              <Field label={t("company.name")} name="name"><Input name="name" required /></Field>
-              {LIMIT_KEYS.map((k) => <Field key={k} label={t(`saas.limits.${k}`)} name={k}><Input type="number" min={0} name={k} placeholder={t("saas.unlimited")} /></Field>)}
-              <Field label={t("platform.priceSrd")} name="priceMonthlySrd"><Input name="priceMonthlySrd" inputMode="decimal" /></Field>
-              <Field label={t("platform.priceUsd")} name="priceMonthlyUsd"><Input name="priceMonthlyUsd" inputMode="decimal" /></Field>
-            </div>
-            <SubmitButton>{t("platform.addPlan")}</SubmitButton>
-          </ActionForm>
-        </Card>
+      <div className="mt-6">
         <Card title={t("saas.invoices")}>
           <ActionForm action={createSubscriptionInvoiceAction} resetOnSuccess>
             <div className="grid gap-3 sm:grid-cols-2">

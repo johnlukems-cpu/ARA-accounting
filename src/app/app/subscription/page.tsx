@@ -3,6 +3,8 @@ import { requireApp } from "@/core/auth/context";
 import { withTenant } from "@/core/tenancy/tenant";
 import { LIMIT_KEYS, accessState, usage, type Limits } from "@/modules/saas/service";
 import { formatAmount } from "@/lib/format";
+import { paymentInstructions } from "@/modules/readiness/service";
+import { PlanCards } from "@/components/platform/plan-cards";
 import { Badge, Card, Dl, PageHeader, Table, Td } from "@/components/ui/misc";
 
 export default async function SubscriptionPage() {
@@ -15,7 +17,9 @@ export default async function SubscriptionPage() {
     plan: org.planId ? await tx.plan.findUnique({ where: { id: org.planId } }) : null,
     usage: await usage(tx, org.id),
     invoices: await tx.subscriptionInvoice.findMany({ orderBy: { createdAt: "desc" }, take: 50 }),
+    plans: await tx.plan.findMany({ where: { status: "ACTIVE" }, orderBy: [{ sortOrder: "asc" }, { code: "asc" }] }),
   }));
+  const instructions = await paymentInstructions();
   const state = accessState(org);
   const limits = (data.plan?.limits as Limits) ?? {};
   const date = (d: Date | null) => (d ? format.dateTime(d, { dateStyle: "medium" }) : "—");
@@ -39,7 +43,14 @@ export default async function SubscriptionPage() {
           </Table>
         </Card>
       </div>
+      <Card title={t("plans.availableTitle")} description={t("plans.availableIntro")} className="mt-6">
+        <PlanCards plans={data.plans} currentPlanId={org.planId} />
+      </Card>
       <Card title={t("saas.invoices")} description={t("saas.paymentInfo")} className="mt-6">
+        <div className="mb-4 rounded-lg border border-border p-3 text-sm">
+          <p className="font-medium">{t("plans.paymentTitle")}</p>
+          <p className="mt-1 whitespace-pre-line text-muted-foreground">{instructions ?? t("plans.paymentPending")}</p>
+        </div>
         {data.invoices.length === 0 ? <p className="text-sm text-muted-foreground">{t("saas.noInvoices")}</p> : (
           <Table head={[t("ledger.number"), t("tax.period"), t("common.amount"), t("common.status")]}>
             {data.invoices.map((i) => <tr key={i.id}><Td>{i.number}</Td><Td>{date(i.periodFrom)} – {date(i.periodTo)}</Td><Td className="amount text-right">{formatAmount(i.amount.toString(), i.currency, locale)}</Td><Td><Badge tone={i.status === "PAID" ? "success" : i.status === "OPEN" ? "warning" : "neutral"}>{t(`saas.invoiceStatuses.${i.status}`)}</Badge></Td></tr>)}

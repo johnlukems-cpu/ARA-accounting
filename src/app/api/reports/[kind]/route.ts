@@ -8,6 +8,7 @@ import { reportTables, tablesToCsv } from "@/modules/reporting/export";
 import { renderReportPdf } from "@/modules/reporting/pdf";
 import { formatAmount } from "@/lib/format";
 import { csvResponse } from "@/lib/csv";
+import { throttleResponse } from "@/core/ops/throttle";
 
 /** PDF or CSV export of a report for the active administration and fiscal year; archived with its fingerprint (R1). */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ kind: string }> }) {
@@ -15,6 +16,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ kind
   if (!(REPORT_KINDS as readonly string[]).includes(kind)) return new Response("Not found", { status: 404 });
   const ctx = await getContext();
   if (!ctx?.access || !ctx.administration || !ctx.fiscalYear || !ctx.mfaSatisfied) return new Response("Unauthorized", { status: 401 });
+  const limited = await throttleResponse("export", ctx.user.id, ctx.access.organizationId);
+  if (limited) return limited;
   const admin = ctx.administration;
   if (!can(ctx.access, "reports.export", admin.companyId)) return new Response("Forbidden", { status: 403 });
   const sp = req.nextUrl.searchParams;

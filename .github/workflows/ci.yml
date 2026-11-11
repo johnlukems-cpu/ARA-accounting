@@ -1,0 +1,63 @@
+# Continuous integration: every push and pull request runs the full gate against PostgreSQL 16.
+# No production secrets are used: test keys are generated per run.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ara
+          POSTGRES_PASSWORD: ara_dev
+          POSTGRES_DB: ara_accounting_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U ara" --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://ara:ara_dev@localhost:5432/ara_accounting_test
+      DATABASE_URL_UNPOOLED: postgresql://ara:ara_dev@localhost:5432/ara_accounting_test
+      TEST_DATABASE_URL: postgresql://ara:ara_dev@localhost:5432/ara_accounting_test
+      PGPASSWORD: ara_dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Create the shadow database for the drift check
+        run: psql -h localhost -U ara -d ara_accounting_test -c "CREATE DATABASE ara_shadow_check"
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - name: Integration tests (migrations + seed + 90 tests)
+        run: npm run test:integration
+      - name: Migration drift
+        run: npx prisma migrate diff --from-migrations prisma/migrations --to-schema-datamodel prisma/schema.prisma --shadow-database-url postgresql://ara:ara_dev@localhost:5432/ara_shadow_check --exit-code
+      - name: Build
+        run: |
+          echo "ENCRYPTION_KEY=$(openssl rand -base64 32)" >> "$GITHUB_ENV"
+          npm run build
+      - name: No secrets in the browser bundle
+        run: npm run check:bundle
+      - name: End-to-end tests (desktop + phone)
+        run: |
+          npx playwright install --with-deps chromium
+          npx playwright test --trace off
+      - name: Dependency audit (fails on critical; the known high advisory is tracked in PRODUCTION_AUDIT §5.3)
+        run: npm audit --omit=dev --audit-level=critical

@@ -5,11 +5,14 @@ import { withTenant } from "@/core/tenancy/tenant";
 import { audit } from "@/core/audit/audit";
 import { invoicePdfData } from "@/modules/invoicing/pdf-data";
 import { renderInvoicePdf } from "@/modules/invoicing/pdf";
+import { throttleResponse } from "@/core/ops/throttle";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const ctx = await getContext();
   if (!ctx?.access || !ctx.mfaSatisfied) return new Response("Unauthorized", { status: 401 });
+  const limited = await throttleResponse("export", ctx.user.id, ctx.access.organizationId);
+  if (limited) return limited;
   const locale = await getLocale();
   const result = await withTenant(ctx.access, async (tx) => {
     const r = await invoicePdfData(tx, id, locale);

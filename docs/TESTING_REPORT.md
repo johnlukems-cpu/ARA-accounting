@@ -2,6 +2,33 @@
 
 Only results from real runs are recorded here. Environment: Node 22, PostgreSQL 16.15 (local), Chromium (Playwright 1.63).
 
+## Production readiness (2026-11-12)
+
+| Suite | Result |
+| --- | --- |
+| Unit | **137 / 137 passed** (+21: `ops.test.ts`, `readiness-guards.test.ts`) |
+| Integration (PostgreSQL) | **90 / 90 passed** (+9: `readiness.test.ts`) |
+| End-to-end | **26 / 26 passed** (+1 `platform.spec.ts`; screenshot run skipped by design) |
+| Browser bundle secret scan (`npm run check:bundle`) | passed |
+| Typecheck / lint / build / migration drift | passed |
+
+| Requirement | Evidence |
+| --- | --- |
+| Environment validation, Neon URLs, APP_URL, SMTP completeness, no secrets in `NEXT_PUBLIC_` | unit "environment validation" (5 tests) |
+| Logs never contain secrets or personal data | unit "log redaction"; guard "no console.* outside the logger" |
+| Cron fails closed | unit "cron authentication" |
+| Every server action and route handler authenticates | guard tests (static scan of `src/actions`, `src/app/api`) |
+| No secrets in frontend code | guard tests; `check:bundle` after the build |
+| Tenant isolation coverage | integration: every table with `organizationId` has RLS and a policy, or no app-role privileges; platform tables closed to tenants |
+| Configurable subscriptions (annual prices, storage, modules, trial length, payment instructions) | integration "Production readiness: configurable subscriptions"; e2e `platform.spec.ts` (plan with only an annual price shows "Prijs op aanvraag" monthly) |
+| Compliance: VERIFIED only through a recorded review; append-only; DB constraint | integration "compliance reviews" |
+| Bank formats validated only against the statement's own figures; layout change resets; tenants apply only validated formats; file never stored | integration "bank format library" |
+| Throttling | integration "uploads are refused after the per-user limit" |
+| Readiness dashboard (live statuses, no values exposed, evidence) | integration "evaluates live statuses…"; e2e `platform.spec.ts` |
+
+Defect found and fixed: field ids were not unique on pages with several forms, so labels pointed at the wrong field. Ids
+are now scoped per form; one e2e selector was updated to select by label.
+
 ## Phase 12 — Final QA (2026-11-11)
 
 | Suite | Result |

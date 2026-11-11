@@ -29,7 +29,7 @@ test("rates: CBvS import and manual closing rate; USD invoice takes the policy r
   await expect(page.getByRole("row", { name: /CBvS aankoopkoers/ })).toContainText("37,8500");
 
   await page.getByLabel("Datum", { exact: true }).fill("2026-03-31");
-  await page.locator("select#rateType").selectOption("CLOSING");
+  await page.locator("form").filter({ has: page.getByRole("button", { name: "Koers opslaan" }) }).getByLabel("Soort koers").selectOption("CLOSING");
   await page.getByLabel("Koers in SRD").fill("38,90");
   await page.getByRole("button", { name: "Koers opslaan" }).click();
   await expect(page.getByText("Koers opgeslagen.")).toBeVisible();

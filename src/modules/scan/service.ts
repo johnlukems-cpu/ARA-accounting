@@ -10,6 +10,7 @@ import { UserError } from "@/core/errors";
 import { postInvoice, purchaseApprovalRequired, saveInvoice, submitInvoice } from "@/modules/invoicing/service";
 import { FIELD_KEYS, emptyFields, matchSupplier, sniffMime, type DuplicateReason, type Fields } from "./domain";
 import { assertLimit } from "@/modules/saas/service";
+import { assertNotThrottled, hit } from "@/core/ops/throttle";
 import { anthropicExtractor, readPdfText, textLayerExtractor, type Extractor } from "./extractors";
 
 const scope = (a: Access) => ({ organizationId: a.organizationId, userId: a.userId });
@@ -51,6 +52,7 @@ export async function latestFields(tx: Tx, documentId: string): Promise<Fields> 
  * the AI provider only when configured and switched on by the organisation. `extractors` replaces the defaults in tests.
  */
 export async function uploadDocument(access: Access, input: { administrationId: string; fileName: string; bytes: Uint8Array; source?: "WEB" | "MOBILE" }, extractors?: Extractor[]) {
+  await assertNotThrottled("upload", access.userId, access.organizationId);
   if (input.bytes.length === 0) throw new UserError("banking.noFile");
   if (input.bytes.length > MAX_UPLOAD_BYTES) throw new UserError("scan.tooLarge");
   const mimeType = sniffMime(input.bytes);
@@ -63,6 +65,7 @@ export async function uploadDocument(access: Access, input: { administrationId: 
     if (!admin) throw new UserError("errors.notFound");
     assertCan(access, "scan.create", admin.companyId);
     await assertLimit(tx, access.organizationId, "documentsPerMonth");
+    await assertLimit(tx, access.organizationId, "storageMb", input.bytes.length / 1_048_576);
     const same = await tx.document.findFirst({ where: { administrationId: admin.id, kind: "PURCHASE", sha256, status: { not: "REJECTED" } }, orderBy: { createdAt: "asc" } });
     const d = await tx.document.create({
       data: {
@@ -76,7 +79,9 @@ export async function uploadDocument(access: Access, input: { administrationId: 
     return { d, aiOn: aiSettingsOf((await tx.organization.findUniqueOrThrow({ where: { id: access.organizationId } })).settings).enabled };
   });
 
-  const list = extractors ?? [textLayerExtractor, ...(doc.aiOn ? [anthropicExtractor()].filter((x): x is Extractor => !!x) : [])];
+  // AI calls cost money per document: above the per-minute AI limit the text layer is used alone (no failure).
+  const aiAllowed = doc.aiOn && !extractors && !(await hit("ai", access.userId, access.organizationId));
+  const list = extractors ?? [textLayerExtractor, ...(aiAllowed ? [anthropicExtractor()].filter((x): x is Extractor => !!x) : [])];
   const runs: { provider: string; model?: string; fields: Fields | null; ms: number; error?: string }[] = [];
   for (const ex of list) {
     const start = Date.now();

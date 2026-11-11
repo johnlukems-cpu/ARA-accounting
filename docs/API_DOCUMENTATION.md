@@ -183,3 +183,28 @@ Report pages (`/app/reports?view=…`) are read-only server components; they nee
 | `createTaskAction`, `taskStatusAction` | `practice.edit` | Practice tasks; assignment notifies |
 | `savePlanAction`, `setSubscriptionAction`, `createSubscriptionInvoiceAction`, `invoiceStepAction` (`pay`/`void`) | `User.isPlatformAdmin` (checked in the service) | Cross-organisation platform operations via trusted system code; audited |
 | every other server action | as before | Additionally refused with `saas.readOnly` when the organisation is suspended, cancelled or its trial ended |
+
+## Rate limits (production readiness)
+
+Export and download routes return **429 Too Many Requests**, with `Retry-After`, above these limits per 10 minutes:
+
+| Kind | Per user | Per organisation |
+| --- | --- | --- |
+| Exports (`/api/reports/*`, `/api/ledger/*`, `/api/budgets/*/report`, `/api/annual-accounts/*/pdf`, `/api/invoices/*/pdf`, `/api/templates/versions/*/export`) | 60 | 300 |
+| Downloads (`/api/documents/*/file`) | 300 | 1 500 |
+
+Server actions refuse uploads above 60 per user and 300 per organisation with `errors.tooManyRequests`. Above 40 AI
+calls per user or 120 per organisation, ARA Scan uses the text layer only. Definitions: `src/core/ops/throttle.ts`.
+
+## Platform server actions (platform administrators, `src/actions/platform.ts`)
+
+Each service re-checks `isPlatformAdmin`; MFA must be satisfied.
+
+| Action | Effect |
+| --- | --- |
+| `savePlanAction` | Creates or updates a plan: prices, limits, modules, order, status. |
+| `trialDaysAction`, `paymentInstructionsAction` | Platform settings. |
+| `recordReviewAction` | Append-only compliance review. APPROVED marks a tax rule (or matching BTW codes) as VERIFIED. |
+| `saveBankFormatAction`, `validateBankFormatAction`, `retireBankFormatAction` | Bank format library and validation against a real sample. |
+| `testEmailAction`, `testErrorAction`, `evidenceAction` | Readiness tests and evidence records. |
+| `applyBankFormatAction` (tenant, `banking.edit`) | Copies a VALIDATED format into a bank account's import profile. |

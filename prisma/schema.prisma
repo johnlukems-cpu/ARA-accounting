@@ -1547,6 +1547,10 @@ model TaxRuleVersion {
   legalStatus   RuleLegalStatus
   legalSource   String?
   notes         String?
+  /// Set only by recording an external review (ComplianceReview): the adviser's name, the date and their reference.
+  verifiedBy    String?
+  verifiedAt    DateTime?
+  verificationReference String?
   createdAt     DateTime        @default(now())
 
   @@unique([taxType, effectiveFrom])
@@ -1737,6 +1741,11 @@ model Plan {
   limits          Json         @default("{}")
   priceMonthlySrd Decimal?     @db.Decimal(20, 2)
   priceMonthlyUsd Decimal?     @db.Decimal(20, 2)
+  priceAnnualSrd  Decimal?     @db.Decimal(20, 2)
+  priceAnnualUsd  Decimal?     @db.Decimal(20, 2)
+  /// Optional modules included in the plan (null = all modules). Core modules are always included.
+  modules         Json?
+  sortOrder       Int          @default(0)
   status          RecordStatus @default(ACTIVE)
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
@@ -1788,4 +1797,70 @@ model PracticeTask {
   createdAt      DateTime   @default(now())
 
   @@index([organizationId, status])
+}
+
+/// Platform-wide settings set by platform administrators (e.g. the trial length). Not readable by tenants.
+model PlatformSetting {
+  key         String   @id
+  value       Json
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+}
+
+enum ComplianceSubject {
+  TAX_RULE
+  BTW_CODE_TEMPLATE
+  ANNUAL_ACCOUNTS_FRAMEWORK
+  RETENTION_PERIOD
+  OTHER
+}
+
+enum ComplianceDecision {
+  APPROVED
+  CHANGES_REQUIRED
+  REJECTED
+}
+
+/// Evidence of an external professional review (tax adviser, SUVA accountant). Append-only.
+model ComplianceReview {
+  id                    String             @id @default(cuid())
+  subject               ComplianceSubject
+  subjectKey            String
+  decision              ComplianceDecision
+  reviewerName          String
+  reviewerQualification String
+  reference             String
+  reviewedOn            DateTime           @db.Date
+  notes                 String?
+  recordedById          String
+  createdAt             DateTime           @default(now())
+
+  @@index([subject, subjectKey])
+}
+
+enum BankFormatStatus {
+  DRAFT
+  VALIDATED
+  RETIRED
+}
+
+/// Library of statement import formats per Surinamese bank. A format is VALIDATED only after a real sample file from
+/// that bank was parsed without errors and its totals matched the bank's own statement (only the hash and a summary of
+/// the sample are kept, never the file).
+model BankFormat {
+  id            String           @id @default(cuid())
+  bankName      String
+  formatName    String
+  profile       Json
+  status        BankFormatStatus @default(DRAFT)
+  notes         String?
+  sampleSha256  String?
+  sampleSummary Json?
+  validatedAt   DateTime?
+  validatedById String?
+  createdById   String
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@unique([bankName, formatName])
 }

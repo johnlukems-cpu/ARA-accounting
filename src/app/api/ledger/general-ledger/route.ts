@@ -7,10 +7,13 @@ import { formatEntryNumber } from "@/core/ledger/engine";
 import { generalLedger } from "@/modules/ledger/reports";
 import { csvResponse } from "@/lib/csv";
 import { getTranslations } from "next-intl/server";
+import { throttleResponse } from "@/core/ops/throttle";
 
 export async function GET(req: NextRequest) {
   const ctx = await getContext();
   if (!ctx?.access || !ctx.administration || !ctx.mfaSatisfied) return new Response("Unauthorized", { status: 401 });
+  const limited = await throttleResponse("export", ctx.user.id, ctx.access.organizationId);
+  if (limited) return limited;
   const admin = ctx.administration;
   if (!can(ctx.access, "ledger.export", admin.companyId) && !can(ctx.access, "reports.export", admin.companyId)) return new Response("Forbidden", { status: 403 });
   const sp = req.nextUrl.searchParams;

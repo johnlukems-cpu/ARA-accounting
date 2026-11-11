@@ -6,6 +6,7 @@ import { withTenant } from "@/core/tenancy/tenant";
 import { audit } from "@/core/audit/audit";
 import { budgetVsActual } from "@/modules/budgets/service";
 import { csvResponse } from "@/lib/csv";
+import { throttleResponse } from "@/core/ops/throttle";
 
 const clamp = (v: string | null, d: number) => Math.min(12, Math.max(1, Number(v) || d));
 
@@ -14,6 +15,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const { id } = await params;
   const ctx = await getContext();
   if (!ctx?.access || !ctx.mfaSatisfied) return new Response("Unauthorized", { status: 401 });
+  const limited = await throttleResponse("export", ctx.user.id, ctx.access.organizationId);
+  if (limited) return limited;
   const from = clamp(req.nextUrl.searchParams.get("from"), 1);
   const to = Math.max(from, clamp(req.nextUrl.searchParams.get("to"), 12));
   const result = await withTenant(ctx.access, async (tx) => {

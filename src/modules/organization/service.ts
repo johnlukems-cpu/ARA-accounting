@@ -11,7 +11,7 @@ import { UserError } from "@/core/errors";
 import { fiscalYearCode, fiscalYearRange, planPeriods } from "./periods";
 import { installStandardChart } from "@/modules/ledger/service";
 import { applyTemplateToNewAdministration } from "@/modules/industry/service";
-import { assertLimit, trialDays } from "@/modules/saas/service";
+import { assertLimit, effectiveTrialDays } from "@/modules/saas/service";
 import { installOperations } from "@/modules/invoicing/setup";
 import type {
   administrationSchema, assignmentSchema, branchSchema, companySchema, inviteSchema, membershipUpdateSchema,
@@ -51,7 +51,7 @@ export async function registerOrganization(input: z.infer<typeof registerSchema>
   try {
     return await systemDb.$transaction(async (tx) => {
       const user = await tx.user.create({ data: { email: input.email, name: input.name, passwordHash, passwordChangedAt: new Date(), ...(isLocale(locale) ? { locale } : {}) } });
-      const org = await tx.organization.create({ data: { name: input.organizationName, kind: input.kind, ownerUserId: user.id, trialEndsAt: new Date(Date.now() + trialDays() * 86_400_000) } });
+      const org = await tx.organization.create({ data: { name: input.organizationName, kind: input.kind, ownerUserId: user.id, trialEndsAt: new Date(Date.now() + (await effectiveTrialDays(tx)) * 86_400_000) } });
       await tx.organizationMembership.create({
         data: { organizationId: org.id, userId: user.id, roleId: await systemRoleId(tx, ownerRole), status: "ACTIVE" },
       });

@@ -1,12 +1,15 @@
 import { getContext } from "@/core/auth/context";
 import { can } from "@/core/auth/access";
 import { withTenant } from "@/core/tenancy/tenant";
+import { throttleResponse } from "@/core/ops/throttle";
 
 /** Serves a stored document (inline). The sandbox CSP keeps any active content in a PDF from running in our origin. */
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const ctx = await getContext();
   if (!ctx?.access || !ctx.mfaSatisfied) return new Response("Unauthorized", { status: 401 });
+  const limited = await throttleResponse("download", ctx.user.id, ctx.access.organizationId);
+  if (limited) return limited;
   const r = await withTenant(ctx.access, async (tx) => {
     const doc = await tx.document.findUnique({ where: { id } });
     if (!doc) return null;

@@ -1,5 +1,5 @@
 import Decimal from "decimal.js";
-import type { Organization, Prisma } from "@prisma/client";
+import { Prisma, type Organization } from "@prisma/client";
 import { z } from "zod";
 import { systemDb, type Tx } from "@/core/db/client";
 import { audit } from "@/core/audit/audit";
@@ -9,14 +9,45 @@ import { UserError } from "@/core/errors";
  * Subscriptions and entitlements. Plans, prices, limits and the trial length are business decisions of the platform
  * owner: they are data (Plan) and configuration (TRIAL_DAYS), never hard-coded amounts.
  */
-export const LIMIT_KEYS = ["companies", "administrations", "users", "documentsPerMonth"] as const;
+export const LIMIT_KEYS = ["companies", "administrations", "users", "documentsPerMonth", "storageMb"] as const;
 export type LimitKey = (typeof LIMIT_KEYS)[number];
 export type Limits = Partial<Record<LimitKey, number>>;
 
+/**
+ * Optional modules a plan can include or leave out. Core bookkeeping (ledger, sales, purchase, bank and cash, reports,
+ * organisation and user management, audit) is always included: a plan never takes away access to one's own books.
+ */
+export const OPTIONAL_MODULES = ["scan", "automation", "budgets", "currency", "assets", "currentAccounts", "tax", "yearEnd", "annualAccounts", "quality", "practice", "industry"] as const;
+export type OptionalModule = (typeof OPTIONAL_MODULES)[number];
+
+/** Removes the permissions of optional modules the plan does not include (null = every module). */
+export function filterPermissionsByPlan(perms: ReadonlySet<string>, modules: readonly string[] | null): Set<string> {
+  if (!modules) return new Set(perms);
+  const excluded = new Set(OPTIONAL_MODULES.filter((m) => !modules.includes(m)));
+  return new Set([...perms].filter((p) => !excluded.has(p.split(".")[0] as OptionalModule)));
+}
+
+/** Trial length in days: platform setting (set in Platformbeheer) → TRIAL_DAYS → 30. */
 export const trialDays = () => {
   const n = Number(process.env.TRIAL_DAYS ?? 30);
   return Number.isInteger(n) && n > 0 && n <= 365 ? n : 30;
 };
+
+export async function effectiveTrialDays(tx: Pick<Tx, "platformSetting"> = systemDb): Promise<number> {
+  const row = await tx.platformSetting.findUnique({ where: { key: "trialDays" } });
+  const n = Number(row?.value);
+  return Number.isInteger(n) && n > 0 && n <= 365 ? n : trialDays();
+}
+
+export async function setTrialDays(userId: string, days: number) {
+  await platformAdmin(userId);
+  if (!Number.isInteger(days) || days < 1 || days > 365) throw new UserError("validation.invalid");
+  return systemDb.$transaction(async (tx) => {
+    const before = await effectiveTrialDays(tx);
+    await tx.platformSetting.upsert({ where: { key: "trialDays" }, create: { key: "trialDays", value: days, updatedById: userId }, update: { value: days, updatedById: userId } });
+    await audit(tx, { organizationId: null, userId, action: "platform.trialDaysChanged", entity: "PlatformSetting", entityId: "trialDays", details: { from: before, to: days } });
+  });
+}
 
 /** Read-only when suspended or cancelled, or when the trial has ended without a plan. */
 export function accessState(org: Pick<Organization, "status" | "trialEndsAt" | "planId">, now = new Date()) {
@@ -32,13 +63,16 @@ export function assertWritable(org: Pick<Organization, "status" | "trialEndsAt" 
 
 export async function usage(tx: Tx | typeof systemDb, organizationId: string) {
   const monthStart = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1));
-  const [companies, administrations, users, documentsPerMonth] = await Promise.all([
+  const [companies, administrations, users, documentsPerMonth, storage] = await Promise.all([
     tx.company.count({ where: { organizationId, status: "ACTIVE" } }),
     tx.administration.count({ where: { organizationId, status: { not: "ARCHIVED" } } }),
     tx.organizationMembership.count({ where: { organizationId, status: { in: ["ACTIVE", "INVITED"] } } }),
     tx.document.count({ where: { organizationId, kind: "PURCHASE", createdAt: { gte: monthStart } } }),
+    tx.document.aggregate({ where: { organizationId }, _sum: { sizeBytes: true } }),
   ]);
-  return { companies, administrations, users, documentsPerMonth } satisfies Record<LimitKey, number>;
+  // Stored documents (all kinds) in MB, rounded up to 0.1 MB.
+  const storageMb = Math.ceil(((storage._sum.sizeBytes ?? 0) / 1_048_576) * 10) / 10;
+  return { companies, administrations, users, documentsPerMonth, storageMb } satisfies Record<LimitKey, number>;
 }
 
 async function limitsOf(tx: Tx, organizationId: string): Promise<Limits> {
@@ -48,7 +82,7 @@ async function limitsOf(tx: Tx, organizationId: string): Promise<Limits> {
   return (plan?.limits as Limits) ?? {};
 }
 
-/** Entitlement check before creating something that counts against the plan. */
+/** Entitlement check before creating something that counts against the plan. For storageMb, `adding` is in MB. */
 export async function assertLimit(tx: Tx, organizationId: string, key: LimitKey, adding = 1) {
   const limit = (await limitsOf(tx, organizationId))[key];
   if (limit === undefined || limit === null) return;
@@ -64,15 +98,19 @@ async function platformAdmin(userId: string) {
   return user;
 }
 
+/** Empty = no price set (shown as "on request"); prices are the owner's decision, never defaulted. */
+const price = z.string().trim().transform((v) => v.replace(",", ".")).pipe(z.string().regex(/^(\d+(\.\d{1,2})?)?$/, "validation.amount")).optional().transform((v) => v || null);
 const limitNumber = z.union([z.literal("").transform(() => undefined), z.coerce.number().int().min(0).max(100000)]).optional();
 export const planSchema = z.object({
   id: z.string().optional().transform((v) => v || undefined),
   code: z.string().trim().toUpperCase().regex(/^[A-Z0-9_-]{2,30}$/, "validation.code"),
   name: z.string().trim().min(2, "validation.required").max(80),
   description: z.string().trim().max(500).optional(),
-  companies: limitNumber, administrations: limitNumber, users: limitNumber, documentsPerMonth: limitNumber,
-  priceMonthlySrd: z.string().trim().transform((v) => v.replace(",", ".")).pipe(z.string().regex(/^(\d+(\.\d{1,2})?)?$/, "validation.amount")).optional().transform((v) => v || null),
-  priceMonthlyUsd: z.string().trim().transform((v) => v.replace(",", ".")).pipe(z.string().regex(/^(\d+(\.\d{1,2})?)?$/, "validation.amount")).optional().transform((v) => v || null),
+  companies: limitNumber, administrations: limitNumber, users: limitNumber, documentsPerMonth: limitNumber, storageMb: limitNumber,
+  priceMonthlySrd: price, priceMonthlyUsd: price, priceAnnualSrd: price, priceAnnualUsd: price,
+  /** "all" or a list of optional modules. */
+  modules: z.union([z.literal("all"), z.array(z.enum(OPTIONAL_MODULES))]).default("all"),
+  sortOrder: z.coerce.number().int().min(0).max(1000).default(0),
   status: z.enum(["ACTIVE", "ARCHIVED"]).default("ACTIVE"),
 });
 
@@ -80,11 +118,12 @@ export async function savePlan(userId: string, raw: z.input<typeof planSchema>) 
   await platformAdmin(userId);
   const p = planSchema.parse(raw);
   const limits: Limits = Object.fromEntries(LIMIT_KEYS.filter((k) => p[k] !== undefined).map((k) => [k, p[k]!]));
-  const data = { code: p.code, name: p.name, description: p.description || null, limits: limits as Prisma.InputJsonValue, priceMonthlySrd: p.priceMonthlySrd, priceMonthlyUsd: p.priceMonthlyUsd, status: p.status };
+  const modules = p.modules === "all" ? Prisma.DbNull : (p.modules as Prisma.InputJsonValue);
+  const data = { code: p.code, name: p.name, description: p.description || null, limits: limits as Prisma.InputJsonValue, priceMonthlySrd: p.priceMonthlySrd, priceMonthlyUsd: p.priceMonthlyUsd, priceAnnualSrd: p.priceAnnualSrd, priceAnnualUsd: p.priceAnnualUsd, modules, sortOrder: p.sortOrder, status: p.status };
   return systemDb.$transaction(async (tx) => {
     if (await tx.plan.findFirst({ where: { code: p.code, ...(p.id ? { id: { not: p.id } } : {}) } })) throw new UserError("errors.codeTaken");
     const plan = p.id ? await tx.plan.update({ where: { id: p.id }, data }) : await tx.plan.create({ data });
-    await audit(tx, { organizationId: null, userId, action: p.id ? "platform.planUpdated" : "platform.planCreated", entity: "Plan", entityId: plan.id, details: { code: plan.code, limits, priceMonthlySrd: p.priceMonthlySrd, priceMonthlyUsd: p.priceMonthlyUsd } });
+    await audit(tx, { organizationId: null, userId, action: p.id ? "platform.planUpdated" : "platform.planCreated", entity: "Plan", entityId: plan.id, details: { code: plan.code, limits, prices: { monthlySrd: p.priceMonthlySrd, monthlyUsd: p.priceMonthlyUsd, annualSrd: p.priceAnnualSrd, annualUsd: p.priceAnnualUsd }, modules: p.modules, status: p.status } });
     return plan;
   });
 }
@@ -167,9 +206,9 @@ export async function voidSubscriptionInvoice(userId: string, invoiceId: string,
 export async function platformOverview(userId: string) {
   await platformAdmin(userId);
   const orgs = await systemDb.organization.findMany({ orderBy: { createdAt: "desc" }, take: 500 });
-  const plans = await systemDb.plan.findMany({ orderBy: { code: "asc" } });
+  const plans = await systemDb.plan.findMany({ orderBy: [{ sortOrder: "asc" }, { code: "asc" }] });
   const rows = [];
   for (const o of orgs) rows.push({ org: o, usage: await usage(systemDb, o.id), openInvoices: await systemDb.subscriptionInvoice.count({ where: { organizationId: o.id, status: "OPEN" } }), state: accessState(o) });
   const invoices = await systemDb.subscriptionInvoice.findMany({ orderBy: { createdAt: "desc" }, take: 100 });
-  return { rows, plans, invoices };
+  return { rows, plans, invoices, trialDays: await effectiveTrialDays() };
 }

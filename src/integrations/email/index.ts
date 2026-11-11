@@ -14,6 +14,8 @@ export interface EmailMessage {
 
 export interface EmailSender {
   send(message: EmailMessage): Promise<void>;
+  /** Opens a connection and authenticates without sending (EHLO + AUTH). */
+  verify?(): Promise<void>;
 }
 
 class SmtpSender implements EmailSender {
@@ -23,6 +25,10 @@ class SmtpSender implements EmailSender {
     secure: process.env.SMTP_SECURE === "true",
     auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD } : undefined,
   });
+
+  async verify() {
+    await this.transport.verify();
+  }
 
   async send(message: EmailMessage) {
     await this.transport.sendMail({
@@ -43,4 +49,27 @@ export function getEmailSender(): EmailSender | null {
 export function appUrl(path: string): string {
   const base = process.env.APP_URL ?? (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://localhost:3000");
   return new URL(path, base).toString();
+}
+
+/**
+ * SMTP readiness test: verifies the connection and credentials, then sends one test message to `to`.
+ * Returns a result code only; error details stay in the (redacted) server log.
+ */
+export async function testEmailDelivery(to: string): Promise<{ ok: true } | { ok: false; code: "notConfigured" | "connectionFailed" | "sendFailed" }> {
+  const s = getEmailSender();
+  if (!s) return { ok: false, code: "notConfigured" };
+  const { log } = await import("@/core/ops/log");
+  try {
+    await s.verify?.();
+  } catch (err) {
+    log.error("smtp.verifyFailed", { error: err });
+    return { ok: false, code: "connectionFailed" };
+  }
+  try {
+    await s.send({ to, subject: "ARA Accounting — testbericht / test message", text: "Dit is een testbericht van ARA Accounting. De e-mailinstellingen werken.\n\nThis is a test message from ARA Accounting. E-mail delivery works." });
+    return { ok: true };
+  } catch (err) {
+    log.error("smtp.sendFailed", { error: err });
+    return { ok: false, code: "sendFailed" };
+  }
 }

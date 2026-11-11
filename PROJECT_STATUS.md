@@ -2,9 +2,59 @@
 
 | Item | Value |
 | --- | --- |
-| Current phase | **All phases complete — release candidate 1.0 (owner items open, see docs/PRODUCTION_AUDIT.md)** |
+| Current phase | **Production readiness — technically ready for a controlled pilot once O1, O2, O10 and O11 are provided; NOT production-ready (see docs/PRODUCTION_READINESS.md)** |
 | Completed | 0 — Architecture · 1 — Foundation · 2 — Accounting core · 3 — Financial operations · 4 — Industry templates · 5 — Multi-currency · 6 — Budgets · 7 — ARA Scan & AI · 8 — Financial reporting · 9 — Year-end & tax · 10 — Quality & automation · 11 — SaaS & practice management · **12 — Final QA & deployment** |
-| Last update | 2026-11-11 |
+| Last update | 2026-11-12 |
+
+## Production readiness execution (2026-11-12)
+
+**Delivered:**
+- **Readiness dashboard.** Platformbeheer → Productiegereedheid lists 34 requirements with status, responsible party,
+  priority and gate, dependencies and acceptance criteria. Statuses are live where the software can check them. Two
+  gates: controlled pilot and general availability. Mirrored to `docs/PRODUCTION_READINESS.md`.
+- **`docs/OWNER_ACTION_REGISTER.md`**: 13 owner and specialist items, each with what, why, who, where, how tested and
+  completion. It is kept separate from the 21 technical items.
+- **Technical:**
+  - environment validation (build and start);
+  - Neon pooled/direct/TLS checks;
+  - `migrate status` on deploy;
+  - SMTP verification and test message (`npm run smtp:test`);
+  - fail-closed cron authentication;
+  - APP_URL rules;
+  - provider-neutral error monitoring (`instrumentation.ts`, `ERROR_REPORT_URL`);
+  - redacted structured logging;
+  - rate limits on uploads, exports, downloads and AI;
+  - bundle secret scan;
+  - CI pipeline;
+  - guard tests for authentication, secrets and logging;
+  - RLS coverage test.
+- **Subscriptions:**
+  - monthly and annual prices in SRD and USD;
+  - storage limit;
+  - module access per plan (effective permissions = role ∩ plan);
+  - trial length and payment instructions as platform settings;
+  - customer preview and plan comparison on the subscription page.
+
+  No prices are seeded.
+- **Compliance:**
+  - a register of every legal item;
+  - review records with the adviser's name, qualification, date and reference (append-only);
+  - VERIFIED enforced in the database;
+  - `docs/COMPLIANCE_REVIEW_CHECKLIST.md`, which separates legal items from software rules.
+
+  No compliance is claimed.
+- **Bank import:**
+  - a format library per bank;
+  - validation only against a real sample whose line count and totals equal the bank's own statement (the file is not
+    stored);
+  - customers can apply a validated format;
+  - an offline validator (`npm run bank:validate`);
+  - `docs/BANK_IMPORT_VALIDATION.md`.
+
+  No bank is claimed as compatible.
+- **Fixed:** field ids were not unique on pages with several forms.
+
+**Tests:** 137 unit, 90 integration and 26 e2e tests, all passing.
 
 ## Phase 12 — Final QA & deployment: COMPLETED (2026-11-11)
 

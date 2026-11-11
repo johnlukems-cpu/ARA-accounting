@@ -286,7 +286,9 @@ de grootboekrekening en het dagboek aan.
 
 **Afschrift importeren.**
 
-1. Stel eenmalig de **kolomindeling** van het CSV-bestand van uw bank in.
+1. Stel eenmalig de **kolomindeling** van het CSV-bestand van uw bank in. Heeft ARA voor uw bank al een **gevalideerd
+   bankformaat**, kies dat dan en klik op **Toepassen**. Een formaat is alleen gevalideerd als het met een echt afschrift
+   van die bank is getest. Staat uw bank er niet bij, stel de kolommen dan zelf in.
 2. Kies het bestand en, optioneel, het eindsaldo volgens het afschrift. ARA controleert dan of het saldo aansluit.
 3. Al eerder geïmporteerde regels worden herkend en overgeslagen.
 
@@ -424,9 +426,20 @@ datum en een medewerker. Die krijgt dan een melding.
 
 ## 25. Abonnement, auditlog en ondersteuning
 
-**Abonnement.** Onder **Abonnement** ziet u de status (*Proefperiode*, *Actief*, *Opgeschort*, *Beëindigd*), het pakket,
-uw gebruik tegenover de limieten van het pakket, en uw abonnementsfacturen. Betalen gaat per bankoverschrijving in SRD
-of USD; ARA bevestigt de ontvangst.
+**Abonnement.** Onder **Abonnement** ziet u:
+
+- de status (*Proefperiode*, *Actief*, *Opgeschort*, *Beëindigd*) en uw pakket;
+- uw gebruik tegenover de limieten van het pakket, ook de opslag van documenten;
+- de beschikbare pakketten, met prijs per maand en/of per jaar en de inbegrepen modules;
+- uw abonnementsfacturen en de betaalinstructies van ARA.
+
+Betalen gaat per bankoverschrijving in SRD of USD; ARA bevestigt de ontvangst.
+
+Een pakket kan modules zoals ARA Scan, Belastingen of de Jaarrekening wel of niet bevatten. Modules buiten uw pakket
+verdwijnen uit het menu. De boekhoudkern (grootboek, verkoop, inkoop, bank en kas, rapportage) zit altijd in elk pakket.
+
+**Limieten per korte periode.** Om misbruik te voorkomen gelden ruime grenzen per 10 minuten voor uploads, exports en
+downloads. Wordt een grens bereikt, wacht dan enkele minuten.
 
 Is de proefperiode verlopen zonder pakket, of is het abonnement opgeschort of beëindigd, dan wordt de organisatie
 **alleen-lezen**. U kunt dan alles inzien en exporteren, maar niets wijzigen. Een melding bovenaan legt uit waarom.

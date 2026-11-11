@@ -8,15 +8,17 @@ checked every statement against the code. **The following parts of the design ar
 | Design statement | Status |
 | --- | --- |
 | Support access through a time-boxed `SupportGrant`, impersonation | Not built. Platform admins have no access to customer books at all. |
-| Rate limits on uploads, exports and AI calls | Not built. Only authentication is rate-limited; uploads are capped per month by the plan. |
+| Rate limits on uploads, exports and AI calls | **Implemented:** `src/core/ops/throttle.ts` (uploads, exports, downloads, AI; per user and per organisation). |
 | Virus-scan hook / ClamAV adapter | Not built (no scanner on Vercel functions). |
-| Error monitoring hook (Sentry-compatible) | Not built. Errors show a digest; the server log holds the details. |
+| Error monitoring hook (Sentry-compatible) | **Implemented, provider-neutral:** `onRequestError` → redacted log + optional `ERROR_REPORT_URL` webhook. Account owner item O11. |
 | Organisation export as ZIP | Not built. Reports, ledgers and documents can be exported one by one. |
 | Step-up MFA for sensitive actions | Not built. |
 | Breached-password check | Not built. |
-| Dependency audit in CI | No CI pipeline in the repository; `npm audit` is run manually (see PRODUCTION_AUDIT §5.3). |
+| Dependency audit in CI | **Implemented:** `.github/workflows/ci.yml` (fails on critical; the known high advisory is tracked in PRODUCTION_AUDIT §5.3). |
 | Audit fields: before/after diff, user agent, request id, impersonation | The audit log stores action, entity, details, IP and the hash chain. User agent and request id are not stored. |
 | Audit chain verification job | **Implemented:** checked on the audit page and daily by `/api/cron/quality`, which logs `audit.chainBroken`. |
+| Configuration validation, secrets in the browser | **Implemented:** `npm run check:env` (build stops on errors) and `npm run check:bundle` (build stops when a secret value reaches `.next/static`). |
+| Logging without sensitive data | **Implemented:** `src/core/ops/log.ts` redacts secrets, e-mail addresses, amounts and free text; a guard test forbids `console.*` elsewhere. |
 
 
 ## 1. Authentication
@@ -67,5 +69,5 @@ checked every statement against the code. **The following parts of the design ar
 
 ## 7. Operations
 - Backups: provider PITR plus a daily logical dump to separate storage, with a quarterly restore test.
-- Error monitoring hook (Sentry-compatible). Logs are structured and contain no amounts or personal data beyond ids.
+- Error monitoring: `src/instrumentation.ts` reports every server error (redacted) to the log and to `ERROR_REPORT_URL`. Logs are structured JSON and contain no amounts or personal data beyond ids.
 - Health endpoint without tenant data.

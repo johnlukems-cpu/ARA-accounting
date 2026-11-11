@@ -8,6 +8,7 @@ import { renderReportPdf, type ReportPdf } from "@/modules/reporting/pdf";
 import type { buildReports } from "@/modules/reporting/service";
 import type { assetMovements } from "@/modules/annual-accounts/service";
 import { formatAmount } from "@/lib/format";
+import { throttleResponse } from "@/core/ops/throttle";
 
 type Snapshot = Awaited<ReturnType<typeof buildReports>> & { assets: Awaited<ReturnType<typeof assetMovements>> };
 
@@ -16,6 +17,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   const ctx = await getContext();
   if (!ctx?.access || !ctx.mfaSatisfied) return new Response("Unauthorized", { status: 401 });
+  const limited = await throttleResponse("export", ctx.user.id, ctx.access.organizationId);
+  if (limited) return limited;
   const r = await withTenant(ctx.access, async (tx) => {
     const aa = await tx.annualAccount.findUnique({ where: { id }, include: { disclosures: { orderBy: { sortOrder: "asc" } } } });
     if (!aa) return null;

@@ -275,6 +275,35 @@ Applying a template **copies** rows into the administration (with `templateAccou
 
 ---
 
+### 4.14 Production readiness (migration `production_readiness`)
+
+**`Plan`**
+- New columns:
+  - `priceAnnualSrd` / `priceAnnualUsd`: optional; never defaulted.
+  - `modules`: JSON list of the optional modules included; null means all modules.
+  - `sortOrder`.
+- Limits (JSON) may include `storageMb`.
+- CHECK: no negative prices.
+
+**`PlatformSetting`**
+- Key/value settings of the platform: `trialDays` and `paymentInstructions`.
+- RLS on, no grant to `ara_app`.
+
+**`ComplianceReview`** (append-only trigger)
+- Evidence of an external review: subject, key, decision, reviewer name and qualification, reference, date and notes.
+- RLS on, no grant to `ara_app`.
+
+**`TaxRuleVersion`**
+- New columns: `verifiedBy`, `verifiedAt`, `verificationReference`.
+- CHECK: `legalStatus = VERIFIED` only with all three filled in. The only writer is `recordReview`.
+
+**`BankFormat`**
+- A library of statement import formats per bank, with a status (DRAFT / VALIDATED / RETIRED).
+- Evidence of the sample: `sampleSha256`, a `sampleSummary` (line count, period, totals) and who validated it when. The
+  file itself is never stored.
+- CHECK: VALIDATED only with that evidence.
+- `ara_app` may only read it, so tenants can apply validated formats.
+
 ## 5. Database-level safeguards (SQL in migrations)
 
 1. `journal_entry_immutable` trigger: rejects UPDATE/DELETE of POSTED entries and their lines (only `reversed_by_entry_id` may be set once).
