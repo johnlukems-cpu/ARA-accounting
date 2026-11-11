@@ -1342,10 +1342,16 @@ enum DocumentSource {
 }
 
 /// A scanned or uploaded purchase document. The file itself is in DocumentFile (database storage adapter).
+enum DocumentKind {
+  PURCHASE
+  EVIDENCE
+}
+
 model Document {
   id               String         @id @default(cuid())
   organizationId   String
   administrationId String
+  kind             DocumentKind   @default(PURCHASE)
   fileName         String
   mimeType         String
   sizeBytes        Int
@@ -1511,5 +1517,94 @@ model YearEndChecklistItem {
   closing        YearEndClosing  @relation(fields: [closingId], references: [id], onDelete: Cascade)
 
   @@unique([closingId, code])
+  @@index([organizationId])
+}
+
+// ───────────── Phase 9: tax ─────────────
+
+enum TaxType {
+  BTW
+  IB_RECHTSPERSONEN
+  DIVIDENDBELASTING
+}
+
+enum RuleLegalStatus {
+  VERIFIED
+  SOURCE_FOUND
+  PENDING_VERIFICATION
+}
+
+/// T1: rates and other tax parameters are versioned data with an effective date and a legal status (platform-wide, read-only for tenants).
+model TaxRuleVersion {
+  id            String          @id @default(cuid())
+  taxType       TaxType
+  effectiveFrom DateTime        @db.Date
+  effectiveTo   DateTime?       @db.Date
+  parameters    Json
+  legalStatus   RuleLegalStatus
+  legalSource   String?
+  notes         String?
+  createdAt     DateTime        @default(now())
+
+  @@unique([taxType, effectiveFrom])
+}
+
+enum TaxReturnStatus {
+  DRAFT
+  APPROVED
+  FILED
+}
+
+/// A tax return or calculation: monthly BTW, yearly IB rechtspersonen, or a dividend declaration.
+model TaxReturn {
+  id                  String          @id @default(cuid())
+  organizationId      String
+  administrationId    String
+  taxType             TaxType
+  periodFrom          DateTime        @db.Date
+  periodTo            DateTime        @db.Date
+  fiscalYearId        String?
+  ruleVersionId       String
+  status              TaxReturnStatus @default(DRAFT)
+  calculation         Json
+  /// T2: explicit acknowledgement when the rule is not VERIFIED.
+  acknowledgedById    String?
+  acknowledgedAt      DateTime?
+  explanation         String?
+  approvedById        String?
+  approvedAt          DateTime?
+  entryId             String?
+  evidenceDocumentId  String?
+  filingReference     String?
+  filedById           String?
+  filedAt             DateTime?
+  createdById         String
+  createdAt           DateTime        @default(now())
+  adjustments         TaxAdjustment[]
+
+  @@unique([administrationId, taxType, periodFrom, periodTo])
+  @@index([organizationId])
+}
+
+enum TaxAdjustmentKind {
+  NON_DEDUCTIBLE
+  EXEMPT_INCOME
+  DEPRECIATION_DIFFERENCE
+  LOSS_OFFSET
+  OTHER
+}
+
+/// T6 fiscal adjustment: signed amount added to the commercial result.
+model TaxAdjustment {
+  id             String            @id @default(cuid())
+  organizationId String
+  returnId       String
+  kind           TaxAdjustmentKind
+  description    String
+  amount         Decimal           @db.Decimal(20, 2)
+  createdById    String
+  createdAt      DateTime          @default(now())
+  taxReturn      TaxReturn         @relation(fields: [returnId], references: [id], onDelete: Cascade)
+
   @@index([organizationId])
 }

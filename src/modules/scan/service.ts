@@ -61,7 +61,7 @@ export async function uploadDocument(access: Access, input: { administrationId: 
     const admin = await tx.administration.findUnique({ where: { id: input.administrationId } });
     if (!admin) throw new UserError("errors.notFound");
     assertCan(access, "scan.create", admin.companyId);
-    const same = await tx.document.findFirst({ where: { administrationId: admin.id, sha256, status: { not: "REJECTED" } }, orderBy: { createdAt: "asc" } });
+    const same = await tx.document.findFirst({ where: { administrationId: admin.id, kind: "PURCHASE", sha256, status: { not: "REJECTED" } }, orderBy: { createdAt: "asc" } });
     const d = await tx.document.create({
       data: {
         organizationId: access.organizationId, administrationId: admin.id, fileName: input.fileName.slice(0, 200), mimeType, sizeBytes: input.bytes.length, sha256,

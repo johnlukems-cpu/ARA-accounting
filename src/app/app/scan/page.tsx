@@ -18,7 +18,7 @@ export default async function ScanPage({ searchParams }: { searchParams: Promise
   const admin = ctx.administration;
   const status = (STATUSES as readonly string[]).includes(sp.status ?? "") ? (sp.status as (typeof STATUSES)[number]) : "REVIEW_REQUIRED";
   const docs = await withTenant(ctx.access, async (tx) => {
-    const list = await tx.document.findMany({ where: { administrationId: admin.id, status }, orderBy: { createdAt: "desc" }, take: 100 });
+    const list = await tx.document.findMany({ where: { administrationId: admin.id, kind: "PURCHASE", status }, orderBy: { createdAt: "desc" }, take: 100 });
     const runs = await tx.automationExecution.findMany({ where: { documentId: { in: list.map((d) => d.id) } }, orderBy: { createdAt: "desc" } });
     return list.map((d) => ({ ...d, run: runs.find((r) => r.documentId === d.id) }));
   });

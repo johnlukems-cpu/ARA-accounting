@@ -15,7 +15,10 @@ export async function loadBalances(tx: Tx, q: { administrationId: string; fiscal
       FROM "Account" a
       LEFT JOIN "Account" p ON p.id = a."parentId"
       LEFT JOIN "JournalLine" l ON l."accountId" = a.id
+      -- Closing-journal entries (year-end transfer of the result, and their reversals) are left out: statements show the
+      -- result of the year, and retained earnings without this year's transfer.
       LEFT JOIN "JournalEntry" e ON e.id = l."entryId" AND e.status = 'POSTED' AND e."fiscalYearId" = ${q.fiscalYearId}
+        AND NOT EXISTS (SELECT 1 FROM "Journal" j WHERE j.id = e."journalId" AND j.type = 'CLOSING')
       LEFT JOIN "AccountingPeriod" ap ON ap.id = e."periodId" AND ap.number <= ${q.toPeriod}
      WHERE a."administrationId" = ${q.administrationId} AND a.type = 'DETAIL'
      GROUP BY a.id, p.number

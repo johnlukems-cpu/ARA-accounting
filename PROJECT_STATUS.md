@@ -46,6 +46,16 @@
 - **Reopen (F6)** — needs a reason; the opening and closing entries are reversed; the closing returns to "in progress" for re-approval.
 - **Tests** — integration "Phase 9A" (3 tests, including a foreign-currency carry-forward after revaluation) and e2e year-end UI.
 
+### Phase 9 step B — Taxes (2026-11-11)
+- **Tax rules as data (T1)** — `TaxRuleVersion`, platform data that tenants can read but not change. Seeded: BTW 10/25/0% (filing day 16 is a placeholder), IB rechtspersonen 36%, dividend tax 25%. All are SOURCE_FOUND, none VERIFIED.
+- **BTW return (T5, T7)** — per calendar month. Output and input BTW per code (with the deductible part) in SRD, from posted invoices and cash entries. Reconciliation with the BTW ledger accounts; a difference needs an explanation.
+- **IB rechtspersonen (T6)** — the commercial result before tax plus fiscal adjustments (non-deductible, exempt, depreciation difference, loss offset, other). Taxable profit × rate, minus the voorlopige aanslag paid (account 1450). A loss gives no tax. The tax provision is posted in period 13.
+- **Dividend tax** — a declaration from retained earnings: tax withheld and net dividend payable.
+- **Approval (T2)** — by another user. An explicit acknowledgement is needed for unverified rules; it is stored and audited. The settlement is posted by the tax journal on approval.
+- **Filing (T4)** — FILED only with an evidence document and a confirmation (database CHECK). Filed returns are immutable (trigger).
+- **Reports** — statements leave out the closing journal, so a closed year still shows its result.
+- **Tests** — integration "Phase 9B" (4 tests) and e2e BTW return.
+
 ## Phase 7 — ARA Scan & AI: COMPLETED (2026-11-11)
 
 **Features:**

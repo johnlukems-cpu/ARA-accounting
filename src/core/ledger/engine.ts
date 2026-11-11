@@ -44,7 +44,8 @@ const SOURCE_PERMISSIONS: Record<SourceType, { create: Permission; post: Permiss
   DEPRECIATION: { create: "assets.create", post: "assets.post", reverse: "assets.post" },
   FX_REVALUATION: { create: "currency.create", post: "currency.post", reverse: "currency.post" },
   YEAR_END: { create: "yearEnd.edit", post: "yearEnd.post", reverse: "yearEnd.post" },
-  TAX: { create: "tax.edit", post: "ledger.post", reverse: "ledger.reverse" },
+  // Tax settlements are posted by the approver of the return (T2), so the approval right covers the posting.
+  TAX: { create: "tax.approve", post: "tax.approve", reverse: "tax.approve" },
   SCAN: { create: "scan.create", post: "scan.post", reverse: "purchase.post" },
 };
 export const permissionsFor = (source: SourceType) => SOURCE_PERMISSIONS[source];
@@ -301,11 +302,11 @@ export async function postEntry(tx: Tx, access: Access, entryId: string): Promis
 
 /** Creates and posts in one step (used by sub-ledgers). Idempotent on `idempotencyKey`. */
 /**
- * Year-end entries (closing in period 13, opening in the next year's period 0): their approval is the approval of the
- * year-end closing by another user (F4), recorded here as the entry's approver. Only for source YEAR_END.
+ * Entries whose approval happened in their module, by someone other than the preparer: year-end closing (F4) and tax
+ * returns (T2). The module's approver is recorded as the entry's approver. Only for sources YEAR_END and TAX.
  */
-export async function createAndPostYearEnd(tx: Tx, access: Access, input: EntryInput, approvedById: string): Promise<JournalEntry> {
-  if (input.sourceType !== "YEAR_END") throw new UserError("ledger.invalidJournal");
+export async function createAndPostApproved(tx: Tx, access: Access, input: EntryInput, approvedById: string): Promise<JournalEntry> {
+  if (input.sourceType !== "YEAR_END" && input.sourceType !== "TAX") throw new UserError("ledger.invalidJournal");
   const entry = await createEntry(tx, access, input);
   await tx.journalEntry.update({ where: { id: entry.id }, data: { status: "APPROVED", approvedById, approvedAt: new Date() } });
   return postEntry(tx, access, entry.id);

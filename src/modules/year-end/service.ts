@@ -217,7 +217,7 @@ export async function closeYear(access: Access, closingId: string) {
     let closingEntryId: string | null = null;
     if (!result.isZero() || closingLines.length) {
       if (!result.isZero()) closingLines.push({ accountId: retained.id, ...side(result), description: `Resultaat ${fy.code} naar ingehouden winsten` });
-      const entry = await engine.createAndPostYearEnd(tx, access, {
+      const entry = await engine.createAndPostApproved(tx, access, {
         administrationId: admin.id, journalId: await journal("CLOSING"), entryDate: iso(fy.endDate), kind: "CLOSING", description: `Jaarafsluiting ${fy.code}`,
         lines: closingLines, sourceType: "YEAR_END", sourceId: c.id, idempotencyKey: `year-end-close:${c.id}:${c.reopenCount}`,
       }, c.approvedById);
@@ -258,7 +258,7 @@ export async function closeYear(access: Access, closingId: string) {
     }
     if (openingLines.length < 2) throw new UserError("yearEnd.nothingToCarry");
     const opn = await journal("OPENING");
-    const opening = await engine.createAndPostYearEnd(tx, access, {
+    const opening = await engine.createAndPostApproved(tx, access, {
       administrationId: admin.id, journalId: opn, entryDate: iso(next.startDate), kind: "OPENING", description: `Beginbalans ${next.code} (overboeking ${fy.code})`,
       lines: openingLines, sourceType: "YEAR_END", sourceId: c.id, idempotencyKey: `year-end-open:${c.id}:${c.reopenCount}`,
     }, c.approvedById);
