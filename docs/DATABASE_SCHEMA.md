@@ -266,6 +266,10 @@ Applying a template **copies** rows into the administration (with `templateAccou
 ### 4.12 Governance and SaaS
 `Approval` (organizationId, subjectType, subjectId, step, requiredPermission, status, decidedById, decidedAt, comment) • `AuditLog` (append-only, hash-chained; see SECURITY.md) • `Notification` • `Plan` (code, name, billing periods, isActive) • `PlanEntitlement` (planId, module, limitKey, limitValue) • `Subscription` (organizationId U, planId, period: MONTHLY, ANNUAL; status: TRIAL, ACTIVE, PAST_DUE, SUSPENDED, CANCELLED; trialEndsAt, currentPeriodEnd) • `SubscriptionInvoice` • `SubscriptionPayment` (method MANUAL_BANK, reference, confirmedById) • `UsageRecord` (organizationId, metric: USERS, ADMINISTRATIONS, DOCUMENTS_PROCESSED, STORAGE_BYTES, month, value) • `PlatformSetting`.
 
+> **Implemented in Phase 11** (`20261111200000_phase11_saas`, `20261111200100_phase11_guard`): `Plan` (platform data; limits JSON, optional
+> monthly SRD/USD prices), `Organization.planId/trialEndsAt/statusReason` (tenant cannot change them — trigger), `SubscriptionInvoice`
+> (gapless `SUB-YYYY-NNNNN`, PAID requires paidAt + confirmer (CHECK), no deletes; tenants read their own) and `PracticeTask`.
+
 ### 4.13 Practice management
 `Task` (organizationId, companyId?, administrationId?, title, type, assigneeId, dueDate, status, recurrence, linkedSubject) • `Deadline` (companyId, kind: BTW_AANGIFTE, IB_AANGIFTE, VOORLOPIGE_AANSLAG_TERMIJN, DIVIDENDBELASTING, JAARREKENING, KKF …, dueDate, status) • `ClientNote`.
 

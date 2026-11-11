@@ -10,6 +10,7 @@ import { UserError } from "@/core/errors";
 import { fiscalYearCode, fiscalYearRange, planPeriods } from "./periods";
 import { installStandardChart } from "@/modules/ledger/service";
 import { applyTemplateToNewAdministration } from "@/modules/industry/service";
+import { assertLimit, trialDays } from "@/modules/saas/service";
 import { installOperations } from "@/modules/invoicing/setup";
 import type {
   administrationSchema, assignmentSchema, branchSchema, companySchema, inviteSchema, membershipUpdateSchema,
@@ -46,7 +47,7 @@ export async function registerOrganization(input: z.infer<typeof registerSchema>
   try {
     return await systemDb.$transaction(async (tx) => {
       const user = await tx.user.create({ data: { email: input.email, name: input.name, passwordHash, passwordChangedAt: new Date() } });
-      const org = await tx.organization.create({ data: { name: input.organizationName, kind: input.kind, ownerUserId: user.id } });
+      const org = await tx.organization.create({ data: { name: input.organizationName, kind: input.kind, ownerUserId: user.id, trialEndsAt: new Date(Date.now() + trialDays() * 86_400_000) } });
       await tx.organizationMembership.create({
         data: { organizationId: org.id, userId: user.id, roleId: await systemRoleId(tx, ownerRole), status: "ACTIVE" },
       });
@@ -81,6 +82,7 @@ export async function createCompany(access: Access, input: z.infer<typeof compan
   assertCan(access, "companies.create");
   try {
     return await withTenant(scopeOf(access), async (tx) => {
+      await assertLimit(tx, access.organizationId, "companies");
       const company = await tx.company.create({ data: { ...input, organizationId: access.organizationId } });
       if (!access.orgWide) {
         // The creator keeps access to the company they created.
@@ -153,6 +155,7 @@ export async function createAdministration(access: Access, input: Omit<z.infer<t
     return await withTenant(scopeOf(access), async (tx) => {
       const company = await tx.company.findUnique({ where: { id: input.companyId } });
       if (!company || company.status !== "ACTIVE") throw new UserError("errors.notFound");
+      await assertLimit(tx, access.organizationId, "administrations");
       const admin = await tx.administration.create({
         data: {
           organizationId: access.organizationId, companyId: input.companyId, code: input.code, name: input.name,
@@ -255,6 +258,7 @@ export async function inviteMember(access: Access, input: z.infer<typeof inviteS
   const userId = user.id;
   try {
     return await withTenant(scopeOf(access), async (tx) => {
+      await assertLimit(tx, access.organizationId, "users");
       const membership = await tx.organizationMembership.create({
         data: { organizationId: access.organizationId, userId, roleId, status: invitationToken ? "INVITED" : "ACTIVE" },
       });

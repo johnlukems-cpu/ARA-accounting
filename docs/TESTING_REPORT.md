@@ -2,6 +2,22 @@
 
 Only results from real runs are recorded here. Environment: Node 22, PostgreSQL 16.15 (local), Chromium (Playwright 1.63).
 
+## Phase 11 — SaaS & practice management (2026-11-11)
+
+| Suite | Result |
+| --- | --- |
+| Unit | **116 / 116 passed** |
+| Integration (PostgreSQL) | **81 / 81 passed** (4 new) |
+| End-to-end | **20 / 20 passed** (1 new) |
+| Typecheck / lint / build / migration drift | passed |
+
+| Acceptance | Evidence |
+| --- | --- |
+| Entitlement enforcement | integration "plan limits are enforced on companies, administrations, users and documents…" |
+| Trial / read-only / tenant cannot change subscription | integration "a new organisation gets a trial…" (database trigger) |
+| Subscription invoices and manual payment | integration "subscription invoices: gapless numbers, manual payment confirmation…" |
+| Workflow 10 practice management | integration "the portfolio shows every client administration…"; e2e practice dashboard + subscription page |
+
 ## Phase 10 — Quality & automation (2026-11-11)
 
 | Suite | Result |

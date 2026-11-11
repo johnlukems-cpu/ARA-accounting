@@ -321,8 +321,8 @@
     "contextTitle": "Huidige omgeving",
     "role": "Uw rol",
     "nextTitle": "In ontwikkeling",
-    "nextBody": "Fase 10 is afgerond. Volgende stap: kantoordashboard, abonnementen en platformbeheer (fase 11).",
-    "phaseBadge": "Fase 11 · SaaS en kantoorbeheer"
+    "nextBody": "Fase 11 is afgerond. Volgende stap: eindtest, beveiligingsreview, handleiding en oplevering (fase 12).",
+    "phaseBadge": "Fase 12 · Eindtest en oplevering"
   },
   "shell": {
     "organization": "Organisatie",
@@ -371,7 +371,10 @@
     "yearEnd": "Jaarafsluiting",
     "tax": "Belastingen",
     "annual": "Jaarrekening",
-    "quality": "Kwaliteitsmonitor"
+    "quality": "Kwaliteitsmonitor",
+    "practice": "Kantoordashboard",
+    "subscription": "Abonnement",
+    "platform": "Platformbeheer"
   },
   "audit": {
     "title": "Auditlog",
@@ -393,7 +396,8 @@
       "memberAdded": "U bent toegevoegd aan de organisatie als {role}.",
       "companyAssigned": "U heeft toegang gekregen tot {company} als {role}.",
       "qualityErrors": "{count} nieuwe kwaliteitsfout(en) in {administration}",
-      "qualityAssigned": "Er is een kwaliteitspunt aan u toegewezen"
+      "qualityAssigned": "Er is een kwaliteitspunt aan u toegewezen",
+      "taskAssigned": "Taak aan u toegewezen: {title}"
     }
   },
   "search": {
@@ -2058,5 +2062,88 @@
         "action": "Sluit de periode (voorlopig) af bij Administratie."
       }
     }
+  },
+  "practice": {
+    "title": "Kantoordashboard",
+    "intro": "Alle klantadministraties in één overzicht: kwaliteit, werkvoorraad, BTW-aangiften, jaarafsluiting en taken.",
+    "portfolio": "Klanten",
+    "noClients": "Nog geen klantadministraties.",
+    "client": "Klant",
+    "issues": "Kwaliteitspunten",
+    "drafts": "Concepten",
+    "lastPosting": "Laatst geboekt",
+    "btw": "BTW vorige maand",
+    "deadline": "uiterlijk {date}",
+    "placeholder": "termijn te verifiëren",
+    "yearEnd": "Jaarafsluiting",
+    "tasks": "Taken",
+    "task": "Taak",
+    "due": "Uiterlijk",
+    "done": "Gereed",
+    "reopen": "Heropenen",
+    "addTask": "Taak toevoegen",
+    "taskCreated": "Taak toegevoegd."
+  },
+  "saas": {
+    "title": "Abonnement",
+    "intro": "Status, pakket, gebruik en facturen van uw ARA Accounting-abonnement.",
+    "status": "Status",
+    "plan": "Pakket",
+    "noPlan": "Nog geen pakket (proefperiode)",
+    "trialEnds": "Proefperiode tot",
+    "reason": "Reden",
+    "statuses": {
+      "TRIAL": "Proefperiode",
+      "ACTIVE": "Actief",
+      "SUSPENDED": "Opgeschort",
+      "CANCELLED": "Beëindigd"
+    },
+    "usage": "Gebruik",
+    "item": "Onderdeel",
+    "used": "Gebruikt",
+    "limit": "Limiet",
+    "unlimited": "onbeperkt",
+    "limits": {
+      "companies": "Bedrijven",
+      "administrations": "Administraties",
+      "users": "Gebruikers",
+      "documentsPerMonth": "Documenten per maand"
+    },
+    "invoices": "Abonnementsfacturen",
+    "noInvoices": "Nog geen facturen.",
+    "paymentInfo": "Betaling per bankoverschrijving in SRD of USD; ARA bevestigt de ontvangst handmatig.",
+    "invoiceStatuses": {
+      "OPEN": "Open",
+      "PAID": "Betaald",
+      "VOID": "Vervallen"
+    },
+    "openInvoices": "open factuur/facturen",
+    "readOnly": "Uw organisatie is alleen-lezen ({reason}). Neem contact op met ARA.",
+    "limitReached": "De limiet van uw pakket is bereikt ({what}: {limit}).",
+    "referenceRequired": "Vul de betalingsreferentie in.",
+    "invoiceCreated": "Factuur aangemaakt.",
+    "banner": {
+      "TRIAL_ENDED": "De proefperiode is verlopen; de administratie is alleen-lezen tot er een pakket is gekozen.",
+      "SUSPENDED": "Het abonnement is opgeschort; de administratie is alleen-lezen.",
+      "CANCELLED": "Het abonnement is beëindigd; de administratie is alleen-lezen."
+    },
+    "bannerLink": "Abonnement bekijken"
+  },
+  "platform": {
+    "title": "Platformbeheer",
+    "intro": "Organisaties, pakketten en abonnementsfacturen (alleen voor ARA-beheerders).",
+    "organisations": "Organisaties",
+    "organisation": "Organisatie",
+    "plans": "Pakketten",
+    "plansIntro": "Limieten en prijzen worden door de eigenaar vastgesteld; leeg betekent onbeperkt of nog niet bepaald.",
+    "price": "Prijs per maand (SRD / USD)",
+    "priceSrd": "Prijs per maand SRD",
+    "priceUsd": "Prijs per maand USD",
+    "addPlan": "Pakket opslaan",
+    "createInvoice": "Factuur maken",
+    "paymentReference": "Betalingsreferentie / reden",
+    "reactivate": "heractiveren",
+    "confirmPayment": "Betaling bevestigen",
+    "void": "Laten vervallen"
   }
 }

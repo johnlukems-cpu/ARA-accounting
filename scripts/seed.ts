@@ -25,6 +25,9 @@ export async function seedReferenceData(db: PrismaClient) {
   }
   await seedPlatformTemplates(db);
   await seedTaxRules(db);
+  // Platform administrators: users whose e-mail is listed in PLATFORM_ADMIN_EMAILS (comma-separated). Never removed here.
+  const admins = (process.env.PLATFORM_ADMIN_EMAILS ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
+  if (admins.length) await db.user.updateMany({ where: { email: { in: admins } }, data: { isPlatformAdmin: true } });
 }
 
 if (process.argv[1]?.endsWith("seed.ts")) {

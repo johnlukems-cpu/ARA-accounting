@@ -2,8 +2,8 @@
 
 | Item | Value |
 | --- | --- |
-| Current phase | **11 — SaaS & practice management (next)** |
-| Completed | 0 — Architecture · 1 — Foundation · 2 — Accounting core · 3 — Financial operations · 4 — Industry templates · 5 — Multi-currency · 6 — Budgets · 7 — ARA Scan & AI · 8 — Financial reporting · 9 — Year-end & tax · **10 — Quality & automation** |
+| Current phase | **12 — Final QA & deployment (next)** |
+| Completed | 0 — Architecture · 1 — Foundation · 2 — Accounting core · 3 — Financial operations · 4 — Industry templates · 5 — Multi-currency · 6 — Budgets · 7 — ARA Scan & AI · 8 — Financial reporting · 9 — Year-end & tax · 10 — Quality & automation · **11 — SaaS & practice management** |
 | Last update | 2026-11-11 |
 
 ## Phase 8 — Financial reporting: COMPLETED (2026-11-11)
@@ -32,6 +32,32 @@
 - P&L at monthly average FX rates (the ledger already holds base amounts).
 
 **Next phase:** 9 — year-end and tax.
+
+## Phase 11 — SaaS & practice management: COMPLETED (2026-11-11)
+
+**Features:**
+- **Practice dashboard** — every client administration the user can see, with quality score, open errors and warnings, drafts, last posting, BTW status of the previous month with the filing deadline (marked as a placeholder until the rule is verified), year-end status and open tasks. Practice tasks per client have an assignee (who is notified), a due date and a done/reopen state.
+- **Subscriptions** — a trial on registration (`TRIAL_DAYS`, default 30 — to be confirmed by the owner). Plans are platform data: limits for companies, administrations, users and documents per month, plus monthly SRD/USD prices. **No plans or prices are seeded: these are the owner's commercial decisions.**
+- **Entitlements and read-only mode** — limits are enforced when creating a company, an administration, an invitation and a scanned document. Suspended, cancelled or expired-trial organisations are read-only for every server action (platform admins excepted), shown by a banner. A database trigger stops tenants from changing their own subscription fields.
+- **Platform administration** (`/app/platform`, `User.isPlatformAdmin`, granted through `PLATFORM_ADMIN_EMAILS` at seed time):
+  - organisations with usage;
+  - plan management;
+  - status, trial and plan changes (suspension needs a reason);
+  - subscription invoices with gapless platform numbering (`SUB-YYYY-NNNNN`), manual payment confirmation with a bank reference (optionally reactivating), voiding.
+  Everything is audited. Organisations read only their own invoices.
+- **Subscription page** — status, plan, usage against limits, invoices and payment instructions.
+
+**Migrations:** `phase11_saas`, `phase11_guard`.
+
+**Tests:** 116 unit, 81 integration and 20 e2e tests, all passing. This includes entitlement enforcement and acceptance workflow 10.
+
+**Outstanding:**
+- plans, prices and trial length (owner decision);
+- ARA's bank details on the subscription page;
+- public API keys (no external consumer has been specified yet);
+- automatic suspension after a payment term (needs the owner's policy).
+
+**Next phase:** 12 — final QA and deployment.
 
 ## Phase 10 — Quality & automation: COMPLETED (2026-11-11)
 
@@ -301,3 +327,4 @@ A template can add accounts, journals, asset categories, dimension values and KP
 - 2026-11-11: Phase 8 completed: balance sheet, P&L, cash flow, equity statement, KPIs, cash-flow forecast, PDF/CSV exports with ledger fingerprint; 195 automated tests passing.
 - 2026-11-11: Phase 9 completed: year-end closing with carry-forward, BTW/IB/dividend tax with versioned rules and four-eyes approval, annual accounts generator; 207 automated tests passing.
 - 2026-11-11: Phase 10 completed: quality monitor with 12 checks, issue lifecycle, score, alerts and daily scheduled scan; 212 automated tests passing.
+- 2026-11-11: Phase 11 completed: practice dashboard and tasks, trial/plans/entitlements with read-only mode, platform administration with subscription invoices and manual payment confirmation; 217 automated tests passing.

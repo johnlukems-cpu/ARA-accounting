@@ -1,4 +1,5 @@
 import "server-only";
+import { assertWritable } from "@/modules/saas/service";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { systemDb } from "@/core/db/client";
@@ -114,6 +115,8 @@ export async function requireActionContext(permission?: Permission, companyId?: 
   if (!ctx || (ctx.user.mfaEnabled && !ctx.session.mfaVerifiedAt)) throw new UnauthenticatedError();
   if (!ctx.access || !ctx.organization) throw new ForbiddenError();
   if (!ctx.mfaSatisfied) throw new ForbiddenError("mfa");
+  // Suspended, cancelled or expired-trial organisations are read-only (platform administrators excepted).
+  if (!ctx.user.isPlatformAdmin) assertWritable(ctx.organization);
   if (permission) assertCan(ctx.access, permission, companyId === undefined ? ctx.company?.id : companyId);
   return ctx as ReadyContext;
 }

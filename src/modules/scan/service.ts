@@ -9,6 +9,7 @@ import { assertCan, type Access } from "@/core/auth/access";
 import { UserError } from "@/core/errors";
 import { postInvoice, purchaseApprovalRequired, saveInvoice, submitInvoice } from "@/modules/invoicing/service";
 import { FIELD_KEYS, emptyFields, matchSupplier, sniffMime, type DuplicateReason, type Fields } from "./domain";
+import { assertLimit } from "@/modules/saas/service";
 import { anthropicExtractor, readPdfText, textLayerExtractor, type Extractor } from "./extractors";
 
 const scope = (a: Access) => ({ organizationId: a.organizationId, userId: a.userId });
@@ -61,6 +62,7 @@ export async function uploadDocument(access: Access, input: { administrationId: 
     const admin = await tx.administration.findUnique({ where: { id: input.administrationId } });
     if (!admin) throw new UserError("errors.notFound");
     assertCan(access, "scan.create", admin.companyId);
+    await assertLimit(tx, access.organizationId, "documentsPerMonth");
     const same = await tx.document.findFirst({ where: { administrationId: admin.id, kind: "PURCHASE", sha256, status: { not: "REJECTED" } }, orderBy: { createdAt: "asc" } });
     const d = await tx.document.create({
       data: {

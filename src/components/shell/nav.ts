@@ -8,7 +8,7 @@ export interface NavItem {
   key: string;
   href: string | ((ids: { administrationId?: string }) => string | null);
   permission?: Permission;
-  icon: "dashboard" | "building" | "briefcase" | "book" | "users" | "shield" | "user" | "list" | "scale" | "library" | "notebook" | "receipt" | "cart" | "contact" | "wallet" | "landmark" | "percent" | "transfer" | "factory" | "template" | "coins" | "target" | "scan" | "bot" | "chart" | "yearEnd" | "tax" | "annual" | "quality";
+  icon: "dashboard" | "building" | "briefcase" | "book" | "users" | "shield" | "user" | "list" | "scale" | "library" | "notebook" | "receipt" | "cart" | "contact" | "wallet" | "landmark" | "percent" | "transfer" | "factory" | "template" | "coins" | "target" | "scan" | "bot" | "chart" | "yearEnd" | "tax" | "annual" | "quality" | "practice" | "subscription" | "platform";
   /** Section heading shown above the item in the sidebar. */
   section?: "operations" | "accounting" | "settings";
 }
@@ -16,6 +16,7 @@ export interface NavItem {
 export const NAV: NavItem[] = [
   { key: "dashboard", href: "/app", icon: "dashboard" },
   { key: "scan", href: "/app/scan", permission: "scan.view", icon: "scan", section: "operations" },
+  { key: "practice", href: "/app/practice", permission: "practice.view", icon: "practice", section: "operations" },
   { key: "sales", href: "/app/sales", permission: "sales.view", icon: "receipt", section: "operations" },
   { key: "purchase", href: "/app/purchase", permission: "purchase.view", icon: "cart", section: "operations" },
   { key: "relations", href: "/app/relations", permission: "sales.view", icon: "contact", section: "operations" },
@@ -44,5 +45,7 @@ export const NAV: NavItem[] = [
   { key: "organization", href: "/app/organization", permission: "organization.view", icon: "building", section: "settings" },
   { key: "users", href: "/app/users", permission: "organization.manageUsers", icon: "users", section: "settings" },
   { key: "audit", href: "/app/audit", permission: "audit.view", icon: "shield", section: "settings" },
+  { key: "subscription", href: "/app/subscription", permission: "organization.view", icon: "subscription", section: "settings" },
+  { key: "platform", href: "/app/platform", icon: "platform", section: "settings" },
   { key: "account", href: "/app/account", icon: "user", section: "settings" },
 ];

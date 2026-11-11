@@ -321,8 +321,8 @@
     "contextTitle": "Current environment",
     "role": "Your role",
     "nextTitle": "In development",
-    "nextBody": "Phase 10 is complete. Next: practice dashboard, subscriptions and platform administration (phase 11).",
-    "phaseBadge": "Phase 11 · SaaS and practice management"
+    "nextBody": "Phase 11 is complete. Next: final testing, security review, manual and delivery (phase 12).",
+    "phaseBadge": "Phase 12 · Final QA and delivery"
   },
   "shell": {
     "organization": "Organisation",
@@ -371,7 +371,10 @@
     "yearEnd": "Year-end",
     "tax": "Taxes",
     "annual": "Annual accounts",
-    "quality": "Quality monitor"
+    "quality": "Quality monitor",
+    "practice": "Practice dashboard",
+    "subscription": "Subscription",
+    "platform": "Platform administration"
   },
   "audit": {
     "title": "Audit log",
@@ -393,7 +396,8 @@
       "memberAdded": "You have been added to the organisation as {role}.",
       "companyAssigned": "You have been given access to {company} as {role}.",
       "qualityErrors": "{count} new quality error(s) in {administration}",
-      "qualityAssigned": "A quality issue was assigned to you"
+      "qualityAssigned": "A quality issue was assigned to you",
+      "taskAssigned": "Task assigned to you: {title}"
     }
   },
   "search": {
@@ -2058,5 +2062,88 @@
         "action": "(Soft-)close the period under Administration."
       }
     }
+  },
+  "practice": {
+    "title": "Practice dashboard",
+    "intro": "All client administrations at a glance: quality, workload, BTW returns, year-end and tasks.",
+    "portfolio": "Clients",
+    "noClients": "No client administrations yet.",
+    "client": "Client",
+    "issues": "Quality issues",
+    "drafts": "Drafts",
+    "lastPosting": "Last posted",
+    "btw": "BTW last month",
+    "deadline": "due {date}",
+    "placeholder": "deadline to be verified",
+    "yearEnd": "Year-end",
+    "tasks": "Tasks",
+    "task": "Task",
+    "due": "Due",
+    "done": "Done",
+    "reopen": "Reopen",
+    "addTask": "Add task",
+    "taskCreated": "Task added."
+  },
+  "saas": {
+    "title": "Subscription",
+    "intro": "Status, plan, usage and invoices of your ARA Accounting subscription.",
+    "status": "Status",
+    "plan": "Plan",
+    "noPlan": "No plan yet (trial)",
+    "trialEnds": "Trial ends",
+    "reason": "Reason",
+    "statuses": {
+      "TRIAL": "Trial",
+      "ACTIVE": "Active",
+      "SUSPENDED": "Suspended",
+      "CANCELLED": "Cancelled"
+    },
+    "usage": "Usage",
+    "item": "Item",
+    "used": "Used",
+    "limit": "Limit",
+    "unlimited": "unlimited",
+    "limits": {
+      "companies": "Companies",
+      "administrations": "Administrations",
+      "users": "Users",
+      "documentsPerMonth": "Documents per month"
+    },
+    "invoices": "Subscription invoices",
+    "noInvoices": "No invoices yet.",
+    "paymentInfo": "Payment by bank transfer in SRD or USD; ARA confirms receipt manually.",
+    "invoiceStatuses": {
+      "OPEN": "Open",
+      "PAID": "Paid",
+      "VOID": "Void"
+    },
+    "openInvoices": "open invoice(s)",
+    "readOnly": "Your organisation is read-only ({reason}). Please contact ARA.",
+    "limitReached": "Your plan's limit has been reached ({what}: {limit}).",
+    "referenceRequired": "Enter the payment reference.",
+    "invoiceCreated": "Invoice created.",
+    "banner": {
+      "TRIAL_ENDED": "The trial has ended; the books are read-only until a plan is chosen.",
+      "SUSPENDED": "The subscription is suspended; the books are read-only.",
+      "CANCELLED": "The subscription is cancelled; the books are read-only."
+    },
+    "bannerLink": "View subscription"
+  },
+  "platform": {
+    "title": "Platform administration",
+    "intro": "Organisations, plans and subscription invoices (ARA administrators only).",
+    "organisations": "Organisations",
+    "organisation": "Organisation",
+    "plans": "Plans",
+    "plansIntro": "Limits and prices are set by the owner; empty means unlimited or not decided yet.",
+    "price": "Price per month (SRD / USD)",
+    "priceSrd": "Monthly price SRD",
+    "priceUsd": "Monthly price USD",
+    "addPlan": "Save plan",
+    "createInvoice": "Create invoice",
+    "paymentReference": "Payment reference / reason",
+    "reactivate": "reactivate",
+    "confirmPayment": "Confirm payment",
+    "void": "Void"
   }
 }

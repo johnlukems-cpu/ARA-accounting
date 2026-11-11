@@ -2,7 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getFormatter, getTranslations } from "next-intl/server";
-import { ArrowLeftRight, Bell, BookMarked, Bot, ShieldAlert, CalendarCheck, FileText, ChartColumn, Coins, ScanLine, Target, BookOpen, Briefcase, Building2, Contact, Factory, Landmark, LayoutDashboard, LayoutTemplate, Library, List, LogOut, NotebookText, Percent, Receipt, Scale, Search, ShieldCheck, ShoppingCart, User, Users, Wallet } from "lucide-react";
+import { accessState } from "@/modules/saas/service";
+import { ArrowLeftRight, BadgeDollarSign, Bell, BookMarked, Briefcase as BriefcaseIcon, ServerCog, Bot, ShieldAlert, CalendarCheck, FileText, ChartColumn, Coins, ScanLine, Target, BookOpen, Briefcase, Building2, Contact, Factory, Landmark, LayoutDashboard, LayoutTemplate, Library, List, LogOut, NotebookText, Percent, Receipt, Scale, Search, ShieldCheck, ShoppingCart, User, Users, Wallet } from "lucide-react";
 import { requireUser } from "@/core/auth/context";
 import { can } from "@/core/auth/access";
 import { withTenant } from "@/core/tenancy/tenant";
@@ -11,7 +12,7 @@ import { switchContextAction } from "@/actions/organization";
 import { ContextSelect } from "@/components/shell/context-select";
 import { NAV } from "@/components/shell/nav";
 
-const ICONS = { dashboard: LayoutDashboard, building: Building2, briefcase: Briefcase, book: BookOpen, users: Users, shield: ShieldCheck, user: User, list: List, scale: Scale, library: Library, notebook: NotebookText, receipt: Receipt, cart: ShoppingCart, contact: Contact, wallet: Wallet, landmark: Landmark, percent: Percent, transfer: ArrowLeftRight, factory: Factory, template: LayoutTemplate, coins: Coins, target: Target, scan: ScanLine, bot: Bot, chart: ChartColumn, yearEnd: CalendarCheck, tax: FileText, annual: BookMarked, quality: ShieldAlert };
+const ICONS = { dashboard: LayoutDashboard, building: Building2, briefcase: Briefcase, book: BookOpen, users: Users, shield: ShieldCheck, user: User, list: List, scale: Scale, library: Library, notebook: NotebookText, receipt: Receipt, cart: ShoppingCart, contact: Contact, wallet: Wallet, landmark: Landmark, percent: Percent, transfer: ArrowLeftRight, factory: Factory, template: LayoutTemplate, coins: Coins, target: Target, scan: ScanLine, bot: Bot, chart: ChartColumn, yearEnd: CalendarCheck, tax: FileText, annual: BookMarked, quality: ShieldAlert, practice: BriefcaseIcon, subscription: BadgeDollarSign, platform: ServerCog };
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const t = await getTranslations();
@@ -20,8 +21,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!ctx.access || !ctx.organization) redirect("/onboarding");
   const access = ctx.access;
 
+  const subscription = accessState(ctx.organization);
   const unread = await withTenant(access, (tx) => tx.notification.count({ where: { userId: ctx.user.id, readAt: null } }));
   const nav = NAV.flatMap((item) => {
+    if (item.key === "platform" && !ctx.user.isPlatformAdmin) return [];
     if (item.permission && !can(access, item.permission, ctx.company?.id)) return [];
     const href = typeof item.href === "string" ? item.href : item.href({ administrationId: ctx.administration?.id });
     return href ? [{ ...item, href }] : [];
@@ -100,7 +103,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <Link href="/app/account" className="font-medium underline">{t("account.setUpMfa")}</Link>
           </div>
         )}
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6">{children}</main>
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6">
+          {subscription.readOnly && (
+            <div role="alert" className="mb-6 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
+              {t(`saas.banner.${subscription.reason}` as never)} <Link href="/app/subscription" className="underline">{t("saas.bannerLink")}</Link>
+            </div>
+          )}
+          {children}
+        </main>
       </div>
     </div>
   );

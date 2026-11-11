@@ -176,3 +176,10 @@ Report pages (`/app/reports?view=…`) are read-only server components; they nee
 | `scanAction` | `quality.view` | Runs the 12 checks for the active administration |
 | `issueAction` | `quality.edit` | Assign (notifies the assignee) and change status; closing needs a note |
 | `GET /api/cron/quality` | `Authorization: Bearer $CRON_SECRET` | Daily scan of all active administrations (Vercel Cron, `vercel.json`); returns `{ scanned, failed }` |
+
+### Phase 11 (`src/actions/saas.ts`)
+| Action | Permission | Notes |
+| --- | --- | --- |
+| `createTaskAction`, `taskStatusAction` | `practice.edit` | Practice tasks; assignment notifies |
+| `savePlanAction`, `setSubscriptionAction`, `createSubscriptionInvoiceAction`, `invoiceStepAction` (`pay`/`void`) | `User.isPlatformAdmin` (checked in the service) | Cross-organisation platform operations via trusted system code; audited |
+| every other server action | as before | Additionally refused with `saas.readOnly` when the organisation is suspended, cancelled or its trial ended |

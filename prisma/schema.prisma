@@ -115,6 +115,9 @@ model Organization {
   defaultLocale       String             @default("nl")
   requireMfaForAdmins Boolean            @default(true)
   ownerUserId         String
+  planId              String?
+  trialEndsAt         DateTime?
+  statusReason        String?
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
 
@@ -1721,4 +1724,68 @@ model QualityScan {
 
   @@index([administrationId, startedAt])
   @@index([organizationId])
+}
+
+// ───────────── Phase 11: SaaS and practice management ─────────────
+
+/// Subscription plan (platform data). Limits and prices are set by the platform administrator; null = not limited / not set.
+model Plan {
+  id              String       @id @default(cuid())
+  code            String       @unique
+  name            String
+  description     String?
+  limits          Json         @default("{}")
+  priceMonthlySrd Decimal?     @db.Decimal(20, 2)
+  priceMonthlyUsd Decimal?     @db.Decimal(20, 2)
+  status          RecordStatus @default(ACTIVE)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+}
+
+enum SubscriptionInvoiceStatus {
+  OPEN
+  PAID
+  VOID
+}
+
+/// Invoice for the ARA Accounting subscription itself; paid by bank transfer and confirmed manually by the platform administrator.
+model SubscriptionInvoice {
+  id               String                    @id @default(cuid())
+  organizationId   String
+  planId           String?
+  number           String                    @unique
+  periodFrom       DateTime                  @db.Date
+  periodTo         DateTime                  @db.Date
+  currency         String
+  amount           Decimal                   @db.Decimal(20, 2)
+  status           SubscriptionInvoiceStatus @default(OPEN)
+  paidAt           DateTime?
+  paymentReference String?
+  confirmedById    String?
+  createdById      String
+  createdAt        DateTime                  @default(now())
+
+  @@index([organizationId])
+}
+
+enum TaskStatus {
+  OPEN
+  DONE
+}
+
+/// Practice management: work items of an accounting firm per client company.
+model PracticeTask {
+  id             String     @id @default(cuid())
+  organizationId String
+  companyId      String?
+  title          String
+  description    String?
+  dueDate        DateTime?  @db.Date
+  assigneeId     String?
+  status         TaskStatus @default(OPEN)
+  completedAt    DateTime?
+  createdById    String
+  createdAt      DateTime   @default(now())
+
+  @@index([organizationId, status])
 }
