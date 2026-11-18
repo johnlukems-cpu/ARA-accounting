@@ -6,7 +6,7 @@ const url = process.env.LOAD_DATABASE_URL ?? "postgresql://ara:ara_dev@localhost
 process.env.TEST_DATABASE_URL = url; // read by the shared global setup (migrate + seed)
 
 export default defineConfig({
-  resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
+  resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)), "server-only": fileURLToPath(new URL("./tests/support/server-only.ts", import.meta.url)) } },
   test: {
     include: ["tests/load/**/*.test.ts"],
     globalSetup: ["tests/integration/global-setup.ts"],

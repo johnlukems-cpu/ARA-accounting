@@ -32,7 +32,7 @@ describe("every server action and route handler authenticates", () => {
   // Public by design: sign-in, registration, password reset, invitation, e-mail verification, language, logout.
   // The token-based ones (reset, invitation, verification) are protected by single-use hashed tokens instead.
   const PUBLIC_ACTIONS = new Set(["registerAction", "loginAction", "verifyMfaAction", "requestPasswordResetAction", "resetPasswordAction", "acceptInvitationAction", "verifyEmail", "logoutAction", "setLocaleAction", "setLocale"]);
-  const AUTH = /requireActionContext\(|platformUser\(|getContext\(|requireApp\(|readSession\(|requireUser\(/;
+  const AUTH = /requireActionContext\(|adminActionContext\(|platformUser\(|getContext\(|requireApp\(|readSession\(|requireUser\(/;
   it("server actions", () => {
     const missing: string[] = [];
     for (const f of [...files("src/actions"), "src/app/actions.ts"]) {

@@ -104,7 +104,7 @@ enum OrganizationStatus {
 model Organization {
   id                  String             @id @default(cuid())
   name                String
-  settings  Json     @default("{}") // e.g. ai: { enabled, consentAt, consentById } (Phase 7)
+  settings            Json               @default("{}") // e.g. ai: { enabled, consentAt, consentById } (Phase 7)
   kind                OrganizationKind
   status              OrganizationStatus @default(TRIAL)
   email               String?
@@ -1235,19 +1235,19 @@ enum RevaluationStatus {
 
 /// Period-end revaluation of monetary foreign-currency balances (ACCOUNTING_RULES C5–C7).
 model CurrencyRevaluation {
-  id                String            @id @default(cuid())
-  organizationId    String
-  administrationId  String
-  periodId          String
-  revaluationDate   DateTime          @db.Date
-  scope             String            @default("ALL")
-  status            RevaluationStatus @default(PROPOSED)
-  rates             Json
-  lines             Json
-  entryId           String?
-  reversalEntryId   String?
-  createdById       String
-  createdAt         DateTime          @default(now())
+  id               String            @id @default(cuid())
+  organizationId   String
+  administrationId String
+  periodId         String
+  revaluationDate  DateTime          @db.Date
+  scope            String            @default("ALL")
+  status           RevaluationStatus @default(PROPOSED)
+  rates            Json
+  lines            Json
+  entryId          String?
+  reversalEntryId  String?
+  createdById      String
+  createdAt        DateTime          @default(now())
 
   @@index([organizationId])
   @@index([administrationId, periodId])
@@ -1539,19 +1539,19 @@ enum RuleLegalStatus {
 
 /// T1: rates and other tax parameters are versioned data with an effective date and a legal status (platform-wide, read-only for tenants).
 model TaxRuleVersion {
-  id            String          @id @default(cuid())
-  taxType       TaxType
-  effectiveFrom DateTime        @db.Date
-  effectiveTo   DateTime?       @db.Date
-  parameters    Json
-  legalStatus   RuleLegalStatus
-  legalSource   String?
-  notes         String?
+  id                    String          @id @default(cuid())
+  taxType               TaxType
+  effectiveFrom         DateTime        @db.Date
+  effectiveTo           DateTime?       @db.Date
+  parameters            Json
+  legalStatus           RuleLegalStatus
+  legalSource           String?
+  notes                 String?
   /// Set only by recording an external review (ComplianceReview): the adviser's name, the date and their reference.
-  verifiedBy    String?
-  verifiedAt    DateTime?
+  verifiedBy            String?
+  verifiedAt            DateTime?
   verificationReference String?
-  createdAt     DateTime        @default(now())
+  createdAt             DateTime        @default(now())
 
   @@unique([taxType, effectiveFrom])
 }
@@ -1564,30 +1564,30 @@ enum TaxReturnStatus {
 
 /// A tax return or calculation: monthly BTW, yearly IB rechtspersonen, or a dividend declaration.
 model TaxReturn {
-  id                  String          @id @default(cuid())
-  organizationId      String
-  administrationId    String
-  taxType             TaxType
-  periodFrom          DateTime        @db.Date
-  periodTo            DateTime        @db.Date
-  fiscalYearId        String?
-  ruleVersionId       String
-  status              TaxReturnStatus @default(DRAFT)
-  calculation         Json
+  id                 String          @id @default(cuid())
+  organizationId     String
+  administrationId   String
+  taxType            TaxType
+  periodFrom         DateTime        @db.Date
+  periodTo           DateTime        @db.Date
+  fiscalYearId       String?
+  ruleVersionId      String
+  status             TaxReturnStatus @default(DRAFT)
+  calculation        Json
   /// T2: explicit acknowledgement when the rule is not VERIFIED.
-  acknowledgedById    String?
-  acknowledgedAt      DateTime?
-  explanation         String?
-  approvedById        String?
-  approvedAt          DateTime?
-  entryId             String?
-  evidenceDocumentId  String?
-  filingReference     String?
-  filedById           String?
-  filedAt             DateTime?
-  createdById         String
-  createdAt           DateTime        @default(now())
-  adjustments         TaxAdjustment[]
+  acknowledgedById   String?
+  acknowledgedAt     DateTime?
+  explanation        String?
+  approvedById       String?
+  approvedAt         DateTime?
+  entryId            String?
+  evidenceDocumentId String?
+  filingReference    String?
+  filedById          String?
+  filedAt            DateTime?
+  createdById        String
+  createdAt          DateTime        @default(now())
+  adjustments        TaxAdjustment[]
 
   @@unique([administrationId, taxType, periodFrom, periodTo])
   @@index([organizationId])
@@ -1863,4 +1863,482 @@ model BankFormat {
   updatedAt     DateTime         @updatedAt
 
   @@unique([bankName, formatName])
+}
+
+// ───────────────────────── ARA Admin Portal (ARA Intelligent Solutions' own business) ─────────────────────────
+// All tables below belong to ARA's own organisation (organizationId = the "ARA home" organisation, see
+// src/modules/admin/home.ts) and are isolated by RLS like every tenant table. Invoices, payments, bank, purchases and
+// the ledger are NOT duplicated: they live in ARA's own administration in the accounting engine.
+
+enum CrmStage {
+  LEAD
+  CONTACTED
+  QUALIFIED
+  PROPOSAL
+  CUSTOMER
+  INACTIVE
+}
+
+enum CrmKind {
+  COMPANY
+  PERSON
+}
+
+/// A prospect, lead or customer of ARA Intelligent Solutions. One record from first contact to customer (no duplicates).
+model CrmCustomer {
+  id                   String       @id @default(cuid())
+  organizationId       String
+  number               String
+  kind                 CrmKind      @default(COMPANY)
+  name                 String
+  legalName            String?
+  stage                CrmStage     @default(LEAD)
+  category             String?
+  source               String?
+  kkfNumber            String?
+  taxNumber            String?
+  email                String?
+  phone                String?
+  address              String?
+  district             String?
+  country              String       @default("SR")
+  website              String?
+  preferredCurrency    String       @default("SRD")
+  paymentTermDays      Int          @default(14)
+  accountManagerId     String?
+  /// Debtor in ARA's own administration (created when the prospect becomes a customer).
+  partyId              String?
+  /// The customer's own ARA Accounting organisation (subscriptions, entitlements, customer portal).
+  linkedOrganizationId String?
+  notes                String?
+  convertedAt          DateTime?
+  status               RecordStatus @default(ACTIVE)
+  createdById          String
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+
+  contacts      CrmContact[]
+  activities    CrmActivity[]
+  quotations    Quotation[]
+  subscriptions AraSubscription[]
+
+  @@unique([organizationId, number])
+  @@unique([partyId])
+  @@index([organizationId, stage])
+  @@index([linkedOrganizationId])
+}
+
+model CrmContact {
+  id             String      @id @default(cuid())
+  organizationId String
+  customerId     String
+  name           String
+  jobTitle       String?
+  email          String?
+  phone          String?
+  isPrimary      Boolean     @default(false)
+  notes          String?
+  createdAt      DateTime    @default(now())
+  customer       CrmCustomer @relation(fields: [customerId], references: [id])
+
+  @@index([organizationId])
+  @@index([customerId])
+}
+
+enum CrmActivityType {
+  NOTE
+  CALL
+  EMAIL
+  MEETING
+  TASK
+  STAGE_CHANGE
+  QUOTATION
+  INVOICE
+  PAYMENT
+  SUBSCRIPTION
+  SUPPORT
+  DOCUMENT
+}
+
+/// Activity and communication history of a customer. Append-only, except completing a task (doneAt).
+model CrmActivity {
+  id             String          @id @default(cuid())
+  organizationId String
+  customerId     String
+  type           CrmActivityType
+  subject        String
+  body           String?
+  dueDate        DateTime?       @db.Date
+  doneAt         DateTime?
+  userId         String
+  entity         String?
+  entityId       String?
+  createdAt      DateTime        @default(now())
+  customer       CrmCustomer     @relation(fields: [customerId], references: [id])
+
+  @@index([organizationId])
+  @@index([customerId, createdAt])
+}
+
+enum ProductCategory {
+  SOFTWARE
+  SUBSCRIPTION
+  IMPLEMENTATION
+  ONBOARDING
+  SUPPORT
+  CONSULTANCY
+  OTHER
+}
+
+enum BillingType {
+  ONE_TIME
+  RECURRING
+}
+
+enum BillingInterval {
+  MONTHLY
+  QUARTERLY
+  ANNUAL
+}
+
+/// Product and service catalogue of ARA Intelligent Solutions. Prices are data set by the owner (none seeded).
+model Product {
+  id               String           @id @default(cuid())
+  organizationId   String
+  code             String
+  name             String
+  nameEn           String?
+  description      String?
+  category         ProductCategory
+  billingType      BillingType
+  billingInterval  BillingInterval?
+  defaultPrice     Decimal?         @db.Decimal(20, 2)
+  currency         String           @default("SRD")
+  /// BTW code and revenue account in ARA's own administration.
+  taxCodeId        String?
+  revenueAccountId String?
+  /// Entitlement plan granted to the customer's ARA Accounting organisation by a subscription to this product.
+  planId           String?
+  status           RecordStatus     @default(ACTIVE)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@unique([organizationId, code])
+}
+
+enum QuotationStatus {
+  DRAFT
+  SENT
+  VIEWED
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  CONVERTED
+}
+
+model Quotation {
+  id              String              @id @default(cuid())
+  organizationId  String
+  number          String
+  revision        Int                 @default(1)
+  customerId      String
+  contactId       String?
+  status          QuotationStatus     @default(DRAFT)
+  quoteDate       DateTime            @db.Date
+  validUntil      DateTime            @db.Date
+  currency        String
+  paymentTermDays Int                 @default(14)
+  introduction    String?
+  terms           String?
+  notes           String?
+  netAmount       Decimal             @default(0) @db.Decimal(20, 2)
+  discountAmount  Decimal             @default(0) @db.Decimal(20, 2)
+  taxAmount       Decimal             @default(0) @db.Decimal(20, 2)
+  grossAmount     Decimal             @default(0) @db.Decimal(20, 2)
+  sentAt          DateTime?
+  sentTo          String?
+  viewedAt        DateTime?
+  decidedAt       DateTime?
+  decidedBy       String?
+  decisionNote    String?
+  invoiceId       String?
+  createdById     String
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  customer        CrmCustomer         @relation(fields: [customerId], references: [id])
+  lines           QuotationLine[]
+  revisions       QuotationRevision[]
+
+  @@unique([organizationId, number])
+  @@index([organizationId, status])
+  @@index([customerId])
+}
+
+model QuotationLine {
+  id             String    @id @default(cuid())
+  organizationId String
+  quotationId    String
+  lineNo         Int
+  productId      String?
+  description    String
+  quantity       Decimal   @db.Decimal(20, 4)
+  unitPrice      Decimal   @db.Decimal(20, 4)
+  discountPct    Decimal   @default(0) @db.Decimal(9, 4)
+  taxCodeId      String?
+  taxRate        Decimal   @default(0) @db.Decimal(9, 4)
+  netAmount      Decimal   @db.Decimal(20, 2)
+  taxAmount      Decimal   @db.Decimal(20, 2)
+  quotation      Quotation @relation(fields: [quotationId], references: [id])
+
+  @@unique([quotationId, lineNo])
+  @@index([organizationId])
+}
+
+/// Snapshot of a quotation before it is revised. Append-only.
+model QuotationRevision {
+  id             String    @id @default(cuid())
+  organizationId String
+  quotationId    String
+  revision       Int
+  snapshot       Json
+  reason         String?
+  createdById    String
+  createdAt      DateTime  @default(now())
+  quotation      Quotation @relation(fields: [quotationId], references: [id])
+
+  @@unique([quotationId, revision])
+  @@index([organizationId])
+}
+
+enum AraSubscriptionStatus {
+  TRIAL
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+}
+
+/// A customer's subscription to an ARA product (ARA Accounting, ARA Payroll, …).
+model AraSubscription {
+  id                   String                @id @default(cuid())
+  organizationId       String
+  number               String
+  customerId           String
+  productId            String
+  planId               String?
+  linkedOrganizationId String?
+  interval             BillingInterval
+  quantity             Decimal               @default(1) @db.Decimal(20, 4)
+  unitPrice            Decimal               @db.Decimal(20, 2)
+  currency             String
+  status               AraSubscriptionStatus @default(TRIAL)
+  startDate            DateTime              @db.Date
+  trialEndsAt          DateTime?             @db.Date
+  nextBillingDate      DateTime              @db.Date
+  cancelledAt          DateTime?
+  cancelReason         String?
+  createdById          String
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  customer             CrmCustomer           @relation(fields: [customerId], references: [id])
+  events               SubscriptionEvent[]
+  billings             SubscriptionBilling[]
+
+  @@unique([organizationId, number])
+  @@index([organizationId, status, nextBillingDate])
+}
+
+/// Subscription history (created, upgraded, renewed, suspended …). Append-only.
+model SubscriptionEvent {
+  id             String          @id @default(cuid())
+  organizationId String
+  subscriptionId String
+  type           String
+  details        Json?
+  userId         String?
+  createdAt      DateTime        @default(now())
+  subscription   AraSubscription @relation(fields: [subscriptionId], references: [id])
+
+  @@index([organizationId])
+  @@index([subscriptionId, createdAt])
+}
+
+/// One row per billed period: the unique key makes invoice generation idempotent.
+model SubscriptionBilling {
+  id             String          @id @default(cuid())
+  organizationId String
+  subscriptionId String
+  periodStart    DateTime        @db.Date
+  periodEnd      DateTime        @db.Date
+  invoiceId      String
+  createdAt      DateTime        @default(now())
+  subscription   AraSubscription @relation(fields: [subscriptionId], references: [id])
+
+  @@unique([subscriptionId, periodStart])
+  @@index([organizationId])
+}
+
+enum AraPaymentStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+  REFUNDED
+}
+
+enum AraPaymentMethod {
+  BANK_TRANSFER
+  CASH
+  OTHER
+}
+
+/// A payment received from a customer. PENDING until a finance user verifies it on the bank statement or counts the
+/// cash; only CONFIRMED payments are posted (through the accounting engine) and reduce receivables.
+model AraPayment {
+  id                    String                 @id @default(cuid())
+  organizationId        String
+  number                String
+  customerId            String?
+  method                AraPaymentMethod
+  reference             String?
+  paymentDate           DateTime               @db.Date
+  currency              String
+  amount                Decimal                @db.Decimal(20, 2)
+  status                AraPaymentStatus       @default(PENDING)
+  financialAccountId    String
+  exchangeRate          String?
+  /// Payment in the accounting engine, set on confirmation.
+  ledgerPaymentId       String?
+  confirmedById         String?
+  confirmedAt           DateTime?
+  failureReason         String?
+  refundedAt            DateTime?
+  refundLedgerPaymentId String?
+  refundReason          String?
+  evidenceDocumentId    String?
+  source                String                 @default("STAFF")
+  notes                 String?
+  createdById           String
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  allocations           AraPaymentAllocation[]
+
+  @@unique([organizationId, number])
+  @@index([organizationId, status])
+}
+
+/// Intended allocation of a payment to an invoice (applied when the payment is confirmed).
+model AraPaymentAllocation {
+  id             String     @id @default(cuid())
+  organizationId String
+  paymentId      String
+  invoiceId      String
+  amount         Decimal    @db.Decimal(20, 2)
+  applied        Boolean    @default(false)
+  payment        AraPayment @relation(fields: [paymentId], references: [id])
+
+  @@index([organizationId])
+  @@index([paymentId])
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_CUSTOMER
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+model SupportTicket {
+  id                      String           @id @default(cuid())
+  organizationId          String
+  number                  String
+  customerId              String?
+  requesterOrganizationId String?
+  requesterUserId         String?
+  subject                 String
+  category                String?
+  priority                TicketPriority   @default(NORMAL)
+  status                  TicketStatus     @default(OPEN)
+  assigneeId              String?
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
+  messages                SupportMessage[]
+
+  @@unique([organizationId, number])
+  @@index([organizationId, status])
+  @@index([requesterOrganizationId])
+}
+
+/// Messages of a ticket. Append-only. Internal notes are never shown to the customer.
+model SupportMessage {
+  id             String        @id @default(cuid())
+  organizationId String
+  ticketId       String
+  authorUserId   String
+  authorKind     String
+  body           String
+  internal       Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+  ticket         SupportTicket @relation(fields: [ticketId], references: [id])
+
+  @@index([organizationId])
+  @@index([ticketId, createdAt])
+}
+
+enum StorageBackend {
+  DATABASE
+  SUPABASE
+}
+
+/// Documents of the admin portal (contracts, quotations, payment evidence …). The file lives in Supabase Storage
+/// (private bucket) or in the database; metadata and access always go through this table. Append-only.
+model AdminDocument {
+  id             String         @id @default(cuid())
+  organizationId String
+  customerId     String?
+  entity         String?
+  entityId       String?
+  category       String
+  fileName       String
+  mimeType       String
+  sizeBytes      Int
+  sha256         String
+  storage        StorageBackend
+  storageKey     String
+  uploadedById   String
+  createdAt      DateTime       @default(now())
+
+  @@index([organizationId])
+  @@index([customerId])
+  @@index([entity, entityId])
+}
+
+model AdminDocumentBlob {
+  documentId     String @id
+  organizationId String
+  data           Bytes
+}
+
+/// Staff directory of ARA Intelligent Solutions (system access is the membership + role of the linked user).
+model Employee {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String?
+  name           String
+  email          String?
+  jobTitle       String?
+  department     String?
+  startDate      DateTime?    @db.Date
+  endDate        DateTime?    @db.Date
+  status         RecordStatus @default(ACTIVE)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
 }

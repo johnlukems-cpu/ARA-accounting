@@ -2,6 +2,41 @@
 
 Only results from real runs are recorded here. Environment: Node 22, PostgreSQL 16.15 (local), Chromium (Playwright 1.63).
 
+## ARA Admin Portal and Supabase (2026-11-18)
+
+| Suite | Result |
+| --- | --- |
+| Unit | **139 / 139 passed** |
+| Integration (local PostgreSQL 16) | **102 / 102 passed**, 2 skipped: the live Supabase Storage tests, which run only with a storage endpoint |
+| Integration on **Supabase PostgreSQL 15.8** (`supabase/postgres`, migrated database) | **102 / 102 passed** |
+| Supabase Storage (live `supabase/storage-api` v1.11.13) | **2 / 2 passed** |
+| Neon → Supabase migration drill (`scripts/migrate-to-supabase.sh`) | **8 / 8 checks OK** |
+| End-to-end | **29 / 29 passed** (+1 screenshot run skipped by design): admin workflow on desktop **and** phone, admin not reachable for customers |
+| Browser bundle secret scan, typecheck, lint, build (Next.js 16.4.6), migration drift | passed |
+
+| Acceptance workflow (prompt §20) | Evidence |
+| --- | --- |
+| 1–2 prospect → customer on the same record (debtor created, no duplicate) | integration "1–10 …"; e2e admin |
+| 3 product | integration; e2e (page) |
+| 4–7 quotation (discount, revision history) → send (no fake e-mail) → accept → convert to draft invoice with identical totals | integration; e2e (UI) |
+| 8–10 payment PENDING → confirm with verification → allocation → invoice PAID; remainder refunded or allocated later; failed payment never posts | integration (two tests) |
+| 11–12 subscription; trial not billed and not auto-converted; recurring invoices idempotent (two runs, unique period); upgrade history; suspension only with a reason | integration |
+| 13 company expense on the right cost account with segregation of duties | integration |
+| 14–15 bank import (duplicate refused) and reconciliation of a payment to an invoice | integration |
+| 16 monthly finance reports and dashboard from real records (all 12 reports) | integration; e2e (CSV export, all admin pages) |
+| Roles, RLS and cross-customer isolation | integration: customer organisations see none of ARA's tables; staff roles home-only; support/sales cannot confirm payments; portal: customer A cannot read B's quotations, invoices or tickets; read-only customer user cannot accept |
+
+Defects found and fixed in this round:
+
+1. Supabase: `GRANT … TO CURRENT_USER` crashed PostgreSQL. The migration now uses the explicit role name.
+2. Supabase: the default Data API grants exposed every table. Migration `supabase_hardening` revokes them, and a test
+   guards it.
+3. Migration drill: a blanket re-grant gave `ara_app` more privileges than the source had. The privileges are now
+   copied exactly, and a check compares both sides.
+4. Mobile: two-column admin pages let a wide table cover the action buttons. Grid items now get `min-width: 0`.
+5. Next.js 16.4.3 had advisories GHSA-mfr8-8qww-v76h and GHSA-vc7v-qv4w-wrv8 (affected 16.2.0–16.4.4). Upgraded to
+   16.4.6.
+
 ## Production readiness (2026-11-12)
 
 | Suite | Result |

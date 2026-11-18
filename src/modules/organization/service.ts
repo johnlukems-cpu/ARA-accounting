@@ -6,7 +6,7 @@ import { withTenant } from "@/core/tenancy/tenant";
 import { audit } from "@/core/audit/audit";
 import { assertCan, type Access } from "@/core/auth/access";
 import { hashPassword, randomToken, sha256 } from "@/core/auth/crypto";
-import { ADMIN_ROLES, rolesForKind, SYSTEM_ROLES, type RoleCode } from "@/core/auth/permissions";
+import { ADMIN_ROLES, rolesForKind, STAFF_ROLES, SYSTEM_ROLES, type RoleCode } from "@/core/auth/permissions";
 import { UserError } from "@/core/errors";
 import { fiscalYearCode, fiscalYearRange, planPeriods } from "./periods";
 import { installStandardChart } from "@/modules/ledger/service";
@@ -241,9 +241,16 @@ export interface InviteResult {
   invitationToken: string | null;
 }
 
+/** Roles allowed in this organisation: by kind, plus the ARA staff roles in ARA's own ("home") organisation only. */
+async function allowedRoles(access: Access): Promise<RoleCode[]> {
+  const home = await systemDb.platformSetting.findUnique({ where: { key: "araHome" } });
+  const isHome = (home?.value as { organizationId?: string } | undefined)?.organizationId === access.organizationId;
+  return isHome ? [...STAFF_ROLES, ...rolesForKind(access.organizationKind)] : rolesForKind(access.organizationKind);
+}
+
 export async function inviteMember(access: Access, input: z.infer<typeof inviteSchema>): Promise<InviteResult> {
   assertCan(access, "organization.manageUsers");
-  if (!rolesForKind(access.organizationKind).includes(input.roleCode)) throw new UserError("errors.roleNotAllowed");
+  if (!(await allowedRoles(access)).includes(input.roleCode)) throw new UserError("errors.roleNotAllowed");
   if (SYSTEM_ROLES[input.roleCode].orgWide && !access.orgWide) throw new UserError("errors.forbidden");
 
   // Users are global: finding or creating one is a system operation; the membership is tenant data.
@@ -286,7 +293,7 @@ export async function updateMembership(access: Access, input: z.infer<typeof mem
     if (m.userId === access.userId) throw new UserError("errors.cannotChangeSelf");
     const data: Prisma.OrganizationMembershipUncheckedUpdateInput = {};
     if (input.roleCode) {
-      if (!rolesForKind(access.organizationKind).includes(input.roleCode)) throw new UserError("errors.roleNotAllowed");
+      if (!(await allowedRoles(access)).includes(input.roleCode)) throw new UserError("errors.roleNotAllowed");
       if ((SYSTEM_ROLES[input.roleCode].orgWide || m.role.orgWide) && !access.orgWide) throw new UserError("errors.forbidden");
       data.roleId = await systemRoleId(tx, input.roleCode);
     }

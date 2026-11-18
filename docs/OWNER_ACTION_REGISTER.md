@@ -174,6 +174,39 @@ Still open on the development side, and not blocking the pilot:
 | **How tested** | The report lists no open high or critical findings. Development fixes findings and has them re-tested. |
 | **Completion** | Record it under *Bewijs vastleggen* (O12) with the report reference. |
 
+### O14 — Database choice and Supabase projects
+
+| | |
+| --- | --- |
+| **What** | A decision: Neon or Supabase. For Supabase: three projects (dev, staging, production) in us-east-1, the Data API switched off for `public`, and Auth sign-ups disabled. |
+| **Why** | The backend runs on both; the owner chooses the provider and pays for it. Supabase is verified (`SUPABASE_ARCHITECTURE.md` §5). |
+| **Who** | Owner. |
+| **Where** | supabase.com → new project. Vercel environment variables per environment:<br>• `DATABASE_URL`: transaction pooler, port 6543, `?pgbouncer=true&sslmode=require`;<br>• `DATABASE_URL_UNPOOLED`: session connection, port 5432;<br>• optional `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (server only), `SUPABASE_STORAGE_BUCKET`. |
+| **How tested** | The deploy runs `check:env` (Supabase-aware) and `migrate status`. Run the integration suite against staging (`TEST_DATABASE_URL`). |
+| **Completion** | Staging deploy green; the readiness page shows no configuration errors; the dashboard settings checklist in `SUPABASE_SECURITY.md` §3 is done. |
+
+### O15 — Approval of the production migration Neon → Supabase
+
+| | |
+| --- | --- |
+| **What** | A maintenance window and a go/no-go decision. Only needed if Neon already holds production data. |
+| **Why** | Financial data must be moved under control, with verification and a rollback (`MIGRATION_PLAN.md`). |
+| **Who** | Owner (decision); development runs the script with the owner. |
+| **Where** | `scripts/migrate-to-supabase.sh`, staging first. |
+| **How tested** | The 8 verification checks of the script, then the smoke test. |
+| **Completion** | All checks OK on production; switch approved; Neon kept 30 days, then deleted with written approval. |
+
+### O16 — Prices, BTW codes and revenue accounts of ARA's products
+
+| | |
+| --- | --- |
+| **What** | Per product in the ARA Admin catalogue:<br>• a price, or deliberately none ("price on request");<br>• the BTW code, after the tax adviser's opinion (O5);<br>• the revenue account;<br>• for subscription products, the plan (entitlements). |
+| **Why** | Quotations, subscriptions and invoices take these values; nothing has been invented. |
+| **Who** | Owner (prices); tax adviser (BTW). |
+| **Where** | ARA Admin → Producten en diensten. |
+| **How tested** | The readiness page shows O16 live (products complete / total); a test quotation shows the correct BTW. |
+| **Completion** | Every active product has a revenue account and a BTW code. |
+
 ### O13 — Terms of service and privacy statement
 
 | | |

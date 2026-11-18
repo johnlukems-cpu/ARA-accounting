@@ -9,10 +9,10 @@ that are still open here.
 
 | Gate | Verdict | Open P1 items |
 | --- | --- | --- |
-| Controlled pilot | **NOT READY** | O1, O2, O10, O11 |
-| General availability | **NOT READY** | O1, O2, O3, O4, O5, O6, O10, O11, O12, O13 |
+| Controlled pilot | **NOT READY** | O1, O2, O10, O11, O14 |
+| General availability | **NOT READY** | O1, O2, O3, O4, O5, O6, O10, O11, O12, O14, O16, O13 |
 
-Status counts: ✅ Completed 18 · 🔄 In progress 0 · ⏳ Waiting for owner input 8 · ⏳ Waiting for external specialist 5 · ⛔ Blocked 0 · ◻️ Not started 3
+Status counts: ✅ Completed 22 · 🔄 In progress 0 · ⏳ Waiting for owner input 10 · ⏳ Waiting for external specialist 5 · ⛔ Blocked 0 · ◻️ Not started 4
 
 ## Owner and external specialists
 
@@ -30,6 +30,9 @@ Status counts: ✅ Completed 18 · 🔄 In progress 0 · ⏳ Waiting for owner i
 | O10 | Off-site backup storage and first restore drill on Neon | ⏳ Waiting for owner input | Owner (ARA) | P1 · Pilot | O1, T4 | Daily dump outside Neon; restore drill passed and recorded. |
 | O11 | Error monitoring / alerting account | ⏳ Waiting for owner input | Owner (ARA) | P1 · Pilot | O1, T8 | ERROR_REPORT_URL set; a test error arrives. |
 | O12 | External security test (DAST or penetration test) | ⏳ Waiting for external specialist | Security tester | P1 · General availability | O1 | Report without open high or critical findings. |
+| O14 | Database choice (Neon or Supabase) and Supabase projects dev/staging/production | ⏳ Waiting for owner input | Owner (ARA) | P1 · Pilot | T22 | Three Supabase projects (us-east-1), Data API off for public, passwords in Vercel per environment. |
+| O15 | Approval of the production migration Neon → Supabase | ◻️ Not started | Owner (ARA) | P2 · General availability | O14, T23 | Trial migration on staging passed; owner approves the switch; Neon kept for 30 days. |
+| O16 | Prices, BTW codes and revenue accounts of ARA's products | ⏳ Waiting for owner input | Owner (ARA) | P1 · General availability | T24, O5 | Every active product has a price or deliberately 'on request', a BTW code (after advice) and a revenue account. |
 | O13 | Terms of service and privacy statement | ⏳ Waiting for external specialist | Lawyer | P1 · General availability | — | Published and accepted by customers at registration. |
 
 ## Independent technical work (development)
@@ -57,5 +60,9 @@ Status counts: ✅ Completed 18 · 🔄 In progress 0 · ⏳ Waiting for owner i
 | T19 | Upgrade to Prisma 7 (deepmerge-ts advisory) | ◻️ Not started | Development | P3 · Later | — | npm audit clean; all suites green.<br>*Evidence:* PRODUCTION_AUDIT §5.3 |
 | T20 | Full organisation export (ZIP) | ◻️ Not started | Development | P2 · General availability | — | The owner downloads all data and documents in one file. |
 | T21 | Step-up MFA for year-end closing and bulk export | ◻️ Not started | Development | P3 · Later | — | Sensitive actions ask for a fresh MFA code. |
+| T22 | Supabase compatibility (migrations, RLS, Data API lockdown) | ✅ Completed | Development | P1 · Pilot | — | All migrations and tests pass on Supabase PostgreSQL; anon/authenticated have no privileges.<br>*Evidence:* migration supabase_hardening · all 104 integration tests on supabase/postgres 15.8 · docs/SUPABASE_SECURITY.md |
+| T23 | Neon → Supabase migration with verification and rollback | ✅ Completed | Development | P1 · Pilot | T22 | Trial migration: equal rows, privileges, balances, open items and audit chain.<br>*Evidence:* scripts/migrate-to-supabase.sh · docs/MIGRATION_PLAN.md (drill: 8/8 checks) |
+| T24 | ARA Admin Portal (CRM, quotations, invoices, subscriptions, payments, finance, support, customer portal) | ✅ Completed | Development | P1 · General availability | — | Workflows 1–16 pass; roles and customer isolation proven.<br>*Evidence:* tests/integration/admin.test.ts (workflows 1–16) · tests/e2e/admin.spec.ts · docs/ARA_ADMIN_MANUAL_NL.md |
+| T25 | Document storage in Supabase Storage (private bucket) | ✅ Completed | Development | P2 · General availability | — | Upload and download through the real Storage API; anonymous access refused; no overwrite.<br>*Evidence:* src/integrations/storage · tests/integration/supabase-storage.test.ts (live storage-api) |
 
 Details per owner item: [OWNER_ACTION_REGISTER.md](OWNER_ACTION_REGISTER.md).

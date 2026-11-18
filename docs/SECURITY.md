@@ -21,6 +21,14 @@ checked every statement against the code. **The following parts of the design ar
 | Logging without sensitive data | **Implemented:** `src/core/ops/log.ts` redacts secrets, e-mail addresses, amounts and free text; a guard test forbids `console.*` elsewhere. |
 
 
+## 0a. ARA Admin Portal and Supabase (2026-11-18)
+- Supabase-specific controls: `SUPABASE_SECURITY.md`.
+- Admin-portal roles and isolation:
+  - staff roles exist only in ARA's own organisation;
+  - ARA's records are RLS-isolated like any tenant;
+  - the customer portal reads ARA's records only through server-side functions with an explicit ownership filter
+    (`modules/admin/portal.ts`).
+
 ## 1. Authentication
 - Email + password hashed with **scrypt** (N=2^15, r=8, p=1, 16-byte salt; parameters stored per hash so they can be raised). Policy: at least 12 characters. A breached-password check is still open (Phase 12).
 - Sessions: a random 256-bit token in an `HttpOnly`, `Secure`, `SameSite=Lax` cookie. Only its SHA-256 hash is stored. Idle timeout 2 h, absolute 12 h. A password change, password reset or MFA change revokes all other sessions. Implemented in `src/core/auth/session.ts`.

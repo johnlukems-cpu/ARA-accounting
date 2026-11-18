@@ -6,7 +6,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-const SECRET_KEYS = ["DATABASE_URL", "DATABASE_URL_UNPOOLED", "ENCRYPTION_KEY", "CRON_SECRET", "SESSION_SECRET", "SMTP_PASSWORD", "SMTP_USER", "ANTHROPIC_API_KEY", "ERROR_REPORT_URL"];
+const SECRET_KEYS = ["DATABASE_URL", "DATABASE_URL_UNPOOLED", "ENCRYPTION_KEY", "CRON_SECRET", "SESSION_SECRET", "SMTP_PASSWORD", "SMTP_USER", "ANTHROPIC_API_KEY", "ERROR_REPORT_URL", "SUPABASE_SERVICE_ROLE_KEY"];
 const values = SECRET_KEYS.map((k) => [k, process.env[k]]).filter(([, v]) => typeof v === "string" && v.length >= 8);
 const walk = (d) => readdirSync(d).flatMap((f) => (statSync(join(d, f)).isDirectory() ? walk(join(d, f)) : [join(d, f)]));
 const files = walk(".next/static").filter((f) => /\.(js|css|json|html|txt|map)$/.test(f));

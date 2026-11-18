@@ -61,3 +61,30 @@ jobs:
           npx playwright test --trace off
       - name: Dependency audit (fails on critical; the known high advisory is tracked in PRODUCTION_AUDIT §5.3)
         run: npm audit --omit=dev --audit-level=critical
+
+  # Supabase compatibility: the same migrations and integration suite on Supabase's PostgreSQL image, in the `postgres`
+  # database (where Supabase's default API grants apply) — guards the supabase_hardening migration.
+  supabase:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      supabase-db:
+        image: supabase/postgres:15.8.1.085
+        env:
+          POSTGRES_PASSWORD: supa_ci_pw
+        ports: ["54322:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -h localhost" --health-interval 5s --health-timeout 5s --health-retries 30
+    env:
+      TEST_DATABASE_URL: postgresql://postgres:supa_ci_pw@localhost:54322/postgres
+      DATABASE_URL: postgresql://postgres:supa_ci_pw@localhost:54322/postgres
+      DATABASE_URL_UNPOOLED: postgresql://postgres:supa_ci_pw@localhost:54322/postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Integration tests on Supabase PostgreSQL
+        run: npm run test:integration

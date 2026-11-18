@@ -67,6 +67,14 @@ export async function evaluate(env: Record<string, string | undefined> = process
     const e = evidence(id);
     if (e) live[id] = { status: "COMPLETED", detail: String((e.details as { reference?: string }).reference ?? "") };
   }
+  // O16: ARA's own product catalogue (only once ARA's organisation exists).
+  const home = await systemDb.platformSetting.findUnique({ where: { key: "araHome" } });
+  const homeOrg = (home?.value as { organizationId?: string } | undefined)?.organizationId;
+  if (homeOrg) {
+    const products = await systemDb.product.findMany({ where: { organizationId: homeOrg, status: "ACTIVE" } });
+    const complete = products.filter((p) => p.revenueAccountId && p.taxCodeId).length;
+    live.O16 = products.length && complete === products.length ? { status: "COMPLETED" } : complete ? { status: "IN_PROGRESS", detail: `${complete}/${products.length}` } : { status: "WAITING_OWNER", detail: `0/${products.length}` };
+  }
   if (Number(failedMigrations[0]?.n ?? 0) > 0) live.T3 = { status: "BLOCKED", detail: "failed migration" };
 
   const items: EvaluatedItem[] = READINESS_ITEMS.map((it) => (live[it.id] ? { ...it, status: live[it.id]!.status, detail: live[it.id]!.detail, live: true } : { ...it, live: false }));

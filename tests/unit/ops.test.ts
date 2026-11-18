@@ -36,6 +36,20 @@ describe("environment validation", () => {
     expect(level({ ...prodBase, DATABASE_URL_UNPOOLED: prodBase.DATABASE_URL_UNPOOLED.replace("/neondb", "/other") }, "DATABASE_URL_UNPOOLED")).toEqual(["error:differentDatabase"]);
     expect(level({ NODE_ENV: "development", DATABASE_URL: "postgresql://a:b@localhost:5432/x" }, "DATABASE_URL")).toEqual(["ok:local"]);
   });
+  it("Supabase: transaction pooler + direct host of the same project pass; missing pgbouncer, pooled direct URL and another project fail", () => {
+    const supa = { ...prodBase, DATABASE_URL: "postgresql://postgres.abcdefgh:pw@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require&pgbouncer=true", DATABASE_URL_UNPOOLED: "postgresql://postgres:pw@db.abcdefgh.supabase.co:5432/postgres?sslmode=require" };
+    expect(envErrors(checkEnvironment(supa))).toEqual([]);
+    expect(envErrors(checkEnvironment({ ...supa, DATABASE_URL_UNPOOLED: "postgresql://postgres.abcdefgh:pw@aws-0-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require" }))).toEqual([]);
+    expect(level({ ...supa, DATABASE_URL: supa.DATABASE_URL.replace("&pgbouncer=true", "") }, "DATABASE_URL")).toContain("error:supabasePgbouncer");
+    expect(level({ ...supa, DATABASE_URL_UNPOOLED: supa.DATABASE_URL }, "DATABASE_URL_UNPOOLED")).toEqual(["error:pooledDirect"]);
+    expect(level({ ...supa, DATABASE_URL_UNPOOLED: supa.DATABASE_URL_UNPOOLED.replace("abcdefgh", "zzzzzzzz") }, "DATABASE_URL_UNPOOLED")).toEqual(["error:differentDatabase"]);
+  });
+  it("Supabase Storage: optional; the service-role key is required with the URL and must never be public", () => {
+    expect(level(prodBase, "SUPABASE_URL")).toEqual(["info:storageDatabase"]);
+    expect(level({ ...prodBase, SUPABASE_URL: "https://abc.supabase.co" }, "SUPABASE_SERVICE_ROLE_KEY")).toEqual(["error:missing"]);
+    expect(level({ ...prodBase, SUPABASE_URL: "https://abc.supabase.co", SUPABASE_SERVICE_ROLE_KEY: "x" }, "SUPABASE_URL")).toEqual(["ok:storageSupabase"]);
+    expect(envErrors(checkEnvironment({ ...prodBase, NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY: "x" })).map((c) => c.code)).toContain("publicSecret");
+  });
   it("SMTP is optional, but incomplete or placeholder settings are errors", () => {
     expect(level(prodBase, "SMTP_HOST")).toEqual(["warning:emailDisabled"]);
     expect(level({ ...prodBase, SMTP_HOST: "smtp.x.sr", SMTP_USER: "u", SMTP_FROM: "ARA <no-reply@example.sr>" }, "SMTP_HOST")).toEqual(["error:smtpIncomplete"]);

@@ -17,6 +17,19 @@
 
 Without a database the public status page still works; sign-in shows "not yet available".
 
+### Supabase (alternative to Neon)
+See `SUPABASE_ARCHITECTURE.md` and `MIGRATION_PLAN.md`. In short:
+
+1. Create a project in us-east-1.
+2. Switch the Data API off for `public`.
+3. Set the variables in Vercel:
+   - `DATABASE_URL` = transaction pooler (`…pooler.supabase.com:6543/postgres?sslmode=require&pgbouncer=true`);
+   - `DATABASE_URL_UNPOOLED` = session pooler or direct host (port 5432, `sslmode=require`).
+4. Deploy. The migrations (including `supabase_hardening`) run automatically.
+5. Optional: `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` for document storage in a private bucket.
+
+Moving existing data from Neon: `scripts/migrate-to-supabase.sh`.
+
 ### Neon connection strings
 - `DATABASE_URL`: the **pooled** host (`…-pooler…`), with `sslmode=require`. Serverless functions open many short connections; the pooler absorbs them. `withTenant` uses `SET LOCAL ROLE` inside a transaction, which is compatible with transaction pooling.
 - `DATABASE_URL_UNPOOLED`: the **direct** host of the same database, with `sslmode=require`. Prisma uses it (`directUrl`) for migrations, which need a session connection.

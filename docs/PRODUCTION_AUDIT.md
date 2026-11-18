@@ -47,6 +47,26 @@ The live verdict per gate is on **Platformbeheer → Productiegereedheid**. The 
 | Bank import | ⚠️ configurable and validated against synthetic data only. No real bank sample yet (O7) |
 | Owner decisions and credentials | ❌ open (§6) |
 
+## 1a. Update 2026-11-18 — ARA Admin Portal and Supabase
+
+- **Backend.** Supabase PostgreSQL is verified:
+  - all migrations;
+  - the full integration suite, also on a database migrated from PostgreSQL 16;
+  - the Data API locked down by migration;
+  - Supabase Storage tested against the real storage-api.
+- **Business management.** The ARA Admin Portal covers CRM, quotations, invoicing, subscriptions, payments, internal
+  finance, reporting, staff, support and a customer portal. It is built on ARA's own administration in the accounting
+  engine, so there is no second bookkeeping.
+- **Dependencies.**
+  - Next.js upgraded 16.4.3 → **16.4.6** (advisories GHSA-mfr8-8qww-v76h and GHSA-vc7v-qv4w-wrv8, about cache leaks
+    with `use cache`/`unstable_cache`, which ARA does not use; the build refused the old version).
+  - `npm audit --omit=dev` still reports `deepmerge-ts` (accepted, §5.3) and **`picomatch` (GHSA-fc5q-39xc-vjpf, all
+    versions affected, no patched release)**. picomatch is used only by `@parcel/watcher`, the development file watcher
+    of next-intl, on fixed glob patterns; it is not reachable with user input. Accepted; re-check when a patch exists.
+- **Verdict unchanged: NOT production-ready.** The pilot additionally needs O14 (database choice and Supabase projects).
+  General availability additionally needs O16 (product prices, BTW codes, revenue accounts). See
+  `PRODUCTION_READINESS.md`.
+
 ## 2. Test results (run 2026-11-12)
 
 | Suite | Result |

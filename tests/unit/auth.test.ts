@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { base32Decode, base32Encode, hotp, totp, verifyTotp } from "@/core/auth/totp";
 import { decrypt, encrypt, hashPassword, verifyPassword } from "@/core/auth/crypto";
-import { ALL_PERMISSIONS, ROLE_CODES, SYSTEM_ROLES, isOrgScoped, rolesForKind } from "@/core/auth/permissions";
+import { ALL_PERMISSIONS, ROLE_CODES, STAFF_ROLES, SYSTEM_ROLES, isOrgScoped, rolesForKind } from "@/core/auth/permissions";
 
 const RFC_SECRET = Buffer.from("12345678901234567890");
 
@@ -52,8 +52,10 @@ describe("passwords and encryption", () => {
 });
 
 describe("permission matrix", () => {
-  it("has the ten required roles (nine tenant roles + platform administrator flag)", () => {
-    expect(ROLE_CODES).toHaveLength(9);
+  it("has the nine tenant roles plus the seven ARA staff roles (the platform administrator is a flag)", () => {
+    expect(ROLE_CODES).toHaveLength(16);
+    expect(STAFF_ROLES).toHaveLength(7);
+    for (const r of STAFF_ROLES) expect(SYSTEM_ROLES[r].orgWide).toBe(true);
   });
 
   it("only uses known permissions", () => {

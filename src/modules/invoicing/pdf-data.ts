@@ -1,6 +1,6 @@
 import "server-only";
 import Decimal from "decimal.js";
-import { getTranslations } from "next-intl/server";
+import { translatorFor } from "@/lib/translator";
 import type { Tx } from "@/core/db/client";
 import { PDF_LABEL_KEYS, type InvoicePdfData, type PdfLabels } from "./pdf";
 
@@ -11,7 +11,7 @@ export async function invoicePdfData(tx: Tx, invoiceId: string, locale: string):
   const admin = await tx.administration.findUniqueOrThrow({ where: { id: inv.administrationId }, include: { company: true } });
   const credits = inv.creditsInvoiceId ? await tx.invoice.findUnique({ where: { id: inv.creditsInvoiceId }, select: { number: true } }) : null;
   const banks = await tx.financialAccount.findMany({ where: { administrationId: admin.id, kind: "BANK", status: "ACTIVE" }, orderBy: { createdAt: "asc" } });
-  const t = await getTranslations({ locale });
+  const t = await translatorFor(locale);
   const fmtDate = (d: Date) => d.toISOString().slice(0, 10).split("-").reverse().join("-");
 
   const taxByRate = new Map<string, { base: Decimal; tax: Decimal }>();

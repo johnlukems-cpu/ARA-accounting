@@ -2,9 +2,45 @@
 
 | Item | Value |
 | --- | --- |
-| Current phase | **Production readiness — technically ready for a controlled pilot once O1, O2, O10 and O11 are provided; NOT production-ready (see docs/PRODUCTION_READINESS.md)** |
+| Current phase | **ARA Admin Portal + Supabase backend built and tested; production waits on owner items (docs/PRODUCTION_READINESS.md)** |
 | Completed | 0 — Architecture · 1 — Foundation · 2 — Accounting core · 3 — Financial operations · 4 — Industry templates · 5 — Multi-currency · 6 — Budgets · 7 — ARA Scan & AI · 8 — Financial reporting · 9 — Year-end & tax · 10 — Quality & automation · 11 — SaaS & practice management · **12 — Final QA & deployment** |
-| Last update | 2026-11-12 |
+| Last update | 2026-11-18 |
+
+## ARA Admin Portal on Supabase (2026-11-18)
+
+**Delivered:**
+- **Supabase backend.**
+  - All migrations run on Supabase PostgreSQL; one migration was fixed for Supabase.
+  - Migration `supabase_hardening` closes the Data API.
+  - The environment checks know Supabase's pooler and session URLs.
+  - Supabase Storage holds admin documents in a private bucket (tested against the real storage-api).
+  - `scripts/migrate-to-supabase.sh`: Neon → Supabase with 8 verification checks; rehearsed, and the full suite passes on
+    the migrated database.
+  - Docs: `SUPABASE_ARCHITECTURE.md`, `SUPABASE_SECURITY.md`, `MIGRATION_PLAN.md`.
+- **ARA Admin Portal** (`/admin`), on ARA's own organisation and administration in the engine:
+  - executive dashboard;
+  - CRM pipeline and customer profiles;
+  - products and services;
+  - quotations with revisions, PDF, e-mail and conversion;
+  - sales invoices;
+  - subscriptions with idempotent billing runs and entitlement sync;
+  - payments (pending → confirmed, allocations, refunds);
+  - receivables, purchases, expenses, banking and the finance overview;
+  - 12 management reports (PDF/CSV);
+  - employees with 7 staff roles;
+  - support;
+  - settings.
+- **Customer portal** ("Mijn ARA-account"): subscriptions, invoices (PDF), payment status, quotations
+  (view/accept/reject), support.
+- **Manuals:** `ARA_ADMIN_MANUAL_NL.md`, `ARA_CRM_MANUAL_NL.md`, `ARA_BILLING_MANUAL_NL.md`, `ARA_FINANCE_MANUAL_NL.md`.
+
+**Deliberate choices** (see SUPABASE_ARCHITECTURE §1):
+
+- ARA's existing, audited authentication is kept; Supabase Auth is not used.
+- The Data API, Realtime and Edge Functions are not used.
+- Scheduled work stays in Vercel Cron.
+
+**Tests:** 139 unit, 102 integration (also on Supabase PostgreSQL) and 29 e2e tests, all passing.
 
 ## Production readiness execution (2026-11-12)
 

@@ -208,3 +208,23 @@ Each service re-checks `isPlatformAdmin`; MFA must be satisfied.
 | `saveBankFormatAction`, `validateBankFormatAction`, `retireBankFormatAction` | Bank format library and validation against a real sample. |
 | `testEmailAction`, `testErrorAction`, `evidenceAction` | Readiness tests and evidence records. |
 | `applyBankFormatAction` (tenant, `banking.edit`) | Copies a VALIDATED format into a bank account's import profile. |
+
+## ARA Admin Portal and customer portal (2026-11-18)
+
+Pages:
+
+- `/admin/*` is for ARA staff: members of ARA's own organisation with a staff role. MFA is required for the
+  administrator and finance roles.
+- `/app/ara` is the customer portal.
+
+Server actions: `src/actions/admin.ts` (each one calls `adminActionContext(permission)`) and `src/actions/portal.ts`
+(each one calls `requireActionContext`, and the service re-checks ownership).
+
+| Route | Auth | Purpose |
+| --- | --- | --- |
+| `GET /api/admin/reports?kind&year&format=pdf\|csv` | staff + `reports.export`; throttled; audited | Management report export (12 kinds) |
+| `GET /api/admin/quotations/[id]/pdf` | staff + `quotes.view` | Quotation PDF |
+| `GET /api/admin/invoices/[id]/pdf` | staff + `sales.view`; ARA's administration only | Invoice PDF |
+| `GET /api/admin/documents/[id]` | staff; throttled; audited; `CSP: sandbox` | Download from private storage |
+| `GET /api/portal/invoices/[id]/pdf` | member of the customer organisation; ownership check | The customer's own issued invoice |
+| `GET /api/portal/quotations/[id]/pdf` | same; records "viewed" | The customer's own quotation |

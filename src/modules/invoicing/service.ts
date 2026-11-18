@@ -106,7 +106,12 @@ async function taxCodeMap(tx: Tx, administrationId: string) {
 
 /** Validates and saves a draft invoice (create or replace). Posted invoices are immutable. */
 export async function saveInvoice(access: Access, input: InvoiceInput) {
-  return withTenant(scope(access), async (tx) => {
+  return withTenant(scope(access), (tx) => saveInvoiceInTx(tx, access, input));
+}
+
+/** Same as saveInvoice, inside an existing tenant transaction (used by subscription billing and quote conversion). */
+export async function saveInvoiceInTx(tx: Tx, access: Access, input: InvoiceInput) {
+  {
     const admin = await adminFor(tx, input.administrationId);
     const area = input.type === "SALES" ? "sales" : "purchase";
     assertCan(access, `${area}.${input.id ? "edit" : "create"}` as "sales.create", admin.companyId);
@@ -172,7 +177,7 @@ export async function saveInvoice(access: Access, input: InvoiceInput) {
       if (err instanceof UserError) throw err;
       uniqueError(err, "invoicing.duplicateSupplierInvoice");
     }
-  });
+  }
 }
 
 async function loadInvoice(tx: Tx, id: string) {
@@ -423,7 +428,11 @@ export async function registerPaymentInTx(tx: Tx, access: Access, input: z.infer
 
 /** Offsets two open items of the same party, side and currency (e.g. a credit note against an invoice). No journal entry needed. */
 export async function offsetItems(access: Access, input: z.infer<typeof offsetSchema>) {
-  return withTenant(scope(access), async (tx) => {
+  return withTenant(scope(access), (tx) => offsetItemsInTx(tx, access, input));
+}
+
+export async function offsetItemsInTx(tx: Tx, access: Access, input: z.infer<typeof offsetSchema>) {
+  {
     const [a, b] = await Promise.all([tx.openItem.findUnique({ where: { id: input.openItemId } }), tx.openItem.findUnique({ where: { id: input.counterOpenItemId } })]);
     if (!a || !b || a.administrationId !== b.administrationId || a.partyId !== b.partyId || a.side !== b.side || a.currency !== b.currency || a.status !== "OPEN" || b.status !== "OPEN") throw new UserError("invoicing.invalidOffset");
     const admin = await adminFor(tx, a.administrationId);
@@ -436,5 +445,38 @@ export async function offsetItems(access: Access, input: z.infer<typeof offsetSc
     await settle(tx, a.id, amt);
     await settle(tx, b.id, amt);
     await audit(tx, { organizationId: access.organizationId, userId: access.userId, action: "openItem.offset", entity: "OpenItem", entityId: a.id, details: { counter: b.id, amount: amt.toFixed(2) } });
+  }
+}
+
+/**
+ * Refunds (part of) a customer's payment on account: Dr receivable control / Cr bank, and settles the on-account item.
+ * Same currency as the item and the item's original rate (no exchange difference); a refund at another rate needs a
+ * manual journal entry.
+ */
+export async function refundOnAccountInTx(tx: Tx, access: Access, input: { openItemId: string; financialAccountId: string; date: string; amount: string; reference: string }) {
+  const item = await tx.openItem.findUnique({ where: { id: input.openItemId } });
+  if (!item || item.side !== "RECEIVABLE" || item.sourceType !== "PAYMENT" || item.status !== "OPEN" || !item.remainingAmount.lt(0)) throw new UserError("invoicing.invalidOffset");
+  const admin = await adminFor(tx, item.administrationId);
+  assertCan(access, "banking.post", admin.companyId);
+  const fa = await tx.financialAccount.findUnique({ where: { id: input.financialAccountId } });
+  if (!fa || fa.administrationId !== admin.id || fa.status !== "ACTIVE" || fa.currency !== item.currency) throw new UserError("invoicing.invalidFinancialAccount");
+  const amt = new Decimal(input.amount);
+  if (!amt.gt(0) || amt.gt(item.remainingAmount.abs().toString())) throw new UserError("invoicing.overAllocation", { document: item.documentNumber });
+  const fx = item.currency === admin.baseCurrency ? {} : { currency: item.currency, rate: item.originalRate.toString() };
+  const payment = await tx.payment.create({
+    data: { organizationId: access.organizationId, administrationId: admin.id, direction: "OUT", partyId: item.partyId, financialAccountId: fa.id, date: toDate(input.date), currency: fa.currency, amount: amt.toFixed(2), exchangeRate: item.originalRate.toString(), reference: input.reference, description: "Terugbetaling", createdById: access.userId },
   });
+  const entry = await engine.createAndPost(tx, access, {
+    administrationId: admin.id, journalId: fa.journalId, entryDate: input.date, description: `Terugbetaling — ${input.reference}`, reference: input.reference,
+    lines: [
+      { accountId: item.ledgerAccountId, description: item.documentNumber, debit: amt.toFixed(2), partyId: item.partyId, ...fx },
+      { accountId: fa.ledgerAccountId, description: "Terugbetaling", credit: amt.toFixed(2), ...fx },
+    ],
+    sourceType: "PAYMENT", sourceId: payment.id, idempotencyKey: `payment:${payment.id}`,
+  });
+  await tx.payment.update({ where: { id: payment.id }, data: { entryId: entry.id } });
+  await tx.allocation.create({ data: { organizationId: access.organizationId, openItemId: item.id, paymentId: payment.id, amount: amt.toFixed(2), createdById: access.userId } });
+  await settle(tx, item.id, amt);
+  await audit(tx, { organizationId: access.organizationId, userId: access.userId, action: "payment.refunded", entity: "Payment", entityId: payment.id, details: { openItemId: item.id, amount: amt.toFixed(2), currency: fa.currency } });
+  return payment;
 }

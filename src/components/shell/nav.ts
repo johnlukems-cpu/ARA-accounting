@@ -46,6 +46,7 @@ export const NAV: NavItem[] = [
   { key: "users", href: "/app/users", permission: "organization.manageUsers", icon: "users", section: "settings" },
   { key: "audit", href: "/app/audit", permission: "audit.view", icon: "shield", section: "settings" },
   { key: "subscription", href: "/app/subscription", permission: "organization.view", icon: "subscription", section: "settings" },
+  { key: "araAccount", href: "/app/ara", permission: "organization.view", icon: "contact", section: "settings" },
   { key: "platform", href: "/app/platform", icon: "platform", section: "settings" },
   { key: "account", href: "/app/account", icon: "user", section: "settings" },
 ];

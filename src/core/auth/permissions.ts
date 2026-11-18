@@ -35,6 +35,13 @@ export const MODULE_ACTIONS = {
   automation: ["view", "edit", "manageSettings"],
   practice: ["view", "edit"],
   audit: ["view", "export"],
+  // ARA Admin Portal (only meaningful in ARA Intelligent Solutions' own organisation)
+  crm: ["view", "create", "edit", "export"],
+  catalog: ["view", "edit"],
+  quotes: ["view", "create", "edit", "approve", "export"],
+  billing: ["view", "create", "edit", "approve"],
+  payments: ["view", "create", "approve"],
+  support: ["view", "create", "edit"],
 } as const satisfies Record<string, readonly Action[]>;
 
 export type Module = keyof typeof MODULE_ACTIONS;
@@ -63,6 +70,14 @@ export const ROLE_CODES = [
   "CLIENT_ADMIN",
   "APPROVAL_MANAGER",
   "READ_ONLY",
+  // ARA Intelligent Solutions staff (ARA Admin Portal; only in ARA's own organisation)
+  "ARA_SUPER_ADMIN",
+  "ARA_ADMIN",
+  "FINANCE_MANAGER",
+  "SALES_MANAGER",
+  "CRM_MANAGER",
+  "SUPPORT_EMPLOYEE",
+  "READONLY_EMPLOYEE",
 ] as const;
 export type RoleCode = (typeof ROLE_CODES)[number];
 
@@ -143,7 +158,42 @@ export const SYSTEM_ROLES: Record<RoleCode, { name: string; nameEn: string; orgW
     ],
   },
   READ_ONLY: { name: "Alleen lezen", nameEn: "Read-only user", orgWide: false, permissions: viewAll.filter((p) => p !== "audit.view") },
+
+  // ── ARA staff. Org-wide within ARA's own organisation (one company: ARA Intelligent Solutions). ──
+  ARA_SUPER_ADMIN: { name: "ARA Super Administrator", nameEn: "ARA Super Administrator", orgWide: true, permissions: ALL_PERMISSIONS },
+  ARA_ADMIN: { name: "ARA Administrator", nameEn: "ARA Administrator", orgWide: true, permissions: without(ALL_PERMISSIONS, ["organization.manageUsers", "organization.manageSettings"]) },
+  FINANCE_MANAGER: {
+    name: "Financieel manager", nameEn: "Finance Manager", orgWide: true,
+    permissions: [
+      ...viewAll,
+      ...pick(["ledger", "purchase", "sales", "banking", "currency", "currentAccounts", "assets", "budgets", "tax", "yearEnd", "annualAccounts", "reports", "billing", "payments", "periods"], ["create", "edit", "approve", "post", "reverse", "export", "close"]),
+      "quotes.view", "crm.view",
+    ],
+  },
+  SALES_MANAGER: {
+    name: "Salesmanager", nameEn: "Sales Manager", orgWide: true,
+    permissions: [
+      ...pick(["crm", "catalog", "quotes", "sales", "billing", "payments", "reports", "support", "companies", "administrations", "periods"], ["view"]),
+      ...pick(["crm", "catalog", "quotes"], ["create", "edit", "approve", "export"]),
+      "sales.create", "sales.edit", "billing.create", "billing.edit", "payments.create",
+    ],
+  },
+  CRM_MANAGER: {
+    name: "CRM-manager", nameEn: "CRM Manager", orgWide: true,
+    permissions: [
+      ...pick(["crm", "catalog", "quotes", "sales", "billing", "support", "companies", "administrations"], ["view"]),
+      "crm.create", "crm.edit", "crm.export", "quotes.create", "quotes.edit", "support.create", "support.edit",
+    ],
+  },
+  SUPPORT_EMPLOYEE: {
+    name: "Supportmedewerker", nameEn: "Support Employee", orgWide: true,
+    permissions: [...pick(["crm", "catalog", "billing", "sales", "support", "companies", "administrations"], ["view"]), "crm.create", "support.create", "support.edit"],
+  },
+  READONLY_EMPLOYEE: { name: "Medewerker alleen lezen", nameEn: "Read-only Employee", orgWide: true, permissions: viewAll.filter((p) => p !== "audit.view") },
 };
+
+/** ARA Intelligent Solutions staff roles: assignable only in ARA's own organisation (see modules/admin/home.ts). */
+export const STAFF_ROLES: RoleCode[] = ["ARA_SUPER_ADMIN", "ARA_ADMIN", "FINANCE_MANAGER", "SALES_MANAGER", "CRM_MANAGER", "SUPPORT_EMPLOYEE", "READONLY_EMPLOYEE"];
 
 /** Roles that may be granted at organisation level for each organisation kind. */
 export function rolesForKind(kind: "BUSINESS" | "ACCOUNTING_FIRM"): RoleCode[] {
@@ -153,7 +203,7 @@ export function rolesForKind(kind: "BUSINESS" | "ACCOUNTING_FIRM"): RoleCode[] {
 }
 
 /** Roles that require MFA when the organisation enforces MFA for administrators. */
-export const ADMIN_ROLES: RoleCode[] = ["ORGANIZATION_OWNER", "FIRM_ADMIN"];
+export const ADMIN_ROLES: RoleCode[] = ["ORGANIZATION_OWNER", "FIRM_ADMIN", "ARA_SUPER_ADMIN", "ARA_ADMIN", "FINANCE_MANAGER"];
 
 export function isPermission(value: string): value is Permission {
   return (ALL_PERMISSIONS as string[]).includes(value);

@@ -32,6 +32,13 @@ describe("Production readiness: tenant isolation coverage", () => {
     // Session, UserToken: no privileges for ara_app (auth tables are only used by trusted system code).
     expect(rows.filter((r) => r.granted && (!r.rls || Number(r.policies) === 0)).map((r) => r.table)).toEqual([]);
   });
+  it("Supabase: the Data API roles (anon, authenticated, service_role) have no privileges on application tables or functions", async () => {
+    const roles = await systemDb.$queryRaw<{ rolname: string }[]>`SELECT rolname FROM pg_roles WHERE rolname IN ('anon', 'authenticated', 'service_role')`;
+    if (roles.length === 0) return; // plain PostgreSQL / Neon: nothing to check
+    const tables = await systemDb.$queryRaw<{ n: bigint }[]>`SELECT count(*) AS n FROM information_schema.role_table_grants WHERE table_schema = 'public' AND grantee IN ('anon', 'authenticated', 'service_role')`;
+    const fns = await systemDb.$queryRaw<{ n: bigint }[]>`SELECT count(*) AS n FROM information_schema.routine_privileges WHERE routine_schema = 'public' AND grantee IN ('anon', 'authenticated', 'PUBLIC')`;
+    expect([Number(tables[0]!.n), Number(fns[0]!.n)]).toEqual([0, 0]);
+  });
   it("platform tables are closed to tenants except the read-only plan and bank-format libraries", async () => {
     const o = await newOrganization();
     await expect(withTenant(o.access, (tx) => tx.platformSetting.findMany())).rejects.toThrow(/permission denied/);

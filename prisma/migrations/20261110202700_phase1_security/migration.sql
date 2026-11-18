@@ -9,7 +9,9 @@ BEGIN
     CREATE ROLE ara_app NOLOGIN NOBYPASSRLS;
   END IF;
 END $$;
-GRANT ara_app TO CURRENT_USER;
+-- Explicit role name via dynamic SQL: on Supabase, `GRANT … TO CURRENT_USER` crashes the server (supautils), while
+-- granting to the named role works. Same effect on every PostgreSQL.
+DO $$ BEGIN EXECUTE format('GRANT ara_app TO %I', current_user); END $$;
 GRANT USAGE ON SCHEMA public TO ara_app;
 
 -- 2. Session variables set by the tenant client per transaction.

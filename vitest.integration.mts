@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 const url = process.env.TEST_DATABASE_URL ?? "postgresql://ara:ara_dev@localhost:5432/ara_accounting_test";
 
 export default defineConfig({
-  resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
+  resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)), "server-only": fileURLToPath(new URL("./tests/support/server-only.ts", import.meta.url)) } },
   test: {
     include: ["tests/integration/**/*.test.ts"],
     globalSetup: ["tests/integration/global-setup.ts"],

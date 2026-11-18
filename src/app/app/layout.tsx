@@ -11,6 +11,7 @@ import { logoutAction } from "@/actions/auth";
 import { switchContextAction } from "@/actions/organization";
 import { ContextSelect } from "@/components/shell/context-select";
 import { NAV } from "@/components/shell/nav";
+import { getHome } from "@/modules/admin/home";
 
 const ICONS = { dashboard: LayoutDashboard, building: Building2, briefcase: Briefcase, book: BookOpen, users: Users, shield: ShieldCheck, user: User, list: List, scale: Scale, library: Library, notebook: NotebookText, receipt: Receipt, cart: ShoppingCart, contact: Contact, wallet: Wallet, landmark: Landmark, percent: Percent, transfer: ArrowLeftRight, factory: Factory, template: LayoutTemplate, coins: Coins, target: Target, scan: ScanLine, bot: Bot, chart: ChartColumn, yearEnd: CalendarCheck, tax: FileText, annual: BookMarked, quality: ShieldAlert, practice: BriefcaseIcon, subscription: BadgeDollarSign, platform: ServerCog };
 
@@ -22,9 +23,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const access = ctx.access;
 
   const subscription = accessState(ctx.organization);
+  // ARA staff (members of ARA's own organisation) get a link to the ARA Admin Portal.
+  const araHome = await getHome();
+  const isStaff = !!araHome && ctx.memberships.some((m) => m.organizationId === araHome.organizationId);
   const unread = await withTenant(access, (tx) => tx.notification.count({ where: { userId: ctx.user.id, readAt: null } }));
   const nav = NAV.flatMap((item) => {
     if (item.key === "platform" && !ctx.user.isPlatformAdmin) return [];
+    if (item.key === "araAccount" && araHome?.organizationId === ctx.organization?.id) return []; // ARA's own organisation
     if (item.permission && !can(access, item.permission, ctx.company?.id)) return [];
     const href = typeof item.href === "string" ? item.href : item.href({ administrationId: ctx.administration?.id });
     return href ? [{ ...item, href }] : [];
@@ -76,6 +81,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 <input id="q" name="q" placeholder={t("shell.searchPlaceholder")} className="h-9 w-40 rounded-lg border border-white/15 bg-white/10 pl-8 pr-2 text-sm placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-accent sm:w-56" />
               </div>
             </form>
+            {isStaff && <Link href="/admin" className="rounded-lg border border-white/20 px-2.5 py-1 text-xs font-medium hover:bg-white/10">{t("admin.portalLink")}</Link>}
             <Link href="/app/notifications" className="relative rounded-lg p-2 hover:bg-white/10" aria-label={t("shell.notifications", { count: unread })}>
               <Bell aria-hidden className="size-5" />
               {unread > 0 && <span className="absolute -right-0.5 -top-0.5 rounded-full bg-accent px-1.5 text-[10px] font-semibold">{unread}</span>}

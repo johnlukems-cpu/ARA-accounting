@@ -304,6 +304,44 @@ Applying a template **copies** rows into the administration (with `templateAccou
 - CHECK: VALIDATED only with that evidence.
 - `ara_app` may only read it, so tenants can apply validated formats.
 
+### 4.15 ARA Admin Portal (migration `admin_portal`)
+
+All tables below are tenant data of **ARA's own organisation** (the "ARA home", platform setting `araHome`) and use
+the standard `tenant_isolation` RLS policy. Invoices, payments, bank, purchases and the ledger are **not** duplicated:
+they are the engine tables of ARA's own administration.
+
+| Table | Purpose | Safeguards |
+| --- | --- | --- |
+| `CrmCustomer` | Prospect, lead or customer: one record through stages LEAD → … → CUSTOMER → INACTIVE. `partyId` is the debtor in ARA's administration, set on conversion; `linkedOrganizationId` is the customer's own ARA Accounting organisation. | unique number per organisation; unique `partyId` |
+| `CrmContact` | Contact persons | RLS |
+| `CrmActivity` | Notes, calls, e-mails, meetings, tasks, and system events (stage, quotation, invoice, payment, subscription, support, document) | append-only except `doneAt` (trigger `crm_activity_guard`) |
+| `Product` | Catalogue: billing type, interval, optional price, tax code, revenue account, plan | CHECK: price ≥ 0; interval set exactly when recurring |
+| `Quotation`, `QuotationLine` | Quotation with totals calculated per line, like invoices | discount 0–100 |
+| `QuotationRevision` | Snapshot before a revision | append-only |
+| `AraSubscription` | Customer subscription: product, plan, interval, price, status, trial, next billing date | CHECK: price ≥ 0, quantity > 0 |
+| `SubscriptionEvent` | History (created, upgraded, invoiced, suspended …) | append-only |
+| `SubscriptionBilling` | One row per billed period → invoice | **unique (subscription, periodStart)** = idempotent billing; append-only |
+| `AraPayment`, `AraPaymentAllocation` | Payment received: PENDING → CONFIRMED / FAILED / REFUNDED; the intended allocations | CHECKs: amount > 0; CONFIRMED needs the ledger payment, confirmer and time; trigger: a confirmed payment is immutable; only pending payments may be deleted |
+| `SupportTicket`, `SupportMessage` | Tickets, including portal tickets (`requesterOrganizationId`) | messages append-only |
+| `AdminDocument`, `AdminDocumentBlob` | Document metadata; the file is in Supabase Storage (private bucket) or in the blob table | append-only |
+| `Employee` | Staff directory (access = membership + staff role) | RLS |
+
+Numbering:
+
+- CUS-00001 (customers) and ABO-00001 (subscriptions);
+- OFF-YYYY-00001 (quotations), BET-YYYY-00001 (payments) and TIC-YYYY-00001 (tickets);
+- all through `NumberSequence`, with a row lock.
+
+### 4.16 Supabase hardening (migration `supabase_hardening`)
+
+On Supabase only (a no-op elsewhere):
+
+- revoke all privileges of `anon`, `authenticated` and `service_role` on `public`, including the default privileges;
+- revoke `EXECUTE` on functions from `PUBLIC`;
+- move `btree_gist` to the `extensions` schema.
+
+See `SUPABASE_SECURITY.md`.
+
 ## 5. Database-level safeguards (SQL in migrations)
 
 1. `journal_entry_immutable` trigger: rejects UPDATE/DELETE of POSTED entries and their lines (only `reversed_by_entry_id` may be set once).
