@@ -1,7 +1,10 @@
 # ARA — Migration Plan: Neon → Supabase
 
-Status: **prepared and rehearsed; not executed against production.** It needs the owner's Supabase projects (O14)
-and the owner's approval (O15). Neon is not touched and stays available until the switch is approved and verified.
+Status: **prepared and rehearsed; not executed against production.** Supabase is now the only supported backend
+(database and file storage); new environments start directly on Supabase (`DEPLOYMENT_GUIDE.md`), and no migration is
+needed for them. This plan applies only when an existing PostgreSQL database (for example Neon) already holds data. It
+then needs the owner's Supabase projects (O1, O14), a maintenance window and the owner's go/no-go. The source database is
+not touched and stays available until the switch is approved and verified.
 
 ## 1. Audit of the current state (2026-11-18)
 
@@ -9,7 +12,7 @@ and the owner's approval (O15). Neon is not touched and stays available until th
 | --- | --- |
 | Architecture | Next.js 16 on Vercel; Prisma 6 on PostgreSQL; server-only data access; RLS through `SET LOCAL ROLE ara_app` |
 | Current database | Neon is prepared in the configuration, but **no production database has been provisioned yet** (owner item O1). There is no production data to migrate today; the procedure below applies once Neon (or any PostgreSQL) holds data. |
-| Migrations | 28 Prisma migrations, hand-written SQL: guards, RLS, append-only tables, checks |
+| Migrations | 31 Prisma migrations, hand-written SQL: guards, RLS, append-only tables, checks |
 | Authentication | Own implementation (scrypt, TOTP MFA, sessions, invitations), audited, rate-limited |
 | Organisation model | Organization → Company → Administration → FiscalYear/Periods; memberships with roles; company assignments |
 | Subscriptions | Phase 11 entitlements (Plan, Organization status/plan/trial) + platform invoices (`SubscriptionInvoice`); now driven by `AraSubscription` in the admin portal |
@@ -55,7 +58,8 @@ and the owner's approval (O15). Neon is not touched and stays available until th
    - `DATABASE_URL` = transaction pooler, with `?pgbouncer=true&sslmode=require`;
    - `DATABASE_URL_UNPOOLED` = session connection.
 
-   Optionally set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and `SUPABASE_STORAGE_BUCKET` for documents. Redeploy:
+   Set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and (optionally) `SUPABASE_STORAGE_BUCKET`; production requires
+   them. Redeploy:
    - the build runs `check:env`;
    - `migrate deploy` is a no-op (the history is copied);
    - `migrate status` must say the schema is up to date.
@@ -64,12 +68,17 @@ and the owner's approval (O15). Neon is not touched and stays available until th
    - open a trial balance and compare it with the pre-migration export;
    - post and reverse an entry in a test organisation;
    - open the audit log (the chain check must be OK).
-8. Lift maintenance.
+8. Move the files that the source database still holds into Supabase Storage:
+   - `npm run files:to-supabase` (dry run: lists what would move);
+   - `npm run files:to-supabase -- --apply`. Per file: upload to the private bucket, download and compare the SHA-256,
+     then in one transaction point the record at Storage and remove the bytes from PostgreSQL. A file that fails stays
+     in PostgreSQL and is reported; the command can be re-run safely.
+9. Lift maintenance.
 
 **After**
 
-9. Keep Neon read-only for **30 days**, then delete it only with the owner's written approval.
-10. Run `scripts/backup-restore-drill.sh` against Supabase (quarterly from then on).
+10. Keep the source database read-only for **30 days**, then delete it only with the owner's written approval.
+11. Run `scripts/backup-restore-drill.sh` against Supabase (quarterly from then on).
 
 ## 4. Validation (per environment)
 
@@ -104,4 +113,4 @@ migrated database (102 tests).
   - the Supabase projects;
   - the maintenance window and announcement;
   - the go/no-go decision;
-  - approval to delete Neon.
+  - approval to delete the source database.

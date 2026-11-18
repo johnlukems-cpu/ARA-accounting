@@ -1358,6 +1358,9 @@ model Document {
   fileName         String
   mimeType         String
   sizeBytes        Int
+  /// Where the file lives: Supabase Storage (private bucket) or DocumentFile (database). Moves only DATABASE → SUPABASE.
+  storage          StorageBackend @default(DATABASE)
+  storageKey       String?
   sha256           String
   pageCount        Int?
   source           DocumentSource @default(WEB)

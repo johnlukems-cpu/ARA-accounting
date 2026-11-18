@@ -53,7 +53,7 @@ Gaps: a double-entry ledger, a chart of accounts, journals with gapless numberin
 | i18n | next-intl, `nl` default, `en` secondary | Proven in the ARA suite |
 | UI | Tailwind CSS 4, own component library, lucide-react, Recharts | ARA Accounting tokens. |
 | Background jobs | **PostgreSQL job table** (`Job`, claimed with `FOR UPDATE SKIP LOCKED`) processed by Vercel functions: started immediately through `after()` and picked up by a **Vercel Cron** sweep every minute | Runs entirely on Vercel, with no extra worker. Jobs are split into short, resumable, idempotent steps that each finish well within the function time limit. |
-| Files | S3-compatible object storage (local disk in development); on Vercel an S3 bucket or Vercel Blob behind the same storage interface | Same as Payroll (`S3_BUCKET` required on Vercel) |
+| Files | Supabase Storage, one private bucket, server-side only (`src/integrations/storage`); required in production | PostgreSQL only in development without Supabase variables |
 | OCR / AI | `DocumentExtractor` interface. Implementations: PDF text layer (built-in), a vision-LLM provider (Claude API) and a manual provider. | Provider-independent. Works without AI (manual entry). |
 | PDF / Excel | pdf-lib, exceljs | Proven in the ARA suite |
 | Tests | Vitest (unit + integration on a real PostgreSQL), Playwright (e2e, nl + en, mobile) | Proven in the ARA suite |
@@ -264,7 +264,7 @@ Write dependencies always point *down* to the ledger. Monitors and practice mana
 
 - No local hyperscale cloud exists in Suriname. Use the closest region (US-East or São Paulo), disclose this in the terms, and offer full data export. ARA Scan is offline-tolerant for unreliable connections.
 - **Platform: Vercel** (decided by the product owner, the same as ARA Payroll). The function region is `iad1` (Washington DC, US-East), the closest region to Suriname, and the database sits in the same region.
-- **Database:** managed PostgreSQL 16 (Neon through the Vercel Marketplace, or another provider in US-East). The pooled connection string is used for the app and the direct one for migrations. RLS policies and triggers are created by SQL migrations.
+- **Database and files:** Supabase (us-east-1): PostgreSQL through the Supavisor transaction pooler for the app and the session connection for migrations, and Supabase Storage for every file. RLS policies and triggers are created by SQL migrations. See `SUPABASE_ARCHITECTURE.md`.
 - **Build:** `vercel-build` = `prisma generate && prisma migrate deploy && seed reference data && next build` . Preview deployments use a separate preview database branch, never production data.
 - **Files:** an S3 bucket (`S3_BUCKET`) or Vercel Blob for documents, scans and generated PDFs. Never the function filesystem.
 - **Background work on Vercel:** OCR, bank imports, revaluation, depreciation runs and report packs are queued in the `Job` table. They start immediately via `after()` and are retried by a Vercel Cron call to `/api/jobs/run` every minute. Each job step is short and resumable (for example one document per OCR step, 500 bank lines per import step, one report section per step), and a step's progress is committed before the next starts. Large Excel/PDF report packs are generated in steps and assembled at the end.

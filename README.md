@@ -20,7 +20,7 @@ Requires Node.js 22 or later.
 ## Deploying to Vercel
 
 1. In Vercel: **Add New → Project → Import** `johnlukems-cpu/ARA-accounting`. Framework, build command and region (`iad1`) come from the repository.
-2. Add a Neon Postgres database and `ENCRYPTION_KEY` — see [docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md).
+2. Create a Supabase project (database + Storage) and set its connection strings, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and `ENCRYPTION_KEY` — see [docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md). Locally: `npm run supabase:local`.
 3. Every push to `main` deploys to production. Branches get preview deployments.
 
 ## Documentation

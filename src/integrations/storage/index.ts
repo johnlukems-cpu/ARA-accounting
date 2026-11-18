@@ -78,3 +78,33 @@ export async function getFile(tx: Tx, doc: { id: string; storage: Backend; stora
   if (!blob) throw new StorageError(404, "file not found");
   return new Uint8Array(blob.data);
 }
+
+// ───────────── Accounting documents (ARA Scan purchase documents, tax filing evidence) ─────────────
+
+export function documentKey(organizationId: string, fileName: string) {
+  const id = crypto.randomUUID();
+  return `${organizationId}/documents/${new Date().getUTCFullYear()}/${id}-${fileName.replace(/[^\w.-]+/g, "_").slice(-120)}`;
+}
+
+/**
+ * Uploads a document file to Supabase Storage BEFORE the database transaction (when configured) and returns the
+ * fields for the Document row; without Supabase it returns null and the caller stores the bytes in DocumentFile.
+ * If the transaction then fails, an unreferenced object remains in the private bucket and is never served.
+ */
+export async function uploadDocumentObject(organizationId: string, fileName: string, bytes: Uint8Array, contentType: string): Promise<{ storage: "SUPABASE"; storageKey: string } | null> {
+  const c = supabaseStorageConfig();
+  if (!c) return null;
+  const storageKey = documentKey(organizationId, fileName);
+  await supabasePut(c, storageKey, bytes, contentType);
+  return { storage: "SUPABASE", storageKey };
+}
+
+export async function readDocumentFile(tx: Tx, doc: { id: string; storage: Backend; storageKey: string | null }): Promise<Uint8Array | null> {
+  if (doc.storage === "SUPABASE") {
+    const c = supabaseStorageConfig();
+    if (!c || !doc.storageKey) throw new StorageError(503, "Supabase Storage is not configured");
+    return supabaseGet(c, doc.storageKey);
+  }
+  const file = await tx.documentFile.findUnique({ where: { documentId: doc.id } });
+  return file ? new Uint8Array(file.data) : null;
+}

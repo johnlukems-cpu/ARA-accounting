@@ -22,7 +22,9 @@
     "smtp:test": "tsx scripts/smtp-test.ts",
     "bank:validate": "tsx scripts/bank-validate.ts",
     "check:bundle": "node scripts/check-bundle.mjs",
-    "readiness:report": "tsx scripts/readiness-report.ts"
+    "readiness:report": "tsx scripts/readiness-report.ts",
+    "files:to-supabase": "tsx scripts/move-files-to-supabase.ts",
+    "supabase:local": "node scripts/supabase-local.mjs"
   },
   "engines": {
     "node": ">=22"

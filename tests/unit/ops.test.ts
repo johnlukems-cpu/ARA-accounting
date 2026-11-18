@@ -9,17 +9,27 @@ import type { ImportProfile } from "@/modules/banking/csv-import";
 const KEY = Buffer.alloc(32, 7).toString("base64");
 const prodBase = {
   NODE_ENV: "production",
-  DATABASE_URL: "postgresql://u:p@ep-cool-1-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require",
-  DATABASE_URL_UNPOOLED: "postgresql://u:p@ep-cool-1.us-east-1.aws.neon.tech/neondb?sslmode=require",
+  DATABASE_URL: "postgresql://postgres.abcdefgh:pw@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require&pgbouncer=true",
+  DATABASE_URL_UNPOOLED: "postgresql://postgres:pw@db.abcdefgh.supabase.co:5432/postgres?sslmode=require",
   ENCRYPTION_KEY: KEY,
   CRON_SECRET: "x".repeat(40),
   APP_URL: "https://app.example-ara.sr",
+  SUPABASE_URL: "https://abcdefgh.supabase.co",
+  SUPABASE_SERVICE_ROLE_KEY: "service-role-test-value",
+};
+const neon = {
+  DATABASE_URL: "postgresql://u:p@ep-cool-1-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require",
+  DATABASE_URL_UNPOOLED: "postgresql://u:p@ep-cool-1.us-east-1.aws.neon.tech/neondb?sslmode=require",
 };
 const level = (env: Record<string, string | undefined>, key: string) => checkEnvironment(env).filter((c) => c.key === key).map((c) => `${c.level}:${c.code}`);
 
 describe("environment validation", () => {
-  it("a complete Neon production configuration has no errors", () => {
+  it("a complete Supabase production configuration has no errors", () => {
     expect(envErrors(checkEnvironment(prodBase))).toEqual([]);
+  });
+  it("production requires Supabase Storage and warns about a database outside Supabase", () => {
+    expect(level({ ...prodBase, SUPABASE_URL: undefined, SUPABASE_SERVICE_ROLE_KEY: undefined }, "SUPABASE_URL")).toEqual(["error:storageRequired"]);
+    expect(level({ ...prodBase, ...neon }, "DATABASE_URL")).toContain("warning:notSupabase");
   });
   it("production refuses missing secrets, short cron secrets, wrong key length and http APP_URL", () => {
     expect(level({ ...prodBase, ENCRYPTION_KEY: undefined }, "ENCRYPTION_KEY")).toEqual(["error:missing"]);
@@ -31,9 +41,9 @@ describe("environment validation", () => {
   });
   it("database: TLS required for remote hosts; the direct URL must not be the pooler and must be the same database", () => {
     expect(level({ ...prodBase, DATABASE_URL: prodBase.DATABASE_URL.replace("?sslmode=require", "") }, "DATABASE_URL")).toContain("error:sslRequired");
-    expect(level({ ...prodBase, DATABASE_URL: prodBase.DATABASE_URL_UNPOOLED }, "DATABASE_URL")).toContain("warning:neonNotPooled");
+    expect(level({ ...prodBase, DATABASE_URL: prodBase.DATABASE_URL_UNPOOLED }, "DATABASE_URL")).toContain("warning:supabaseNotPooled");
     expect(level({ ...prodBase, DATABASE_URL_UNPOOLED: prodBase.DATABASE_URL }, "DATABASE_URL_UNPOOLED")).toEqual(["error:pooledDirect"]);
-    expect(level({ ...prodBase, DATABASE_URL_UNPOOLED: prodBase.DATABASE_URL_UNPOOLED.replace("/neondb", "/other") }, "DATABASE_URL_UNPOOLED")).toEqual(["error:differentDatabase"]);
+    expect(level({ ...prodBase, DATABASE_URL_UNPOOLED: prodBase.DATABASE_URL_UNPOOLED.replace("/postgres?", "/other?") }, "DATABASE_URL_UNPOOLED")).toEqual(["error:differentDatabase"]);
     expect(level({ NODE_ENV: "development", DATABASE_URL: "postgresql://a:b@localhost:5432/x" }, "DATABASE_URL")).toEqual(["ok:local"]);
   });
   it("Supabase: transaction pooler + direct host of the same project pass; missing pgbouncer, pooled direct URL and another project fail", () => {
@@ -45,8 +55,8 @@ describe("environment validation", () => {
     expect(level({ ...supa, DATABASE_URL_UNPOOLED: supa.DATABASE_URL_UNPOOLED.replace("abcdefgh", "zzzzzzzz") }, "DATABASE_URL_UNPOOLED")).toEqual(["error:differentDatabase"]);
   });
   it("Supabase Storage: optional; the service-role key is required with the URL and must never be public", () => {
-    expect(level(prodBase, "SUPABASE_URL")).toEqual(["info:storageDatabase"]);
-    expect(level({ ...prodBase, SUPABASE_URL: "https://abc.supabase.co" }, "SUPABASE_SERVICE_ROLE_KEY")).toEqual(["error:missing"]);
+    expect(level({ ...prodBase, NODE_ENV: "development", SUPABASE_URL: undefined, SUPABASE_SERVICE_ROLE_KEY: undefined }, "SUPABASE_URL")).toEqual(["info:storageDatabase"]);
+    expect(level({ ...prodBase, SUPABASE_URL: "https://abc.supabase.co", SUPABASE_SERVICE_ROLE_KEY: undefined }, "SUPABASE_SERVICE_ROLE_KEY")).toEqual(["error:missing"]);
     expect(level({ ...prodBase, SUPABASE_URL: "https://abc.supabase.co", SUPABASE_SERVICE_ROLE_KEY: "x" }, "SUPABASE_URL")).toEqual(["ok:storageSupabase"]);
     expect(envErrors(checkEnvironment({ ...prodBase, NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY: "x" })).map((c) => c.code)).toContain("publicSecret");
   });

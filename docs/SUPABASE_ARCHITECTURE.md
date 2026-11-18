@@ -4,16 +4,17 @@ Date: 2026-11-18 · Applies to ARA Accounting and the ARA Admin Portal (one Next
 
 ## 1. Decision summary
 
-Supabase is the backend **platform**: a managed PostgreSQL database and Storage. The application keeps its own server
+Supabase is the **only** backend platform: every environment runs on a managed Supabase PostgreSQL database, and every
+file is in Supabase Storage. Production refuses to start a deploy without both (`check:env`). The application keeps its own server
 layer, so every financial rule runs on the server and in the database, never in the browser.
 
 | Supabase service | Used? | How / why |
 | --- | --- | --- |
-| **PostgreSQL** | ✅ Primary database | Prisma (server-side) through Supavisor. All 28 migrations, triggers, RLS and the full test suite were verified on `supabase/postgres` 15.8 (§5). |
-| **Storage** | ✅ Admin documents | Contracts, quotations, payment evidence and customer documents go in **one private bucket**, accessed only from the server with the service-role key (`src/integrations/storage`). Verified against the real `supabase/storage-api` (§5). Without the Supabase variables, documents are stored in PostgreSQL. Scanned purchase invoices (ARA Scan) stay in PostgreSQL. |
+| **PostgreSQL** | ✅ Primary database | Prisma (server-side) through Supavisor. All 31 migrations, triggers, RLS and the full test suite were verified on `supabase/postgres` 15.8 (§5). |
+| **Storage** | ✅ All files | Scanned receipts and purchase invoices (ARA Scan), filed tax returns, contracts, quotations, payment evidence and customer documents go in **one private bucket**, accessed only from the server with the service-role key (`src/integrations/storage`). Objects are never overwritten (`x-upsert: false`); the record keeps the SHA-256, and database triggers make the evidence fields immutable. Verified against the real `supabase/storage-api` (§5). Only in development without the Supabase variables are files kept in PostgreSQL; `npm run files:to-supabase -- --apply` moves them (upload → SHA-256 check → switch, per file in one transaction). |
 | **Database migrations** | ✅ | Prisma migrations, run against the session connection on every deploy (`migrate deploy`, then `migrate status`). The Supabase CLI is not needed. |
 | **Database APIs (PostgREST / GraphQL)** | ❌ Deliberately **off** | The app never reads data from the browser. Exposing `public` through the Data API would bypass the server-side authorisation and segregation-of-duties rules. Migration `supabase_hardening` revokes every privilege of `anon`, `authenticated` and `service_role` on `public`. The owner also switches the Data API off for `public` in the dashboard. |
-| **Authentication** | ❌ Not now (kept: ARA's own auth) | ARA Accounting already has audited authentication (scrypt, TOTP MFA with recovery codes, session revocation, rate limits, invitations), tied to RLS through `withTenant`. Moving to Supabase Auth would rebuild a working, security-critical module and change every authorisation path. If wanted later, it is a separate project with its own migration of users and MFA secrets. |
+| **Authentication** | ❌ Not now (kept: ARA's own auth; owner decision pending) | ARA Accounting already has audited authentication (scrypt, TOTP MFA with recovery codes, session revocation, rate limits, invitations), tied to RLS through `withTenant`. Moving to Supabase Auth would rebuild a working, security-critical module and change every authorisation path. If wanted later, it is a separate project with its own migration of users and MFA secrets. |
 | **Edge Functions** | ❌ Not needed | Scheduled work (quality scan, audit-chain check, subscription billing) runs as Vercel Cron route handlers in the same codebase, with the same services and tests. Edge Functions would duplicate business logic in a second runtime. |
 | **Realtime** | ❌ Not used | Realtime needs table exposure through Supabase's API roles, which is switched off on purpose. Notifications are polled server-side. |
 
@@ -24,7 +25,7 @@ public API. Supabase Studio is a database console for operators; the business ap
 
 | Environment | Supabase project | Vercel | Database URLs |
 | --- | --- | --- | --- |
-| Development | `ara-dev` (or local `supabase/postgres` in Docker) | local / Preview | dev project |
+| Development | `ara-dev`, or local: `npm run supabase:local` (`docker-compose.supabase.yml`: the same `supabase/postgres` and `supabase/storage-api` images) | local | dev project or local stack |
 | Staging | `ara-staging`, us-east-1 | Preview (branch `staging`) | staging project |
 | Production | `ara-prod`, us-east-1 (next to Vercel `iad1`) | Production | prod project |
 
@@ -66,10 +67,12 @@ Browser ──HTTPS──> Vercel (Next.js server: pages, server actions, route 
 | Check | Environment | Result |
 | --- | --- | --- |
 | All migrations on Supabase PostgreSQL as `postgres` (not superuser, BYPASSRLS) | `supabase/postgres:15.8.1.085` | ✅. One incompatibility was found and fixed: `GRANT … TO CURRENT_USER` crashed the server (supautils); it now uses the explicit role name. |
-| Full integration suite on Supabase PostgreSQL | same | ✅ 90 tests at the time (before the admin portal), then **102 tests** on the migrated database |
+| Full integration suite on Supabase PostgreSQL | same | ✅ 90 tests at the time (before the admin portal), then 102, now **105 tests** — on the migrated database and on a fresh `npm run supabase:local` stack (database `postgres`, live Storage) |
 | Default exposure through the Data API | database `postgres` | ⚠️ Found: Supabase grants `anon`/`authenticated`/`service_role` ALL on new tables (69 tables, incl. tables without RLS). ✅ Fixed by migration `supabase_hardening`; an integration test asserts 0 privileges. |
 | Neon → Supabase migration drill (`scripts/migrate-to-supabase.sh`) | PG 16 → Supabase PG 15.8 | ✅ 8/8 checks: privileges, rows, RLS/triggers, ledger totals, open items, audit chain, balance, API roles |
 | Storage adapter | `supabase/storage-api:v1.11.13` | ✅ private bucket, upload/download, no overwrite, anonymous read refused |
+| All files to Storage | same | ✅ ARA Scan uploads land in the bucket (no bytes in PostgreSQL); `files:to-supabase` moves old files with a SHA-256 check and is idempotent; evidence fields cannot be changed, bytes in PostgreSQL can only be removed once the record points to Storage |
+| Function privileges | database `postgres` | ⚠️ Found: functions created after the hardening still got PostgreSQL's built-in EXECUTE for PUBLIC. ✅ Fixed by migration `function_privileges` (also as a global default); the same test asserts 0. |
 
 Not verified here, because no Supabase account is available in this environment: a hosted project's Supavisor
 pooler and network. These are covered by the staging steps in `MIGRATION_PLAN.md` §4.

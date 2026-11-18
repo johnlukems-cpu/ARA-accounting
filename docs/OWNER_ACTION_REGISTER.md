@@ -14,7 +14,7 @@ assumed anywhere in the code.
 | ID | Work | Where | Verified by |
 | --- | --- | --- | --- |
 | T1 | Environment variable validation: presence and format only, values never printed. The build stops on errors. | `src/core/ops/env.ts`, `npm run check:env`, `scripts/vercel-build.mjs` | `tests/unit/ops.test.ts` |
-| T2 | Neon configuration: pooled URL for the app, direct URL for migrations, TLS enforced, the pooler/direct mix-up detected. | `prisma/schema.prisma`, env checks | unit tests |
+| T2 | Database connection: Supabase transaction pooler for the app, session URL for migrations, TLS enforced, the pooler/direct mix-up detected, Supabase Storage required in production. | `prisma/schema.prisma`, env checks | unit tests |
 | T3 | Every deploy runs `migrate deploy` and then `migrate status`. The drift check runs in CI. | `scripts/vercel-build.mjs`, `.github/workflows/ci.yml` | CI |
 | T4 | Backup and restore drill. | `scripts/backup-restore-drill.sh` | executed (PRODUCTION_AUDIT §4) |
 | T5 | SMTP prepared: a connection and login check plus a test message. | `testEmailDelivery`, `npm run smtp:test`, readiness page | ready for O2 |
@@ -42,15 +42,15 @@ Still open on the development side, and not blocking the pilot:
 
 ## Part B — Requirements that need the owner or an external professional
 
-### O1 — Production database and secrets
+### O1 — Supabase production project (database + Storage) and secrets
 
 | | |
 | --- | --- |
-| **What** | A Neon PostgreSQL 16 database (region US-East, next to Vercel `iad1`) connected to the Vercel project, plus `ENCRYPTION_KEY`, `CRON_SECRET` and `APP_URL`. |
-| **Why** | Without them the application cannot store data, encrypt MFA secrets, run the daily checks, or build correct e-mail links. |
-| **Who** | Owner (account holder of Vercel and Neon). |
-| **Where** | Vercel → Project → Storage → Neon (sets `DATABASE_URL` and `DATABASE_URL_UNPOOLED`). Vercel → Settings → Environment Variables (Production) for the other three:<br>• `ENCRYPTION_KEY`: `openssl rand -base64 32`; **keep a copy in a password manager**, MFA cannot be recovered without it.<br>• `CRON_SECRET`: `openssl rand -hex 32`.<br>• `APP_URL`: `https://<your domain>`. |
-| **How tested** | The deploy runs `npm run check:env`, which fails on errors. `GET /api/health` returns 200. The readiness page shows O1 as *Completed*. |
+| **What** | A Supabase production project (region us-east-1, next to Vercel `iad1`) connected to the Vercel project: the database connection strings and the Storage service-role key, plus `ENCRYPTION_KEY`, `CRON_SECRET` and `APP_URL`. |
+| **Why** | Without them the application cannot store data or files, encrypt MFA secrets, run the daily checks, or build correct e-mail links. A production deploy without Supabase Storage is refused by `check:env`. |
+| **Who** | Owner (account holder of Vercel and Supabase). |
+| **Where** | Supabase dashboard → Connect (connection strings) and Settings → API keys (service-role key). Vercel → Settings → Environment Variables (Production):<br>• `DATABASE_URL`: transaction pooler, port 6543, `?pgbouncer=true&sslmode=require`;<br>• `DATABASE_URL_UNPOOLED`: session pooler or direct host, port 5432, `?sslmode=require`;<br>• `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (server only, never `NEXT_PUBLIC_`);<br>• `ENCRYPTION_KEY`: `openssl rand -base64 32`; **keep a copy in a password manager**, MFA cannot be recovered without it;<br>• `CRON_SECRET`: `openssl rand -hex 32`;<br>• `APP_URL`: `https://<your domain>`. |
+| **How tested** | The deploy runs `npm run check:env`, which fails on errors. `GET /api/health` returns 200. A scanned receipt opens again after upload (Storage). The readiness page shows O1 as *Completed*. |
 | **Completion** | No configuration errors in Production; the first organisation can register; O1 is green on the live dashboard. |
 
 ### O2 — SMTP for e-mail
@@ -141,15 +141,15 @@ Still open on the development side, and not blocking the pilot:
 | **How tested** | Switch AI on in a test organisation and upload a photo of an invoice in ARA Scan. |
 | **Completion** | Suggestions shown with provider and model; O9 *Completed* (live). |
 
-### O10 — Off-site backups and the first restore drill on Neon
+### O10 — Off-site backups and the first restore drill (Supabase)
 
 | | |
 | --- | --- |
-| **What** | Storage outside Neon for a daily logical backup (for example an S3-compatible bucket, or another cloud account under ARA's control), plus a scheduler that runs `pg_dump`. |
-| **Why** | Neon point-in-time restore covers most incidents, but not the loss of the Neon account itself. |
+| **What** | Storage outside Supabase for a daily logical backup (for example an S3-compatible bucket, or another cloud account under ARA's control), plus a scheduler that runs `pg_dump` and copies the Storage bucket. |
+| **Why** | Supabase's own backups (depending on the plan) cover most incidents, but not the loss of the Supabase account itself. |
 | **Who** | Owner (choice and account of the storage). Development can set up the job once the storage exists. |
-| **Where** | The storage provider; Neon (create a branch for the drill). |
-| **How tested** | Run `SOURCE_URL=<Neon branch> TARGET_ADMIN_URL=<restore server>/postgres scripts/backup-restore-drill.sh`. All four checks must be OK. |
+| **Where** | The storage provider; the Supabase staging project (or a restored copy) for the drill. |
+| **How tested** | Run `SOURCE_URL=<staging session URL> TARGET_ADMIN_URL=<restore server>/postgres scripts/backup-restore-drill.sh`. All four checks must be OK. |
 | **Completion** | First dump stored off-site and the drill passed. Record it in Platformbeheer → Productiegereedheid → *Bewijs vastleggen* (O10), with the date and storage location. |
 
 ### O11 — Error monitoring and alerting
@@ -174,27 +174,18 @@ Still open on the development side, and not blocking the pilot:
 | **How tested** | The report lists no open high or critical findings. Development fixes findings and has them re-tested. |
 | **Completion** | Record it under *Bewijs vastleggen* (O12) with the report reference. |
 
-### O14 — Database choice and Supabase projects
+### O14 — Supabase dev and staging projects and dashboard settings
 
 | | |
 | --- | --- |
-| **What** | A decision: Neon or Supabase. For Supabase: three projects (dev, staging, production) in us-east-1, the Data API switched off for `public`, and Auth sign-ups disabled. |
-| **Why** | The backend runs on both; the owner chooses the provider and pays for it. Supabase is verified (`SUPABASE_ARCHITECTURE.md` §5). |
-| **Who** | Owner. |
-| **Where** | supabase.com → new project. Vercel environment variables per environment:<br>• `DATABASE_URL`: transaction pooler, port 6543, `?pgbouncer=true&sslmode=require`;<br>• `DATABASE_URL_UNPOOLED`: session connection, port 5432;<br>• optional `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (server only), `SUPABASE_STORAGE_BUCKET`. |
-| **How tested** | The deploy runs `check:env` (Supabase-aware) and `migrate status`. Run the integration suite against staging (`TEST_DATABASE_URL`). |
-| **Completion** | Staging deploy green; the readiness page shows no configuration errors; the dashboard settings checklist in `SUPABASE_SECURITY.md` §3 is done. |
+| **What** | Two more projects (dev and staging, us-east-1) next to production; in all three: the Data API switched off for `public`, Auth sign-ups disabled, and for production a backup plan (and PITR if wanted). |
+| **Why** | Changes are tested on staging before production; the dashboard settings are a second line of defence next to the database privileges (`SUPABASE_SECURITY.md`). |
+| **Who** | Owner (account and costs). |
+| **Where** | supabase.com → new project. Vercel Preview environment variables point to staging. |
+| **How tested** | Staging deploy green (`check:env`, `migrate status`); the integration suite against staging (`TEST_DATABASE_URL`). |
+| **Completion** | The dashboard checklist in `SUPABASE_SECURITY.md` §3 is done; record it under *Bewijs vastleggen* (O14). |
 
-### O15 — Approval of the production migration Neon → Supabase
-
-| | |
-| --- | --- |
-| **What** | A maintenance window and a go/no-go decision. Only needed if Neon already holds production data. |
-| **Why** | Financial data must be moved under control, with verification and a rollback (`MIGRATION_PLAN.md`). |
-| **Who** | Owner (decision); development runs the script with the owner. |
-| **Where** | `scripts/migrate-to-supabase.sh`, staging first. |
-| **How tested** | The 8 verification checks of the script, then the smoke test. |
-| **Completion** | All checks OK on production; switch approved; Neon kept 30 days, then deleted with written approval. |
+Moving an existing PostgreSQL database with production data (for example Neon) to Supabase follows `MIGRATION_PLAN.md`, with a maintenance window and the owner's go/no-go. The source is kept 30 days and only deleted with written approval.
 
 ### O16 — Prices, BTW codes and revenue accounts of ARA's products
 

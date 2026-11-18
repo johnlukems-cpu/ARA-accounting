@@ -1,3 +1,4 @@
+import { uploadDocumentObject } from "@/integrations/storage";
 import { createHash } from "node:crypto";
 import Decimal from "decimal.js";
 import type { Prisma, TaxType } from "@prisma/client";
@@ -269,15 +270,16 @@ export async function fileReturn(access: Access, input: { returnId: string; file
   if (!input.confirmed) throw new UserError("tax.confirmFiling");
   const mimeType = sniffMime(input.bytes);
   if (!mimeType) throw new UserError("scan.unsupportedType");
+  const object = await uploadDocumentObject(access.organizationId, input.fileName, input.bytes, mimeType);
   return withTenant(scope(access), async (tx) => {
     const ret = await tx.taxReturn.findUnique({ where: { id: input.returnId } });
     if (!ret) throw new UserError("errors.notFound");
     assertCan(access, "tax.edit", (await adminFor(tx, ret.administrationId)).companyId);
     if (ret.status !== "APPROVED") throw new UserError("tax.notApproved");
     const doc = await tx.document.create({
-      data: { organizationId: access.organizationId, administrationId: ret.administrationId, kind: "EVIDENCE", fileName: input.fileName.slice(0, 200), mimeType, sizeBytes: input.bytes.length, sha256: createHash("sha256").update(input.bytes).digest("hex"), status: "PROCESSED", uploadedById: access.userId },
+      data: { organizationId: access.organizationId, administrationId: ret.administrationId, kind: "EVIDENCE", fileName: input.fileName.slice(0, 200), mimeType, sizeBytes: input.bytes.length, sha256: createHash("sha256").update(input.bytes).digest("hex"), status: "PROCESSED", uploadedById: access.userId, ...(object ?? {}) },
     });
-    await tx.documentFile.create({ data: { documentId: doc.id, organizationId: access.organizationId, data: Buffer.from(input.bytes) } });
+    if (!object) await tx.documentFile.create({ data: { documentId: doc.id, organizationId: access.organizationId, data: Buffer.from(input.bytes) } });
     const updated = await tx.taxReturn.update({ where: { id: ret.id }, data: { status: "FILED", evidenceDocumentId: doc.id, filingReference: input.reference?.trim() || null, filedById: access.userId, filedAt: new Date() } });
     await audit(tx, { organizationId: access.organizationId, userId: access.userId, action: "tax.filed", entity: "TaxReturn", entityId: ret.id, details: { evidence: doc.id, reference: input.reference ?? null } });
     return updated;

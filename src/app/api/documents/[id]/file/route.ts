@@ -2,6 +2,7 @@ import { getContext } from "@/core/auth/context";
 import { can } from "@/core/auth/access";
 import { withTenant } from "@/core/tenancy/tenant";
 import { throttleResponse } from "@/core/ops/throttle";
+import { readDocumentFile } from "@/integrations/storage";
 
 /** Serves a stored document (inline). The sandbox CSP keeps any active content in a PDF from running in our origin. */
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -15,8 +16,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     if (!doc) return null;
     const admin = await tx.administration.findUniqueOrThrow({ where: { id: doc.administrationId } });
     if (!can(ctx.access!, "scan.view", admin.companyId)) return "forbidden" as const;
-    const file = await tx.documentFile.findUnique({ where: { documentId: id } });
-    return file ? { doc, data: file.data } : null;
+    const data = await readDocumentFile(tx, doc).catch(() => null);
+    return data ? { doc, data } : null;
   });
   if (!r) return new Response("Not found", { status: 404 });
   if (r === "forbidden") return new Response("Forbidden", { status: 403 });

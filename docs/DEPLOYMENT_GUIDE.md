@@ -2,7 +2,14 @@
 
 ## Vercel (production)
 1. In Vercel: **Add New → Project → Import** `johnlukems-cpu/ARA-accounting`. `vercel.json` sets the framework and region `iad1`.
-2. **Database:** Vercel → Storage → **Neon** (Postgres) → region US-East → connect to the project. This sets `DATABASE_URL` and `DATABASE_URL_UNPOOLED`.
+2. **Supabase** (database + file storage; see `SUPABASE_ARCHITECTURE.md`):
+   - create a project in **us-east-1** (next to Vercel `iad1`);
+   - switch the **Data API off** for `public` (Settings → API), and switch Auth sign-ups off (ARA has its own sign-in);
+   - set in Vercel (Production):
+     - `DATABASE_URL` = transaction pooler (`…pooler.supabase.com:6543/postgres?sslmode=require&pgbouncer=true`);
+     - `DATABASE_URL_UNPOOLED` = session pooler or direct host (port 5432, `sslmode=require`);
+     - `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` (server-only; never `NEXT_PUBLIC_`). Files go to the private
+       bucket `SUPABASE_STORAGE_BUCKET` (default `ara-private`), created on first use.
 3. **Environment variables** (Production and Preview): `ENCRYPTION_KEY` (run `openssl rand -base64 32`), `CRON_SECRET` (at least 32 characters: `openssl rand -hex 32`), `APP_URL` (https origin), `PLATFORM_ADMIN_EMAILS`, and optionally the `SMTP_*` variables, `ERROR_REPORT_URL` and `ANTHROPIC_API_KEY` (ARA Scan AI recognition; it is used only when an organisation also switches AI on). See `.env.example`. Check a configuration with `npm run check:env`.
 4. Deploy. The build command (`npm run vercel-build` → `scripts/vercel-build.mjs`) runs, in order:
    - `prisma generate`;
@@ -17,37 +24,31 @@
 
 Without a database the public status page still works; sign-in shows "not yet available".
 
-### Supabase (alternative to Neon)
-See `SUPABASE_ARCHITECTURE.md` and `MIGRATION_PLAN.md`. In short:
+### Connection strings
+- `DATABASE_URL`: the **transaction pooler** (port 6543, `pgbouncer=true`, `sslmode=require`). Serverless functions open many short connections; the pooler absorbs them. `withTenant` uses `SET LOCAL ROLE` inside a transaction, which is compatible with transaction pooling.
+- `DATABASE_URL_UNPOOLED`: the **session pooler or direct host** (port 5432) of the same database. Prisma uses it (`directUrl`) for migrations, which need a session connection.
+- The environment check refuses a remote database without TLS, a pooler host as the direct URL, two URLs that point to different databases, and a production deployment without Supabase Storage. It warns when the production database is not on Supabase.
 
-1. Create a project in us-east-1.
-2. Switch the Data API off for `public`.
-3. Set the variables in Vercel:
-   - `DATABASE_URL` = transaction pooler (`…pooler.supabase.com:6543/postgres?sslmode=require&pgbouncer=true`);
-   - `DATABASE_URL_UNPOOLED` = session pooler or direct host (port 5432, `sslmode=require`).
-4. Deploy. The migrations (including `supabase_hardening`) run automatically.
-5. Optional: `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` for document storage in a private bucket.
+### Database role
+The security migration creates the NOLOGIN role `ara_app` and grants it to the migration user (`postgres`). The application keeps one connection string and switches to `ara_app` inside every tenant transaction (`SET LOCAL ROLE`). The `supabase_hardening` and `function_privileges` migrations remove every privilege of `anon`, `authenticated` and `service_role` on application tables and functions, so the public API key can read nothing even if the Data API is switched back on.
 
-Moving existing data from Neon: `scripts/migrate-to-supabase.sh`.
+### Environments
+Three Supabase projects: **dev**, **staging** (Vercel Preview) and **production**. Never point previews at production data.
 
-### Neon connection strings
-- `DATABASE_URL`: the **pooled** host (`…-pooler…`), with `sslmode=require`. Serverless functions open many short connections; the pooler absorbs them. `withTenant` uses `SET LOCAL ROLE` inside a transaction, which is compatible with transaction pooling.
-- `DATABASE_URL_UNPOOLED`: the **direct** host of the same database, with `sslmode=require`. Prisma uses it (`directUrl`) for migrations, which need a session connection.
-- The environment check refuses: a remote database without TLS, a pooler host as the direct URL, and two URLs that point to different databases. It warns when a Neon URL is not pooled.
-
-### Database role on Neon
-The security migration creates the NOLOGIN role `ara_app` and grants it to the migration user. The application keeps one connection string and switches to `ara_app` inside every tenant transaction (`SET LOCAL ROLE`). No extra credentials are needed.
-
-### Preview deployments
-Use a separate Neon branch for Preview (Neon integration: "create a branch for each preview"). Never point previews at production data.
+### Moving existing data
+- An existing PostgreSQL database (for example Neon): `scripts/migrate-to-supabase.sh`, see `MIGRATION_PLAN.md`.
+- Files still stored in PostgreSQL: `npm run files:to-supabase` (dry run), then `npm run files:to-supabase -- --apply`. Each file is uploaded, verified against its SHA-256 and only then removed from the database, in one transaction per file.
 
 ## Local development
 ```bash
 npm install
-cp .env.example .env   # fill in DATABASE_URL, DATABASE_URL_UNPOOLED, ENCRYPTION_KEY
+npm run supabase:local # Docker: Supabase PostgreSQL + Storage API (docker-compose.supabase.yml); prints the .env values
+cp .env.example .env   # fill in the printed values and ENCRYPTION_KEY
 npx prisma migrate deploy && npm run db:seed
 npm run dev
 ```
+
+The local keys live in `.env.supabase.local` (git-ignored) and are for local use only.
 
 ## Tests
 ```bash
@@ -61,7 +62,7 @@ npm run manual:screenshots  # regenerates docs/manual/*.png for the user manual 
 The release checklist is in `docs/RELEASE_CHECKLIST.md`, and the go/no-go report is in `docs/PRODUCTION_AUDIT.md`.
 
 ## Backups and recovery
-- Neon provides point-in-time restore (retention depends on the plan). Check the retention period in the Neon console.
+- Supabase backups depend on the plan (daily backups on paid plans; point-in-time recovery is an add-on). Check what the chosen plan includes and the retention period in the dashboard (Database → Backups).
 - Add a periodic logical backup (`pg_dump --format=custom`) to separate storage before going live.
 - **Restore drill** (quarterly): `SOURCE_URL=<db> TARGET_ADMIN_URL=<server>/postgres scripts/backup-restore-drill.sh`.
   It restores into a new database and proves the copy is complete and still protected:

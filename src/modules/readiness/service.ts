@@ -15,7 +15,7 @@ async function platformAdmin(userId: string) {
 }
 
 /** Items whose completion is a fact outside the software: recorded as evidence by a platform admin. */
-export const EVIDENCE_ITEMS = ["O10", "O12", "O13"] as const;
+export const EVIDENCE_ITEMS = ["O10", "O12", "O13", "O14"] as const;
 
 export type EvaluatedItem = ReadinessItem & { live: boolean; detail?: string };
 
@@ -43,8 +43,8 @@ export async function evaluate(env: Record<string, string | undefined> = process
   const ratioStatus = (v: { verified: number; total: number }, waiting: ReadinessStatus): ReadinessStatus => (v.total > 0 && v.verified === v.total ? "COMPLETED" : v.verified > 0 ? "IN_PROGRESS" : waiting);
 
   const live: Record<string, { status: ReadinessStatus; detail?: string }> = {};
-  const coreKeys = ["DATABASE_URL", "DATABASE_URL_UNPOOLED", "ENCRYPTION_KEY", "CRON_SECRET", "APP_URL"];
-  const coreErrors = coreKeys.filter((k) => checks.some((c) => c.key === k && c.level === "error" && c.code !== "missing"));
+  const coreKeys = ["DATABASE_URL", "DATABASE_URL_UNPOOLED", "ENCRYPTION_KEY", "CRON_SECRET", "APP_URL", "SUPABASE_URL"];
+  const coreErrors = coreKeys.filter((k) => checks.some((c) => c.key === k && c.level === "error" && c.code !== "missing" && c.code !== "storageRequired"));
   const coreMissing = coreKeys.filter((k) => !envOk(checks, k));
   live.O1 = coreErrors.length ? { status: "BLOCKED", detail: coreErrors.join(", ") } : coreMissing.length ? { status: "WAITING_OWNER", detail: coreMissing.join(", ") } : { status: "COMPLETED" };
   const smtpTested = events.some((e) => e.action === "platform.smtpTested");

@@ -1,0 +1,40 @@
+# Local Supabase for development and tests: the same PostgreSQL image and Storage API that Supabase runs.
+#   npm run supabase:local        (creates .env.supabase.local with local-only keys, then starts the stack)
+#   DATABASE_URL=postgresql://postgres:<pw>@localhost:54322/postgres  ·  Storage: http://localhost:54325
+# Local credentials only — never reuse them for a hosted project.
+services:
+  db:
+    image: supabase/postgres:15.8.1.085
+    environment:
+      POSTGRES_PASSWORD: ${SUPABASE_DB_PASSWORD:?run npm run supabase:local}
+    ports: ["54322:5432"]
+    volumes:
+      - ./supabase/local/zz-ara-roles.sql:/docker-entrypoint-initdb.d/migrations/99999999999999_zz-ara-roles.sql:ro
+      - ara-supabase-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-h", "localhost"]
+      interval: 5s
+      retries: 30
+  storage:
+    image: supabase/storage-api:v1.11.13
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ANON_KEY: ${SUPABASE_ANON_KEY}
+      SERVICE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      PGRST_JWT_SECRET: ${SUPABASE_JWT_SECRET}
+      AUTH_JWT_SECRET: ${SUPABASE_JWT_SECRET}
+      DATABASE_URL: postgres://supabase_storage_admin:${SUPABASE_DB_PASSWORD}@db:5432/postgres
+      STORAGE_BACKEND: file
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      TENANT_ID: stub
+      REGION: local
+      GLOBAL_S3_BUCKET: stub
+      FILE_SIZE_LIMIT: "52428800"
+    ports: ["54325:5000"]
+    volumes:
+      - ara-supabase-storage:/var/lib/storage
+volumes:
+  ara-supabase-db:
+  ara-supabase-storage:

@@ -340,7 +340,20 @@ On Supabase only (a no-op elsewhere):
 - revoke `EXECUTE` on functions from `PUBLIC`;
 - move `btree_gist` to the `extensions` schema.
 
-See `SUPABASE_SECURITY.md`.
+See `SUPABASE_SECURITY.md`. Migration `function_privileges` repeats the `PUBLIC` revoke for functions created later and
+makes it a global default privilege of the migration role, because a per-schema default cannot remove PostgreSQL's
+built-in grant.
+
+### 4.17 Files in Supabase Storage (migrations `supabase_storage`, `supabase_storage_guards`)
+
+| Change | Rule (enforced by triggers) |
+| --- | --- |
+| `Document.storage` (`DATABASE` \| `SUPABASE`, default `DATABASE`), `Document.storageKey` | CHECK: `SUPABASE` requires a key. File name, type, size and SHA-256 are immutable; `storage` may only change once, from `DATABASE` to `SUPABASE`. |
+| `DocumentFile` | No updates. A row may be deleted only when its document already points to Storage (that is how the file mover removes the bytes). |
+| `AdminDocument` / `AdminDocumentBlob` | Same rules: only the switch `DATABASE` → `SUPABASE`; blob rows removable only after that switch. |
+
+New files go straight to the private bucket when Storage is configured (always in production). `npm run files:to-supabase`
+moves older files: upload, SHA-256 check, then switch and delete in one transaction per file.
 
 ## 5. Database-level safeguards (SQL in migrations)
 

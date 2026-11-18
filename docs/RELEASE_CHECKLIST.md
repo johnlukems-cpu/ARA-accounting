@@ -10,13 +10,13 @@ compliant with Surinamese legislation, until **gate 2** is complete.
 ## Gate 1 — Controlled pilot
 
 ### A. Configuration (O1)
-- [ ] **(owner)** Create the Neon production database (US-East) and connect it to the Vercel project. This sets the pooled `DATABASE_URL` and the direct `DATABASE_URL_UNPOOLED`.
+- [ ] **(owner)** Create the Supabase production project (us-east-1). Set in Vercel: `DATABASE_URL` (transaction pooler, `pgbouncer=true`), `DATABASE_URL_UNPOOLED` (session connection), `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` (server only). Switch the Data API off for `public` and Auth sign-ups off.
 - [ ] **(owner)** Set `ENCRYPTION_KEY` (`openssl rand -base64 32`) and keep a copy in a password manager.
 - [ ] **(owner)** Set `CRON_SECRET` (`openssl rand -hex 32`), `APP_URL` (the https origin) and `PLATFORM_ADMIN_EMAILS`.
 - [ ] Deploy. The build log shows `check-env` without errors, `migrate deploy`, `migrate status` ("Database schema is up to date"), the seed, `next build`, and "No secrets in the browser bundle".
 - [ ] `GET /api/health` returns 200.
 - [ ] Sign in as a platform admin and set up MFA. Platformbeheer → Productiegereedheid shows O1 *Afgerond* and no configuration errors.
-- [ ] Use a separate Neon branch for Preview deployments; never production data.
+- [ ] Use the separate Supabase staging project for Preview deployments; never production data.
 
 ### B. E-mail (O2)
 - [ ] **(owner)** Set `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD` and `SMTP_FROM` (ARA's domain, with SPF/DKIM).
@@ -25,9 +25,9 @@ compliant with Surinamese legislation, until **gate 2** is complete.
 
 ### C. Operations (O10, O11)
 - [ ] **(owner)** Set `ERROR_REPORT_URL`, then **Testfout sturen**: the alert arrives.
-- [ ] Neon point-in-time restore is enabled; note the retention period.
+- [ ] Supabase backups for production are on the chosen plan (and PITR if wanted); note the retention period.
 - [ ] **(owner)** Off-site storage chosen and a daily `pg_dump --format=custom` scheduled.
-- [ ] Run `scripts/backup-restore-drill.sh` against a Neon branch; all four checks OK. Record it under *Bewijs vastleggen* (O10).
+- [ ] Run `scripts/backup-restore-drill.sh` against the staging project; all four checks OK. Record it under *Bewijs vastleggen* (O10).
 - [ ] Trigger the cron once: `curl -H "Authorization: Bearer $CRON_SECRET" https://<host>/api/cron/quality`. Expect `brokenChains: 0`; a call without the header returns 401.
 
 ### D. Smoke test on production
@@ -60,7 +60,7 @@ compliant with Surinamese legislation, until **gate 2** is complete.
 - [ ] **(owner)** A validated format for every bank the customers use (Platformbeheer → Bankformaten; BANK_IMPORT_VALIDATION.md).
 
 ### I. Performance
-- [ ] Re-run `npm run test:load` against a staging Neon branch and compare with PRODUCTION_AUDIT §3.
+- [ ] Re-run `npm run test:load` against the Supabase staging project and compare with PRODUCTION_AUDIT §3.
 
 ## After each release
 - [ ] CI green on `main` (`.github/workflows/ci.yml`).

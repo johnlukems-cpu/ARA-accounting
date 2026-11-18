@@ -37,7 +37,7 @@ function checkDatabase(env: Env, prod: boolean): EnvCheck[] {
   const pooled = env.DATABASE_URL;
   const direct = env.DATABASE_URL_UNPOOLED;
   if (!set(pooled)) {
-    out.push({ key: "DATABASE_URL", level: prod ? "error" : "warning", code: "missing", hint: "PostgreSQL connection string (Neon pooled URL on Vercel)." });
+    out.push({ key: "DATABASE_URL", level: prod ? "error" : "warning", code: "missing", hint: "PostgreSQL connection string (Supabase transaction pooler on Vercel)." });
     return out;
   }
   const u = parseUrl(pooled);
@@ -47,7 +47,7 @@ function checkDatabase(env: Env, prod: boolean): EnvCheck[] {
   }
   const remote = !isLocalHost(u.hostname);
   if (remote && u.searchParams.get("sslmode") !== "require" && u.searchParams.get("sslmode") !== "verify-full") {
-    out.push({ key: "DATABASE_URL", level: "error", code: "sslRequired", hint: "Remote databases must use sslmode=require (Neon sets it)." });
+    out.push({ key: "DATABASE_URL", level: "error", code: "sslRequired", hint: "Remote databases must use sslmode=require." });
   } else out.push({ key: "DATABASE_URL", level: "ok", code: remote ? "remoteTls" : "local", hint: remote ? "Remote database over TLS." : "Local database." });
   const supaPooled = u.hostname.endsWith(".pooler.supabase.com");
   if (supaPooled && u.port === "6543" && u.searchParams.get("pgbouncer") !== "true") {
@@ -56,15 +56,15 @@ function checkDatabase(env: Env, prod: boolean): EnvCheck[] {
   if (remote && u.hostname.endsWith(".supabase.co")) {
     out.push({ key: "DATABASE_URL", level: "warning", code: "supabaseNotPooled", hint: "On Vercel use Supabase's transaction pooler (…pooler.supabase.com:6543) for DATABASE_URL." });
   }
-  if (remote && u.hostname.endsWith(".neon.tech") && !u.hostname.includes("-pooler")) {
-    out.push({ key: "DATABASE_URL", level: "warning", code: "neonNotPooled", hint: "On Vercel use Neon's pooled host (…-pooler…) for DATABASE_URL; serverless functions open many connections." });
+  if (prod && remote && !u.hostname.endsWith(".supabase.com") && !u.hostname.endsWith(".supabase.co")) {
+    out.push({ key: "DATABASE_URL", level: "warning", code: "notSupabase", hint: "ARA runs on Supabase: expected a …pooler.supabase.com or db.<ref>.supabase.co host." });
   }
   if (!set(direct)) {
     out.push({ key: "DATABASE_URL_UNPOOLED", level: prod ? "error" : "warning", code: "missing", hint: "Direct (unpooled) URL; prisma migrate deploy needs it." });
   } else {
     const d = parseUrl(direct);
     if (!d || !/^postgres(ql)?:$/.test(d.protocol)) out.push({ key: "DATABASE_URL_UNPOOLED", level: "error", code: "invalidUrl", hint: "Must be a postgresql:// URL." });
-    else if (d.hostname.includes("-pooler") || (d.hostname.endsWith(".pooler.supabase.com") && d.port === "6543")) out.push({ key: "DATABASE_URL_UNPOOLED", level: "error", code: "pooledDirect", hint: "Must be a session connection (Neon: host without -pooler; Supabase: direct host or session pooler on port 5432): migrations need it." });
+    else if (d.hostname.includes("-pooler") || (d.hostname.endsWith(".pooler.supabase.com") && d.port === "6543")) out.push({ key: "DATABASE_URL_UNPOOLED", level: "error", code: "pooledDirect", hint: "Must be a session connection (Supabase: direct host or session pooler on port 5432): migrations need it." });
     else if (!isLocalHost(d.hostname) && d.searchParams.get("sslmode") !== "require" && d.searchParams.get("sslmode") !== "verify-full") out.push({ key: "DATABASE_URL_UNPOOLED", level: "error", code: "sslRequired", hint: "Remote databases must use sslmode=require." });
     else if ((supabaseRef(u) || supabaseRef(d) ? supabaseRef(u) !== supabaseRef(d) : d.hostname.replace("-pooler", "") !== u.hostname.replace("-pooler", "")) || d.pathname !== u.pathname) out.push({ key: "DATABASE_URL_UNPOOLED", level: "error", code: "differentDatabase", hint: "Pooled and direct URLs must point to the same database." });
     else out.push({ key: "DATABASE_URL_UNPOOLED", level: "ok", code: "ok", hint: "" });
@@ -133,7 +133,7 @@ export function checkEnvironment(env: Env = process.env): EnvCheck[] {
     if (!u || (u.protocol !== "https:" && !(u.protocol === "http:" && isLocalHost(u.hostname)))) out.push({ key: "SUPABASE_URL", level: "error", code: "httpsRequired", hint: "https://<project-ref>.supabase.co" });
     else if (!set(env.SUPABASE_SERVICE_ROLE_KEY)) out.push({ key: "SUPABASE_SERVICE_ROLE_KEY", level: "error", code: "missing", hint: "Server-only key (Project settings → API). Never prefix it with NEXT_PUBLIC_." });
     else out.push({ key: "SUPABASE_URL", level: "ok", code: "storageSupabase", hint: `Documents in the private bucket ${env.SUPABASE_STORAGE_BUCKET || "ara-private"}.` });
-  } else out.push({ key: "SUPABASE_URL", level: "info", code: "storageDatabase", hint: "Admin documents are stored in PostgreSQL (encrypted connection); set SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY for Supabase Storage." });
+  } else out.push({ key: "SUPABASE_URL", level: prod ? "error" : "info", code: prod ? "storageRequired" : "storageDatabase", hint: prod ? "Production stores every file in Supabase Storage: set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY." : "Development without Supabase Storage: files are stored in PostgreSQL." });
 
   // Secrets must never be exposed to the browser bundle.
   const leaked = Object.keys(env).filter((k) => k.startsWith("NEXT_PUBLIC_") && /SECRET|KEY|PASSWORD|TOKEN|DATABASE/i.test(k));

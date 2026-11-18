@@ -2,6 +2,26 @@
 
 Only results from real runs are recorded here. Environment: Node 22, PostgreSQL 16.15 (local), Chromium (Playwright 1.63).
 
+## Everything on Supabase (2026-11-18, later run)
+
+| Suite | Result |
+| --- | --- |
+| Unit | **140 / 140 passed** |
+| Integration (local PostgreSQL 16, with live Storage) | **105 / 105 passed**, none skipped |
+| Integration on **Supabase PostgreSQL 15.8**, migrated database, with live Storage | **105 / 105 passed** |
+| Integration on a fresh **`npm run supabase:local`** stack (`docker-compose.supabase.yml`: database `postgres` + storage-api, all 31 migrations from zero) | **105 / 105 passed** |
+| End-to-end (desktop + phone) | **29 / 29 passed** (+1 screenshot run skipped by design) |
+| Typecheck, lint, build, browser bundle secret scan, migration drift | passed |
+
+New coverage: ARA Scan uploads land in the private bucket with no bytes in PostgreSQL and open again through the
+download route; `files:to-supabase` moves older files with a SHA-256 check (dry run changes nothing, a second run moves
+nothing); evidence fields and the storage switch are immutable; bytes can only be deleted after the switch; production
+configuration without Storage is refused.
+
+Defect found and fixed: functions created after `supabase_hardening` still had PostgreSQL's built-in `EXECUTE` for
+`PUBLIC` (4 trigger functions). Migration `function_privileges` revokes it and makes the revoke a global default; the
+existing "Data API roles have no privileges" test now passes on Supabase.
+
 ## ARA Admin Portal and Supabase (2026-11-18)
 
 | Suite | Result |
@@ -49,7 +69,7 @@ Defects found and fixed in this round:
 
 | Requirement | Evidence |
 | --- | --- |
-| Environment validation, Neon URLs, APP_URL, SMTP completeness, no secrets in `NEXT_PUBLIC_` | unit "environment validation" (5 tests) |
+| Environment validation, Supabase URLs and Storage requirement, APP_URL, SMTP completeness, no secrets in `NEXT_PUBLIC_` | unit "environment validation" (5 tests) |
 | Logs never contain secrets or personal data | unit "log redaction"; guard "no console.* outside the logger" |
 | Cron fails closed | unit "cron authentication" |
 | Every server action and route handler authenticates | guard tests (static scan of `src/actions`, `src/app/api`) |

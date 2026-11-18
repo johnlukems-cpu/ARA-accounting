@@ -6,6 +6,18 @@
 | Completed | 0 — Architecture · 1 — Foundation · 2 — Accounting core · 3 — Financial operations · 4 — Industry templates · 5 — Multi-currency · 6 — Budgets · 7 — ARA Scan & AI · 8 — Financial reporting · 9 — Year-end & tax · 10 — Quality & automation · 11 — SaaS & practice management · **12 — Final QA & deployment** |
 | Last update | 2026-11-18 |
 
+## Everything on Supabase (2026-11-18)
+
+- Supabase is the only backend: database **and** every file. ARA Scan receipts, filed tax returns and admin documents go
+  to the private Storage bucket; production refuses to deploy without Storage (`check:env` → `storageRequired`).
+- Migrations `supabase_storage`, `supabase_storage_guards` (immutable evidence, one-way switch to Storage, bytes
+  deletable only after the switch) and `function_privileges` (no `EXECUTE` for `PUBLIC`, also for future functions).
+- `npm run files:to-supabase [-- --apply]`: verified mover for files still in PostgreSQL.
+- `npm run supabase:local`: local Supabase (database + Storage) in Docker for development and tests.
+- Neon removed from the configuration, environment checks and documentation; `MIGRATION_PLAN.md` remains for moving an
+  existing database. Readiness register: O1 = Supabase production project, O14 = dev/staging projects, O15 removed.
+- Not changed: authentication stays ARA's own (owner decision, see `SUPABASE_ARCHITECTURE.md` §1).
+
 ## ARA Admin Portal on Supabase (2026-11-18)
 
 **Delivered:**
@@ -52,7 +64,7 @@
   completion. It is kept separate from the 21 technical items.
 - **Technical:**
   - environment validation (build and start);
-  - Neon pooled/direct/TLS checks;
+  - database pooled/direct/TLS checks (Supabase);
   - `migrate status` on deploy;
   - SMTP verification and test message (`npm run smtp:test`);
   - fail-closed cron authentication;
@@ -385,7 +397,7 @@ A template can add accounts, journals, asset categories, dimension values and KP
 - E-mail delivery needs SMTP settings (none configured); until then invitation and reset links are shown once to administrators.
 - Breached-password check and step-up MFA for sensitive actions: planned (Phase 12 / with those actions).
 **Security considerations:** see docs/SECURITY.md (RLS, scrypt, AES-GCM, CSP, rate limits, audit chain).
-**Deployment:** add the Neon database and `ENCRYPTION_KEY` in Vercel (docs/DEPLOYMENT_GUIDE.md); the build then migrates automatically.
+**Deployment:** create the Supabase project, set its variables and `ENCRYPTION_KEY` in Vercel (docs/DEPLOYMENT_GUIDE.md); the build then migrates automatically.
 **Next phase:** 2 — chart of accounts, journals, ledger engine with DB-enforced balance and immutability, opening balances, general ledger, trial balance, period locks.
 
 ## Phase 0 checkpoint

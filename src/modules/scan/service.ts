@@ -11,6 +11,7 @@ import { postInvoice, purchaseApprovalRequired, saveInvoice, submitInvoice } fro
 import { FIELD_KEYS, emptyFields, matchSupplier, sniffMime, type DuplicateReason, type Fields } from "./domain";
 import { assertLimit } from "@/modules/saas/service";
 import { assertNotThrottled, hit } from "@/core/ops/throttle";
+import { uploadDocumentObject } from "@/integrations/storage";
 import { anthropicExtractor, readPdfText, textLayerExtractor, type Extractor } from "./extractors";
 
 const scope = (a: Access) => ({ organizationId: a.organizationId, userId: a.userId });
@@ -60,6 +61,7 @@ export async function uploadDocument(access: Access, input: { administrationId: 
   const sha256 = createHash("sha256").update(input.bytes).digest("hex");
   const pdf = mimeType === "application/pdf" ? await readPdfText(input.bytes) : null;
 
+  const object = await uploadDocumentObject(access.organizationId, input.fileName, input.bytes, mimeType);
   const doc = await withTenant(scope(access), async (tx) => {
     const admin = await tx.administration.findUnique({ where: { id: input.administrationId } });
     if (!admin) throw new UserError("errors.notFound");
@@ -72,9 +74,10 @@ export async function uploadDocument(access: Access, input: { administrationId: 
         organizationId: access.organizationId, administrationId: admin.id, fileName: input.fileName.slice(0, 200), mimeType, sizeBytes: input.bytes.length, sha256,
         pageCount: pdf?.pages ?? (mimeType === "application/pdf" ? null : 1), source: input.source ?? "WEB", textContent: pdf?.text.slice(0, 200_000) || null,
         uploadedById: access.userId, status: "REVIEW_REQUIRED", ...(same ? { duplicateOfId: same.id, duplicateReason: "SAME_FILE" satisfies DuplicateReason } : {}),
+        ...(object ?? {}),
       },
     });
-    await tx.documentFile.create({ data: { documentId: d.id, organizationId: access.organizationId, data: Buffer.from(input.bytes) } });
+    if (!object) await tx.documentFile.create({ data: { documentId: d.id, organizationId: access.organizationId, data: Buffer.from(input.bytes) } });
     await audit(tx, { organizationId: access.organizationId, userId: access.userId, action: "document.uploaded", entity: "Document", entityId: d.id, details: { fileName: d.fileName, sha256, size: d.sizeBytes, duplicateOf: same?.id ?? null } });
     return { d, aiOn: aiSettingsOf((await tx.organization.findUniqueOrThrow({ where: { id: access.organizationId } })).settings).enabled };
   });

@@ -12,13 +12,13 @@ that are still open here.
 | Controlled pilot | **NOT READY** | O1, O2, O10, O11, O14 |
 | General availability | **NOT READY** | O1, O2, O3, O4, O5, O6, O10, O11, O12, O14, O16, O13 |
 
-Status counts: ✅ Completed 22 · 🔄 In progress 0 · ⏳ Waiting for owner input 10 · ⏳ Waiting for external specialist 5 · ⛔ Blocked 0 · ◻️ Not started 4
+Status counts: ✅ Completed 22 · 🔄 In progress 0 · ⏳ Waiting for owner input 10 · ⏳ Waiting for external specialist 5 · ⛔ Blocked 0 · ◻️ Not started 3
 
 ## Owner and external specialists
 
 | ID | Requirement | Status | Responsible | Priority · gate | Depends on | Acceptance criterion |
 | --- | --- | --- | --- | --- | --- | --- |
-| O1 | Production database (Neon) and secrets in Vercel | ⏳ Waiting for owner input | Owner (ARA) | P1 · Pilot | T1, T2 | npm run check:env without errors in Production; /api/health returns 200. |
+| O1 | Supabase production project (database + Storage) and secrets in Vercel | ⏳ Waiting for owner input | Owner (ARA) | P1 · Pilot | T1, T2 | npm run check:env without errors in Production (Supabase pooler + session URL, Storage key); /api/health returns 200. |
 | O2 | SMTP credentials | ⏳ Waiting for owner input | Owner (ARA) | P1 · Pilot | O1, T5 | Test message from Platformbeheer received; invitation and password reset work. |
 | O3 | Plans, prices, limits and trial length | ⏳ Waiting for owner input | Owner (ARA) | P1 · General availability | T15 | At least one active plan with a price; trial length set. |
 | O4 | ARA payment details for subscription invoices | ⏳ Waiting for owner input | Owner (ARA) | P1 · General availability | O3 | Payment instructions set and visible on the subscription page. |
@@ -27,11 +27,10 @@ Status counts: ✅ Completed 22 · 🔄 In progress 0 · ⏳ Waiting for owner i
 | O7 | Real sample files from the local banks | ⏳ Waiting for owner input | Owner (ARA) | P2 · General availability | T17 | A validated format for every bank customers use. |
 | O8 | Statutory retention period for books and records | ⏳ Waiting for external specialist | Tax adviser | P2 · General availability | T16 | Approved review of the retention period. |
 | O9 | Optional: ANTHROPIC_API_KEY for AI recognition | ⏳ Waiting for owner input | Owner (ARA) | P3 · Later | O1 | A scanned photo is recognised in ARA Scan with AI switched on. |
-| O10 | Off-site backup storage and first restore drill on Neon | ⏳ Waiting for owner input | Owner (ARA) | P1 · Pilot | O1, T4 | Daily dump outside Neon; restore drill passed and recorded. |
+| O10 | Off-site backup storage and first restore drill (Supabase) | ⏳ Waiting for owner input | Owner (ARA) | P1 · Pilot | O1, T4 | Daily dump outside Supabase; restore drill passed and recorded. |
 | O11 | Error monitoring / alerting account | ⏳ Waiting for owner input | Owner (ARA) | P1 · Pilot | O1, T8 | ERROR_REPORT_URL set; a test error arrives. |
 | O12 | External security test (DAST or penetration test) | ⏳ Waiting for external specialist | Security tester | P1 · General availability | O1 | Report without open high or critical findings. |
-| O14 | Database choice (Neon or Supabase) and Supabase projects dev/staging/production | ⏳ Waiting for owner input | Owner (ARA) | P1 · Pilot | T22 | Three Supabase projects (us-east-1), Data API off for public, passwords in Vercel per environment. |
-| O15 | Approval of the production migration Neon → Supabase | ◻️ Not started | Owner (ARA) | P2 · General availability | O14, T23 | Trial migration on staging passed; owner approves the switch; Neon kept for 30 days. |
+| O14 | Supabase dev and staging projects and dashboard settings | ⏳ Waiting for owner input | Owner (ARA) | P1 · Pilot | T22 | Three projects (us-east-1); Data API off for public; Auth sign-ups off; backups/PITR for production (SUPABASE_SECURITY §3). |
 | O16 | Prices, BTW codes and revenue accounts of ARA's products | ⏳ Waiting for owner input | Owner (ARA) | P1 · General availability | T24, O5 | Every active product has a price or deliberately 'on request', a BTW code (after advice) and a revenue account. |
 | O13 | Terms of service and privacy statement | ⏳ Waiting for external specialist | Lawyer | P1 · General availability | — | Published and accepted by customers at registration. |
 
@@ -40,7 +39,7 @@ Status counts: ✅ Completed 22 · 🔄 In progress 0 · ⏳ Waiting for owner i
 | ID | Requirement | Status | Responsible | Priority · gate | Depends on | Acceptance criterion |
 | --- | --- | --- | --- | --- | --- | --- |
 | T1 | Environment variable validation | ✅ Completed | Development | P1 · Pilot | — | The build fails on missing or invalid secrets; values are never printed.<br>*Evidence:* src/core/ops/env.ts · npm run check:env · build stops on errors |
-| T2 | Neon PostgreSQL configuration (pooled + direct, TLS) | ✅ Completed | Development | P1 · Pilot | — | Pooled URL for the app, direct URL for migrations, sslmode=require enforced.<br>*Evidence:* prisma/schema.prisma (url + directUrl) · env checks sslRequired/neonNotPooled/pooledDirect |
+| T2 | Supabase database connection (pooler + session URL, TLS, Storage required) | ✅ Completed | Development | P1 · Pilot | — | Transaction pooler for the app, session URL for migrations, sslmode=require enforced, production without Supabase Storage refused.<br>*Evidence:* prisma/schema.prisma (url + directUrl) · env checks sslRequired/supabasePgbouncer/pooledDirect/storageRequired |
 | T3 | Database migration verification on every deploy | ✅ Completed | Development | P1 · Pilot | — | No failed or pending migrations; no drift between schema and migrations.<br>*Evidence:* scripts/vercel-build.mjs (migrate deploy + migrate status) · drift check in CI |
 | T4 | Backup and restore procedure | ✅ Completed | Development | P1 · Pilot | — | Restore drill proves identical rows, RLS, balances and audit chain.<br>*Evidence:* scripts/backup-restore-drill.sh · DEPLOYMENT_GUIDE |
 | T5 | SMTP integration prepared (connection test + test message) | ✅ Completed | Development | P1 · Pilot | — | Once SMTP is set, a platform admin can send a test message with one click.<br>*Evidence:* testEmailDelivery · npm run smtp:test · Platformbeheer → Gereedheid |
